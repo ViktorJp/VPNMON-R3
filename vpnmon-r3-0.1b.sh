@@ -1,9 +1,17 @@
 #!/bin/sh
 
+# VPNMON-R3 v0.1b (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# able to provide for the capabilities to randomly reconnect to the specified server list of your choice to have these
+# individual VPN clients reconnect. Special care has been taken to ensure that only the VPN connections you want to have
+# monitored are tended to. This script will check the health of up to 5 VPN connections on a regular interval to see if
+# one is connected, and sends a ping to a host of your choice through the active connection. If it finds that connection
+# has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
+# your specified servers to connect to for each VPN client.
+
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
-#Variables
+#Static Variables - please do not change unless you know what you're doing
 version="0.1b"
 beta=1
 apppath="/jffs/scripts/vpnmon-r3.sh"
@@ -41,7 +49,6 @@ InvWhite="\e[1;107m"
 CClear="\e[0m"
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # blackwhite is a simple function that removes all color attributes
 blackwhite () {
 
@@ -68,7 +75,6 @@ CClear=""
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # Promptyn is a simple function that accepts y/n input
 promptyn () {   # No defaults, just y or n
   while true; do
@@ -102,7 +108,6 @@ spinner() {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # Preparebar and Progressbar is a script that provides a nice progressbar to show script activity
 preparebar() {
   # $1 - bar length
@@ -156,13 +161,13 @@ progressbaroverride() {
           [3]) restartvpn 3;;
           [4]) restartvpn 4;;
           [5]) restartvpn 5;;
-          [Mm]) (vpnslots);;
-          [Vv]) (vpnserverlistmaint);;
-          [Tt]) (timerloopconfig);;
-          [Rr]) (schedulevpnreset);;
-          [Aa]) (autostart);;
-          [Ll]) (vlogs);;
-          [Cc]) (vsetup);;
+          [Mm]) vpnslots;;
+          [Vv]) vpnserverlistmaint;;
+          [Tt]) timerloopconfig;;
+          [Rr]) schedulevpnreset;;
+          [Aa]) autostart;;
+          [Ll]) vlogs;;
+          [Cc]) vsetup;;
           [Ee])  # Exit gracefully
                 echo -e "${CClear}\n"
                 exit 0
@@ -222,7 +227,7 @@ while true; do
   		1) # Check for existence of entware, and if so proceed and install the timeout package, then run vpnmon-r3 -config
         clear
         if [ -f "/opt/bin/timeout" ] && [ -f "/opt/sbin/screen" ]; then
-          (vconfig)
+          vconfig
         else
           clear
           echo -e "${InvGreen} ${InvDkGray}${CWhite} Install Dependencies                                                                  ${CClear}"
@@ -269,7 +274,7 @@ while true; do
                 echo ""
                 echo -e "Executing Configuration Utility..."
                 sleep 2
-                (vconfig)
+                vconfig
               else
                 clear
                 echo -e "${CRed}ERROR: Entware was not found on this router...${CClear}"
@@ -281,7 +286,7 @@ while true; do
               echo ""
               echo -e "\nExecuting Configuration Utility..."
               sleep 2
-              (vconfig)
+              vconfig
           fi
         fi
       ;;
@@ -339,8 +344,8 @@ while true; do
             fi
         fi
       ;;
-      3) (vupdate);;
-      4) (vuninstall);;
+      3) vupdate;;
+      4) vuninstall;;
       [Ee]) exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
     esac
 done
@@ -349,6 +354,7 @@ done
 
 # -------------------------------------------------------------------------------------------------------------------------
 # vconfig is a function that provides a UI to choose various options for vpnmon-r3
+
 vconfig() 
 {
 
@@ -454,6 +460,7 @@ done
 
 # -------------------------------------------------------------------------------------------------------------------------
 # vupdate is a function that provides a UI to check for script updates and allows you to install the latest version...
+
 vupdate() 
 {
 
@@ -470,8 +477,8 @@ while true; do
   echo ""
   if [ "$version" == "$DLversion" ]
     then
-      echo -e "You are on the latest version! Would you like to download anyways?${CClear}"
-      echo -e "This will overwrite your local copy with the current build.${CClear}"
+      echo -e "You are on the latest version! Would you like to download anyways? This will overwrite${CClear}"
+      echo -e "your local copy with the current build.${CClear}"
       if promptyn "(y/n): "; then
         echo ""
         echo -e "\nDownloading VPNMON-R3 ${CGreen}v$DLversion${CClear}"
@@ -540,8 +547,8 @@ updatecheck()
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # vuninstall is a function that uninstalls and removes all traces of vpnmon-r3 from your router...
+
 vuninstall() 
 {
 
@@ -583,8 +590,8 @@ done
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # vlogs is a function that calls the nano text editor to view the BACKUPMON log file
+
 vlogs()
 {
 
@@ -774,6 +781,7 @@ while true; do
     	timerloop=$EnterTimerLoop
     	echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Timer Loop Configuration saved" >> $logfile
     	saveconfig
+    	exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
     elif [ "$EnterTimerLoop" == "e" ]; then 
     	echo ""
     	exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
@@ -824,10 +832,11 @@ while true; do
 			echo -e "${CGreen}[Modifiying SERVICES-START file]..."
 		  sleep 2
 		  echo ""
-		  echo -e "[Modifying CRON jobs]..."
+		  echo -e "${CGreen}[Modifying CRON jobs]..."
 		  sleep 2
 		  echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN Reset Schedule Disabled" >> $logfile
       saveconfig
+      exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
     fi
 
 	elif [ "$schedule" == "1" ]; then
@@ -845,7 +854,7 @@ while true; do
 	  	if [ "$schedulemin1" == "" ] || [ -z "$schedulemin1" ]; then schedulemin=0; else schedulemin="$schedulemin1"; fi # Using default value on enter keypress
 		
 		echo ""
-		echo -e "${CGreen}[Modifiying SERVICES-START file]..."
+		echo -e "${CGreen}[Modifying SERVICES-START file]..."
 	  sleep 2
 		
 	  if [ -f /jffs/scripts/services-start ]; then
@@ -868,10 +877,11 @@ while true; do
 	  fi
 	    
 	  echo ""
-	  echo -e "[Modifying CRON jobs]..."
+	  echo -e "${CGreen}[Modifying CRON jobs]..."
 	  sleep 2
 	  echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN Reset Schedule Enabled" >> $logfile
 	  saveconfig
+	  exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
 	  
 	elif [ "$schedule" == "e" ]; then
 		exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
@@ -907,7 +917,7 @@ while true; do
   if [ "$autostart" == "0" ]; then
   	echo -e "${CClear}Current: ${CRed}Disabled${CClear}"
   elif [ "$autostart" == "1" ]; then
-		echo -e "${CClear}Current: ${CGreen}Enabled{CClear}"
+		echo -e "${CClear}Current: ${CGreen}Enabled${CClear}"
   fi
   echo ""
 	read -p 'Enable Reboot Protection? (0=No, 1=Yes, e=Exit): ' autostart1
@@ -920,10 +930,11 @@ while true; do
 		  sed -i -e '/vpnmon-r3.sh/d' /jffs/scripts/post-mount
 		  autostart=0
 		  echo ""
-		  echo -e "[Modifying POST-MOUNT file]..."
+		  echo -e "${CGreen}[Modifying POST-MOUNT file]..."
 		  sleep 2
 		  echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Reboot Protection Disabled" >> $logfile
 		  saveconfig
+		  exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
 		fi
 
 	elif [ "$autostart" == "1" ]; then
@@ -934,10 +945,11 @@ while true; do
 	      echo "(sleep 30 && /jffs/scripts/vpnmon-r3.sh -screen) & # Added by vpnmon-r3" >> /jffs/scripts/post-mount
 	      autostart=1
 	      echo ""
-			  echo -e "[Modifying POST-MOUNT file]..."
+			  echo -e "${CGreen}[Modifying POST-MOUNT file]..."
 			  sleep 2
 			  echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Reboot Protection Enabled" >> $logfile
 		    saveconfig
+		    exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
 	    fi
 
 	  else
@@ -947,10 +959,11 @@ while true; do
 	    chmod 755 /jffs/scripts/post-mount
 	    autostart=1
       echo ""
-		  echo -e "[Modifying POST-MOUNT file]..."
+		  echo -e "${CGreen}[Modifying POST-MOUNT file]..."
 		  sleep 2	    
 		  echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Reboot Protection Enabled" >> $logfile
 	  	saveconfig
+	  	exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
 	  fi
   
 	elif [ "$autostart" == "e" ]; then
@@ -1487,4 +1500,5 @@ while true; do
 done
 echo -e "${CClear}"
 exit 0
+
 #} #2>&1 | tee $LOG | logger -t $(basename $0)[$$]  # uncomment/comment to enable/disable debug mode
