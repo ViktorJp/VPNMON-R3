@@ -1,31 +1,31 @@
 #!/bin/sh
 
 # VPNMON-R3 v0.1b (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
-# able to provide for the capabilities to randomly reconnect to the specified server list of your choice to have these
-# individual VPN clients reconnect. Special care has been taken to ensure that only the VPN connections you want to have
-# monitored are tended to. This script will check the health of up to 5 VPN connections on a regular interval to see if
-# one is connected, and sends a ping to a host of your choice through the active connection. If it finds that connection
+# able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
+# choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
+# This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
+# are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
-# your specified servers to connect to for each VPN client.
+# your specified servers to reconnect to for each VPN client.
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
-#Static Variables - please do not change unless you know what you're doing
-version="0.1b"
-beta=1
-apppath="/jffs/scripts/vpnmon-r3.sh"
-logfile="/jffs/addons/vpnmon-r3.d/vpnmon-r3.log"
-dlverpath="/jffs/addons/vpnmon-r3.d/version.txt"                # Path to the vpnmon-r3 version file
-config="/jffs/addons/vpnmon-r3.d/vpnmon-r3.cfg"
-availableslots="1 2 3 4 5"
-PINGHOST="8.8.8.8"
-logsize=2000
-timerloop=60
-schedule=0
-schedulehrs=1
-schedulemin=0
-autostart=0
+#Static Variables - please do not change
+version="0.1b"                                                  # Version tracker
+beta=1                                                          # Beta switch
+apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
+logfile="/jffs/addons/vpnmon-r3.d/vpnmon-r3.log"                # Static path to the log
+dlverpath="/jffs/addons/vpnmon-r3.d/version.txt"                # Static path to the version file
+config="/jffs/addons/vpnmon-r3.d/vpnmon-r3.cfg"                 # Static path to the config file		
+availableslots="1 2 3 4 5"                                      # Available slots tracker
+PINGHOST="8.8.8.8"                                              # Ping host
+logsize=2000                                                    # Log file size in rows
+timerloop=60                                                    # Timer loop in sec
+schedule=0                                                      # Scheduler enable y/n
+schedulehrs=1                                                   # Scheduler hours
+schedulemin=0                                                   # Scheduler mins
+autostart=0                                                     # Auto start on router reboot y/n
 
 # Color variables
 CBlack="\e[1;30m"
@@ -50,7 +50,8 @@ CClear="\e[0m"
 
 # -------------------------------------------------------------------------------------------------------------------------
 # blackwhite is a simple function that removes all color attributes
-blackwhite () {
+blackwhite() 
+{
 
 CBlack=""
 InvBlack=""
@@ -76,7 +77,9 @@ CClear=""
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Promptyn is a simple function that accepts y/n input
-promptyn () {   # No defaults, just y or n
+
+promptyn() 
+{   # No defaults, just y or n
   while true; do
     read -p "[y/n]? " -n 1 -r yn
       case "${yn}" in
@@ -90,9 +93,10 @@ promptyn () {   # No defaults, just y or n
 # -------------------------------------------------------------------------------------------------------------------------
 # Spinner is a script that provides a small indicator on the screen to show script activity
 
-spinner() {
+spinner() 
+{
 
-	spins=$1
+  spins=$1
 
   spin=0
   totalspins=$((spins / 4))
@@ -109,7 +113,9 @@ spinner() {
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Preparebar and Progressbar is a script that provides a nice progressbar to show script activity
-preparebar() {
+
+preparebar() 
+{
   # $1 - bar length
   # $2 - bar char
   #printf "\n"
@@ -118,7 +124,8 @@ preparebar() {
   barchars=$(printf "%*s" "$1" | tr ' ' "$2")
 }
 
-progressbaroverride() {
+progressbaroverride() 
+{
   # $1 - number (-1 for clearing the bar)
   # $2 - max number
   # $3 - system name
@@ -174,7 +181,6 @@ progressbaroverride() {
                 ;;
       esac
   fi
-  
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -182,36 +188,36 @@ progressbaroverride() {
 
 vsetup()
 {
-	
+
 while true; do
-	
-	clear # Initial Setup
-	if [ ! -f $config ]; then # Write /jffs/addons/vpnmon-r3.d/vpnmon-r3.cfg
-		saveconfig
-	fi
-	
-	# Create initial vr3clients.txt file
-	if [ ! -f /jffs/addons/vpnmon-r3.d/vr3clients.txt ]; then
-		if [ "$availableslots" == "1 2 3" ]; then
-		 { echo 'VPN1=0'
-	     echo 'VPN2=0'
-	     echo 'VPN3=0'
-	   } > /jffs/addons/vpnmon-r3.d/vr3clients.txt
-		elif [ "$availableslots" == "1 2 3 4 5" ]; then
-		 { echo 'VPN1=0'
-	     echo 'VPN2=0'
-	     echo 'VPN3=0'
-	     echo 'VPN4=0'
-	     echo 'VPN5=0'
-	   } > /jffs/addons/vpnmon-r3.d/vr3clients.txt
-	  fi
+
+  clear # Initial Setup
+  if [ ! -f $config ]; then # Write /jffs/addons/vpnmon-r3.d/vpnmon-r3.cfg
+    saveconfig
   fi
-	       
-	echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 Main Setup and Configuration Menu                                           ${CClear}"
-	echo -e "${InvGreen} ${CClear}"
-	echo -e "${InvGreen} ${CClear} Please choose from the various options below, which allow you to perform high level${CClear}"
-	echo -e "${InvGreen} ${CClear} actions in the management of the VPNMON-R3 script.${CClear}"
-	echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+
+  # Create initial vr3clients.txt file
+  if [ ! -f /jffs/addons/vpnmon-r3.d/vr3clients.txt ]; then
+    if [ "$availableslots" == "1 2 3" ]; then
+      { echo 'VPN1=0'
+        echo 'VPN2=0'
+        echo 'VPN3=0'
+      } > /jffs/addons/vpnmon-r3.d/vr3clients.txt
+    elif [ "$availableslots" == "1 2 3 4 5" ]; then
+      { echo 'VPN1=0'
+        echo 'VPN2=0'
+        echo 'VPN3=0'
+        echo 'VPN4=0'
+        echo 'VPN5=0'
+      } > /jffs/addons/vpnmon-r3.d/vr3clients.txt
+    fi
+  fi
+
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 Main Setup and Configuration Menu                                           ${CClear}"
+  echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear} Please choose from the various options below, which allow you to perform high level${CClear}"
+  echo -e "${InvGreen} ${CClear} actions in the management of the VPNMON-R3 script.${CClear}"
+  echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(1)${CClear} : Custom configuration options for VPNMON-R3${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(2)${CClear} : Force reinstall Entware dependencies${CClear}"
@@ -220,21 +226,21 @@ while true; do
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} | ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(e)${CClear} : Exit${CClear}"
   echo -e "${InvGreen} ${CClear}"
-	echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-	echo ""
+  echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+  echo ""
   read -p "Please select? (1-4, e=Exit): " SelectSlot
     case $SelectSlot in
-  		1) # Check for existence of entware, and if so proceed and install the timeout package, then run vpnmon-r3 -config
+      1) # Check for existence of entware, and if so proceed and install the timeout package, then run vpnmon-r3 -config
         clear
         if [ -f "/opt/bin/timeout" ] && [ -f "/opt/sbin/screen" ]; then
           vconfig
         else
           clear
           echo -e "${InvGreen} ${InvDkGray}${CWhite} Install Dependencies                                                                  ${CClear}"
-					echo -e "${InvGreen} ${CClear}"
-					echo -e "${InvGreen} ${CClear} Missing dependencies required by VPNMON-R3 will be installed during this process."         
-					echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-				  echo ""
+          echo -e "${InvGreen} ${CClear}"
+          echo -e "${InvGreen} ${CClear} Missing dependencies required by VPNMON-R3 will be installed during this process."         
+          echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+          echo ""
           echo -e "VPNMON-R3 has some dependencies in order to function correctly, namely, CoreUtils-Timeout"
           echo -e "and the Screen utility. These utilities require you to have Entware already installed"
           echo -e "using the AMTM tool. If Entware is present, the Timeout and Screen utilities will"
@@ -270,7 +276,7 @@ while true; do
                 echo ""
                 echo -e "Install completed..."
                 echo ""
-                read -rsp $' Press any key to continue...\n' -n1 key
+                read -rsp $'Press any key to continue...\n' -n1 key
                 echo ""
                 echo -e "Executing Configuration Utility..."
                 sleep 2
@@ -280,7 +286,7 @@ while true; do
                 echo -e "${CRed}ERROR: Entware was not found on this router...${CClear}"
                 echo -e "Please install Entware using the AMTM utility before proceeding..."
                 echo ""
-                read -rsp $' Press any key to continue...\n' -n1 key
+                read -rsp $'Press any key to continue...\n' -n1 key
               fi
             else
               echo ""
@@ -294,10 +300,10 @@ while true; do
       2) # Force re-install the CoreUtils timeout/screen package
         clear
         echo -e "${InvGreen} ${InvDkGray}${CWhite} Re-install Dependencies                                                               ${CClear}"
-				echo -e "${InvGreen} ${CClear}"
-				echo -e "${InvGreen} ${CClear} Missing dependencies required by VPNMON-R3 will be re-installed during this process."         
-				echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-			  echo ""
+        echo -e "${InvGreen} ${CClear}"
+        echo -e "${InvGreen} ${CClear} Missing dependencies required by VPNMON-R3 will be re-installed during this process."         
+        echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+        echo ""
         echo -e "Would you like to re-install the CoreUtils-Timeout and the Screen utility? These"
         echo -e "utilities require you to have Entware already installed using the AMTM tool. If Entware"
         echo -e "is present, the Timeout and Screen utilities will be uninstalled, downloaded and re-"
@@ -334,13 +340,13 @@ while true; do
               echo ""
               echo -e "Re-install completed..."
               echo ""
-              read -rsp $' Press any key to continue...\n' -n1 key
+              read -rsp $'Press any key to continue...\n' -n1 key
             else
               clear
               echo -e "${CRed}ERROR: Entware was not found on this router...${CClear}"
               echo -e "Please install Entware using the AMTM utility before proceeding..."
               echo ""
-              read -rsp $' Press any key to continue...\n' -n1 key
+              read -rsp $'Press any key to continue...\n' -n1 key
             fi
         fi
       ;;
@@ -359,13 +365,13 @@ vconfig()
 {
 
 while true; do
-	
-	clear
-	echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 Configuration Options                                                       ${CClear}"
-	echo -e "${InvGreen} ${CClear}"
-	echo -e "${InvGreen} ${CClear} Please choose from the various options below, which allow you to modify certain${CClear}"
-	echo -e "${InvGreen} ${CClear} customizable parameters that affect the operation of this script.${CClear}"
-	echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+
+  clear
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 Configuration Options                                                       ${CClear}"
+  echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear} Please choose from the various options below, which allow you to modify certain${CClear}"
+  echo -e "${InvGreen} ${CClear} customizable parameters that affect the operation of this script.${CClear}"
+  echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(1)${CClear} : Number of VPN Client Slots available         : ${CGreen}$availableslots"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(2)${CClear} : Custom PING host to determine VPN health     : ${CGreen}$PINGHOST"
@@ -373,88 +379,88 @@ while true; do
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} | ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(e)${CClear} : Exit${CClear}"
   echo -e "${InvGreen} ${CClear}"
-	echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-	echo ""
+  echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+  echo ""
   read -p "Please select? (1-3, e=Exit): " SelectSlot
     case $SelectSlot in
-  		1) 
+      1)
         clear
         echo -e "${InvGreen} ${InvDkGray}${CWhite} Number of VPN Client Slots Available on Router                                        ${CClear}"
-				echo -e "${InvGreen} ${CClear}"
-				echo -e "${InvGreen} ${CClear} Please indicate how many VPN client slots your router is configured with. Certain${CClear}"
-				echo -e "${InvGreen} ${CClear} older model routers can only handle a maximum of 3 client slots, while newer models${CClear}"
-			  echo -e "${InvGreen} ${CClear} can handle 5. (Default = 5 VPN client slots)${CClear}"
-				echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-			  echo ""
-			  echo -e "${CClear}Current: ${CGreen}$availableslots${CClear}"
-			  echo ""
-			  read -p "Please enter value (3 or 5)? (e=Exit): " EnterAvailableSlots
-			    if [ "$EnterAvailableSlots" == "3" ]; then
-			    	availableslots="1 2 3"
-			      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslots" >> $logfile
-			      saveconfig
-			    elif [ "$EnterAvailableSlots" == "5" ]; then
-			    	availableslots="1 2 3 4 5"
-			      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslots" >> $logfile
-			      saveconfig
-			    elif [ "$EnterAvailableSlots" == "e" ]; then
-			    	echo -e "\n[Exiting]"; sleep 2
-			    else availableslots="1 2 3 4 5"
-			      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslots" >> $logfile
-			      saveconfig
-			  	fi
-			 ;;
+        echo -e "${InvGreen} ${CClear}"
+        echo -e "${InvGreen} ${CClear} Please indicate how many VPN client slots your router is configured with. Certain${CClear}"
+        echo -e "${InvGreen} ${CClear} older model routers can only handle a maximum of 3 client slots, while newer models${CClear}"
+        echo -e "${InvGreen} ${CClear} can handle 5. (Default = 5 VPN client slots)${CClear}"
+        echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+        echo ""
+        echo -e "${CClear}Current: ${CGreen}$availableslots${CClear}"
+        echo ""
+        read -p "Please enter value (3 or 5)? (e=Exit): " EnterAvailableSlots
+          if [ "$EnterAvailableSlots" == "3" ]; then
+            availableslots="1 2 3"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslots" >> $logfile
+            saveconfig
+          elif [ "$EnterAvailableSlots" == "5" ]; then
+            availableslots="1 2 3 4 5"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslots" >> $logfile
+            saveconfig
+          elif [ "$EnterAvailableSlots" == "e" ]; then
+            echo -e "\n[Exiting]"; sleep 2
+          else availableslots="1 2 3 4 5"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslots" >> $logfile
+            saveconfig
+          fi
+      ;;
 
-  		2) 
+      2) 
         clear
         echo -e "${InvGreen} ${InvDkGray}${CWhite} Custom PING Host (to determine VPN health)                                            ${CClear}"
-				echo -e "${InvGreen} ${CClear}"
-				echo -e "${InvGreen} ${CClear} Please indicate which host you want to PING in order to determine VPN Client health.${CClear}"
-				echo -e "${InvGreen} ${CClear} By default, the script will ping 8.8.8.8 (Google DNS) as it's reliable, fairly${CClear}"
-			  echo -e "${InvGreen} ${CClear} standard, and typically available globally. You can change this depending on your"
-			  echo -e "${InvGreen} ${CClear} local access and connectivity situation. (Default = 8.8.8.8)${CClear}"
-				echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-			  echo ""
-			  echo -e "${CClear}Current: ${CGreen}$PINGHOST${CClear}"
-			  echo ""
-			  read -p "Please enter valid IP4 address? (e=Exit): " NEWPINGHOST
-			    if [ "$NEWPINGHOST" == "e" ]; then
-			    	echo -e "\n[Exiting]"; sleep 2
-			    else PINGHOST=$NEWPINGHOST
-			      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New custom PING host entered: $PINGHOST" >> $logfile
-			      saveconfig
-			  	fi
-			 ;;
+        echo -e "${InvGreen} ${CClear}"
+        echo -e "${InvGreen} ${CClear} Please indicate which host you want to PING in order to determine VPN Client health.${CClear}"
+        echo -e "${InvGreen} ${CClear} By default, the script will ping 8.8.8.8 (Google DNS) as it's reliable, fairly${CClear}"
+        echo -e "${InvGreen} ${CClear} standard, and typically available globally. You can change this depending on your"
+        echo -e "${InvGreen} ${CClear} local access and connectivity situation. (Default = 8.8.8.8)${CClear}"
+        echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+        echo ""
+        echo -e "${CClear}Current: ${CGreen}$PINGHOST${CClear}"
+        echo ""
+        read -p "Please enter valid IP4 address? (e=Exit): " NEWPINGHOST
+          if [ "$NEWPINGHOST" == "e" ]; then
+            echo -e "\n[Exiting]"; sleep 2
+          else PINGHOST=$NEWPINGHOST
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New custom PING host entered: $PINGHOST" >> $logfile
+            saveconfig
+          fi
+      ;;
 
   		3) 
         clear
         echo -e "${InvGreen} ${InvDkGray}${CWhite} Custom Event Log Size                                                                 ${CClear}"
-				echo -e "${InvGreen} ${CClear}"
-				echo -e "${InvGreen} ${CClear} Please indicate below how large you would like your Event Log to grow. I'm a poet${CClear}"
-				echo -e "${InvGreen} ${CClear} and didn't even know it. By default, with 2000 rows, you will have many months of${CClear}"
-			  echo -e "${InvGreen} ${CClear} Event Log data. Use 0 to disable, max number of rows is 9999. (Default = 2000)"
-				echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-			  echo ""
-			  echo -e "${CClear}Current: ${CGreen}$logsize${CClear}"
-			  echo ""
-			  read -p "Please enter Log Size (in rows)? (0-9999, e=Exit): " NEWLOGSIZE
-			  
-			    if [ "$NEWLOGSIZE" == "e" ]; then
-			    	echo -e "\n[Exiting]"; sleep 2
-		      elif [ $NEWLOGSIZE -ge 0 ] && [ $NEWLOGSIZE -le 9999 ]; then
-					  logsize=$NEWLOGSIZE
-			      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New custom Event Log Size entered (in rows): $logsize" >> $logfile
-			      saveconfig
-			    else
-					  logsize=2000
-			      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New custom Event Log Size entered (in rows): $logsize" >> $logfile
-			      saveconfig			    
-			  	fi
-			 ;;
-			 
-	  [Ee]) break ;;
-			
-	  esac
+        echo -e "${InvGreen} ${CClear}"
+        echo -e "${InvGreen} ${CClear} Please indicate below how large you would like your Event Log to grow. I'm a poet${CClear}"
+        echo -e "${InvGreen} ${CClear} and didn't even know it. By default, with 2000 rows, you will have many months of${CClear}"
+        echo -e "${InvGreen} ${CClear} Event Log data. Use 0 to disable, max number of rows is 9999. (Default = 2000)"
+        echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+        echo ""
+        echo -e "${CClear}Current: ${CGreen}$logsize${CClear}"
+        echo ""
+        read -p "Please enter Log Size (in rows)? (0-9999, e=Exit): " NEWLOGSIZE
+
+          if [ "$NEWLOGSIZE" == "e" ]; then
+            echo -e "\n[Exiting]"; sleep 2
+          elif [ $NEWLOGSIZE -ge 0 ] && [ $NEWLOGSIZE -le 9999 ]; then
+            logsize=$NEWLOGSIZE
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New custom Event Log Size entered (in rows): $logsize" >> $logfile
+            saveconfig
+          else
+            logsize=2000
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New custom Event Log Size entered (in rows): $logsize" >> $logfile
+            saveconfig			    
+          fi
+      ;;
+
+      [Ee]) break ;;
+
+    esac
 done
 }
 
@@ -466,11 +472,11 @@ vupdate()
 
 updatecheck # Check for the latest version from source repository
 while true; do
-	clear
-	echo -e "${InvGreen} ${InvDkGray}${CWhite} Update Utility                                                                        ${CClear}"
-	echo -e "${InvGreen} ${CClear}"
-	echo -e "${InvGreen} ${CClear} This utility allows you to check, download and install updates"     
-	echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+  clear
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} Update Utility                                                                        ${CClear}"
+  echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear} This utility allows you to check, download and install updates"     
+  echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo ""
   echo -e "Current Version: ${CGreen}$version${CClear}"
   echo -e "Updated Version: ${CGreen}$DLversion${CClear}"
@@ -538,7 +544,7 @@ updatecheck()
       if [ "$beta" == "1" ]; then   # Check if Dev/Beta Mode is enabled and disable notification message
         UpdateNotify=0
       elif [ "$DLversion" != "$version" ]; then
-        UpdateNotify="Update available: v$version -> v$DLversion"
+        UpdateNotify="${InvYellow} ${InvDkGray}${CWhite} Update available: v$version -> v$DLversion                                                      ${CClear}"
         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: A new update (v$DLversion) is available to download" >> $logfile
       else
         UpdateNotify=0
@@ -553,11 +559,11 @@ vuninstall()
 {
 
 while true; do
-	clear
-	echo -e "${InvGreen} ${InvDkGray}${CWhite} Uninstall Utility                                                                     ${CClear}"
-	echo -e "${InvGreen} ${CClear}"
-	echo -e "${InvGreen} ${CClear} You are about to uninstall VPNMON-R3!  This action is irreversible."
-	echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+  clear
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} Uninstall Utility                                                                     ${CClear}"
+  echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear} You are about to uninstall VPNMON-R3!  This action is irreversible."
+  echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo ""
   echo -e "Do you wish to proceed?${CClear}"
   if promptyn "(y/n): "; then
@@ -606,14 +612,14 @@ exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
 
 vpnslots()
 {
-	
+
 while true; do
-	clear
-	echo -e "${InvGreen} ${InvDkGray}${CWhite} VPN Client Slot Monitoring                                                            ${CClear}"
-	echo -e "${InvGreen} ${CClear}"
-	echo -e "${InvGreen} ${CClear} Please indicate which VPN slots you would like VPNMON-R3 to monitor.${CClear}"
+  clear
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} VPN Client Slot Monitoring                                                            ${CClear}"
+  echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear} Please indicate which VPN slots you would like VPNMON-R3 to monitor.${CClear}"
   echo -e "${InvGreen} ${CClear} Use the corresponding ${CGreen}()${CClear} key to enable/disable monitoring for each slot:${CClear}"
-	echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+  echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
     
     if [ "$availableslots" == "1 2 3" ]; then
 
@@ -1039,7 +1045,6 @@ _VPN_GetClientState_()
 restartvpn()
 {
 	
-	echo ""
 	echo -e "${CGreen}\nMessages:                           ${CClear}"
 	echo ""
 	printf "${CGreen}\r[Stopping VPN Client $1]"
@@ -1056,7 +1061,7 @@ restartvpn()
   			printf "${CGreen}\r[Starting VPN Client $1]"
 				service start_vpnclient$1 >/dev/null 2>&1
 				echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN$1 Connection Restarted" >> $logfile
-				sleep 5
+				sleep 10
   		else
     		#Pick a random server from the alternate servers file, populate in vpn client slot, and restart
     		printf "\r                            "
@@ -1072,7 +1077,7 @@ restartvpn()
   			printf "${CGreen}\r[Starting VPN Client $1]"
 				service start_vpnclient$1 >/dev/null 2>&1
 				echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN$1 Connection Restarted" >> $logfile
-				sleep 5
+				sleep 10
     	fi
     else
     	#Restart the same server currently allocated to that vpn slot
@@ -1080,7 +1085,7 @@ restartvpn()
 			printf "${CGreen}\r[Starting VPN Client $1]"
 			service start_vpnclient$1 >/dev/null 2>&1
 			echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN$1 Connection Restarted" >> $logfile
-			sleep 5
+			sleep 10
     fi
 	
   printf "\r                            "
@@ -1090,10 +1095,61 @@ restartvpn()
 	sleep 5
 	printf "\r                            "
 	trimlogs
-	exec sh /jffs/scripts/vpnmon-r3.sh #reinitialize the script
+
 	
 }
 
+
+# -------------------------------------------------------------------------------------------------------------------------
+# Reset the managed VPN connections
+
+vreset()
+{
+
+	# Grab the VPNMON-R3 config file and read it in
+  if [ -f $config ]; then
+    source $config
+  else
+    clear
+    echo -e "${CRed} ERROR: VPNMON-R3 is not configured.  Please run 'vpnmon-r3.sh -setup' first."
+    echo ""
+    echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - ERROR: VPNMON-R3 config file not found. Please run the setup/configuration utility" >> $logfile
+    echo -e "${CClear}"
+    exit 0
+  fi
+	
+  # Grab the monitored slots file and read it in
+  if [ -f /jffs/addons/vpnmon-r3.d/vr3clients.txt ]; then
+    source /jffs/addons/vpnmon-r3.d/vr3clients.txt
+  else
+    clear
+    echo -e "${CRed} ERROR: VPNMON-R3 is not configured.  Please run 'vpnmon-r3.sh -setup' first."
+    echo ""
+    echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - ERROR: VPNMON-R3 VPN Client Monitoring file not found. Please run the setup/configuration utility" >> $logfile
+    echo -e "${CClear}"
+    exit 0
+  fi
+  
+	slot=0
+	for slot in $availableslots #loop through the 3/5 vpn slots
+    do
+      
+    	clear
+			echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 - v$version | $(date)                                         ${CClear}\n"
+			echo -e "${CGreen}[VPN Connection Reset Commencing]"
+			sleep 2
+
+      #determine if the slot is monitored and reset it
+      if [ "$((VPN$slot))" == "1" ]; then
+       	restartvpn $slot
+      fi
+          
+  done
+  
+  echo -e "\n${CClear}"
+	exit 0
+
+}
 # -------------------------------------------------------------------------------------------------------------------------
 # Find the VPN city
 
@@ -1221,6 +1277,9 @@ if ! grep -F "sh /jffs/scripts/vpnmon-r3.sh" /jffs/configs/profile.add >/dev/nul
   echo "alias vpnmon-r3=\"sh /jffs/scripts/vpnmon-r3.sh\" # added by vpnmon-r3" >> /jffs/configs/profile.add
 fi
 
+# Check for updates
+updatecheck
+
 # Check and see if any commandline option is being used
 if [ $# -eq 0 ]
   then
@@ -1334,7 +1393,7 @@ fi
 
 while true; do
 	
-	  # Grab the VPNMON-R3 config file and read it in
+	# Grab the VPNMON-R3 config file and read it in
   if [ -f $config ]; then
     source $config
   else
@@ -1409,7 +1468,8 @@ while true; do
  	fi
 	
 	#Display VPN client slot grid
-	echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 - v$version | ${CGreen}(S)${CWhite}how/${CGreen}(H)${CWhite}ide Operations Menu | $(date)      ${CClear}\n"
+	echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 - v$version | ${CGreen}(S)${CWhite}how/${CGreen}(H)${CWhite}ide Operations Menu | $(date)      ${CClear}"
+	if [ "$UpdateNotify" != "0" ]; then echo -e "$UpdateNotify\n"; else echo -e "${CClear}"; fi
 	echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | City Exit"
 	echo -e "  -----|-----|--------|--------|--------------|-----------------|-----------------------"
 	
@@ -1474,11 +1534,13 @@ while true; do
       #if a vpn is monitored and disconnected, try to restart it
       if [ "$((VPN$i))" == "1" ] && [ "$vpnstate" == "Disconnected" ]; then #reconnect
        	restartvpn $i
+       	exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
       fi
       
       #if a vpn is monitored and not responsive, try to restart it
       if [ "$((VPN$i))" == "1" ] && [ "$resetvpn" != "0" ]; then #reconnect
        	restartvpn $resetvpn
+       	exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
       fi
       
   done
