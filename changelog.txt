@@ -1,1 +1,12 @@
+v0.2b    - ADDED: Included "VPN Client Slot Server List Automation" functionality which allows you to free-form enter in
+           various carefully crafted CURL statements which are designed to point to your VPN Provider's API functionality
+           in order to export out a single list of VPN Server IPs/Hostnames to be imported into your VPN Client Slot 
+           Server List files assigned to each VPN slot. These lists are used by VPNMON-R3 to randomly reconnect to one of
+           the hosts in the list. A separate thread will be created on SNBForums.com that will give specific examples on
+           how to format the CURL statements in order to pull VPN Server IPs for specific countries, or cities. Please
+           note that not all VPN providers make this easy, or have an API to pull information from. Examples for NordVPN,
+           Surfshark, AirVPN, WeVPN and PerfectPrivacy will be provided. This item is available under the Quick Access
+           Operations Menu using the (U) key.
+         - MINOR: A few visual fixes here and there to standardize look & feel across screens
+
 v0.1b    - Initial Release!
