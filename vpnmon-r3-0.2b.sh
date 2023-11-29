@@ -826,6 +826,7 @@ while true; do
          else 
            automation1=`echo $automation1new | openssl enc -base64 -A`
            saveconfig
+           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 1" >> $logfile
          fi
       ;;
       
@@ -838,6 +839,7 @@ while true; do
          eval "$automation1unenc" > /jffs/addons/vpnmon-r3.d/vr3svr1.txt
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
+         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 1" >> $logfile
          echo ""
          read -rsp $'Press any key to acknowledge...\n' -n1 key
       ;;
@@ -859,6 +861,7 @@ while true; do
          else 
            automation2=`echo $automation2new | openssl enc -base64 -A`
            saveconfig
+           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 2" >> $logfile
          fi
       ;;
 
@@ -871,6 +874,7 @@ while true; do
          eval "$automation2unenc" > /jffs/addons/vpnmon-r3.d/vr3svr2.txt
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
+         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 2" >> $logfile
          echo ""
          read -rsp $'Press any key to acknowledge...\n' -n1 key
       ;;
@@ -892,6 +896,7 @@ while true; do
          else 
            automation3=`echo $automation3new | openssl enc -base64 -A`
            saveconfig
+           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 3" >> $logfile
          fi      
       ;;
 
@@ -904,6 +909,7 @@ while true; do
          eval "$automation3unenc" > /jffs/addons/vpnmon-r3.d/vr3svr3.txt
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
+         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 3" >> $logfile
          echo ""
          read -rsp $'Press any key to acknowledge...\n' -n1 key
       ;;
@@ -949,6 +955,7 @@ while true; do
          else 
            automation1=`echo $automation1new | openssl enc -base64 -A`
            saveconfig
+           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 1" >> $logfile
          fi
       ;;
       
@@ -961,6 +968,7 @@ while true; do
          eval "$automation1unenc" > /jffs/addons/vpnmon-r3.d/vr3svr1.txt
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
+         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 1" >> $logfile
          echo ""
          read -rsp $'Press any key to acknowledge...\n' -n1 key
       ;;
@@ -982,6 +990,7 @@ while true; do
          else 
            automation2=`echo $automation2new | openssl enc -base64 -A`
            saveconfig
+           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 2" >> $logfile
          fi
       ;;
 
@@ -994,6 +1003,7 @@ while true; do
          eval "$automation2unenc" > /jffs/addons/vpnmon-r3.d/vr3svr2.txt
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
+         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 2" >> $logfile
          echo ""
          read -rsp $'Press any key to acknowledge...\n' -n1 key
       ;;
@@ -1015,6 +1025,7 @@ while true; do
          else 
            automation3=`echo $automation3new | openssl enc -base64 -A`
            saveconfig
+           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 3" >> $logfile
          fi      
       ;;
 
@@ -1027,6 +1038,7 @@ while true; do
          eval "$automation3unenc" > /jffs/addons/vpnmon-r3.d/vr3svr3.txt
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
+         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 3" >> $logfile
          echo ""
          read -rsp $'Press any key to acknowledge...\n' -n1 key
       ;;
@@ -1048,6 +1060,7 @@ while true; do
          else 
            automation4=`echo $automation4new | openssl enc -base64 -A`
            saveconfig
+           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 4" >> $logfile
          fi
       ;;
 
@@ -1060,6 +1073,7 @@ while true; do
          eval "$automation4unenc" > /jffs/addons/vpnmon-r3.d/vr3svr4.txt
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
+         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 4" >> $logfile
          echo ""
          read -rsp $'Press any key to acknowledge...\n' -n1 key
       ;;
@@ -1081,6 +1095,7 @@ while true; do
          else 
            automation5=`echo $automation5new | openssl enc -base64 -A`
            saveconfig
+           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 5" >> $logfile
          fi
       ;;
 
@@ -1093,6 +1108,7 @@ while true; do
          eval "$automation5unenc" > /jffs/addons/vpnmon-r3.d/vr3svr5.txt
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
+         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 5" >> $logfile
          echo ""
          read -rsp $'Press any key to acknowledge...\n' -n1 key
       ;;
