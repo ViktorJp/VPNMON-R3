@@ -825,8 +825,8 @@ while true; do
          	 echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else 
            automation1=`echo $automation1new | openssl enc -base64 -A`
-           saveconfig
            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 1" >> $logfile
+           saveconfig
          fi
       ;;
       
@@ -860,8 +860,8 @@ while true; do
          	 echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else 
            automation2=`echo $automation2new | openssl enc -base64 -A`
-           saveconfig
            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 2" >> $logfile
+           saveconfig
          fi
       ;;
 
@@ -895,8 +895,8 @@ while true; do
          	 echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else 
            automation3=`echo $automation3new | openssl enc -base64 -A`
-           saveconfig
            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 3" >> $logfile
+           saveconfig
          fi      
       ;;
 
@@ -954,8 +954,8 @@ while true; do
          	 echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else 
            automation1=`echo $automation1new | openssl enc -base64 -A`
-           saveconfig
            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 1" >> $logfile
+           saveconfig
          fi
       ;;
       
@@ -989,8 +989,8 @@ while true; do
          	 echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else 
            automation2=`echo $automation2new | openssl enc -base64 -A`
-           saveconfig
            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 2" >> $logfile
+           saveconfig
          fi
       ;;
 
@@ -1024,8 +1024,8 @@ while true; do
          	 echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else 
            automation3=`echo $automation3new | openssl enc -base64 -A`
-           saveconfig
            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 3" >> $logfile
+           saveconfig
          fi      
       ;;
 
@@ -1059,8 +1059,8 @@ while true; do
          	 echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else 
            automation4=`echo $automation4new | openssl enc -base64 -A`
-           saveconfig
            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 4" >> $logfile
+           saveconfig
          fi
       ;;
 
@@ -1094,8 +1094,8 @@ while true; do
          	 echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else 
            automation5=`echo $automation5new | openssl enc -base64 -A`
-           saveconfig
            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 5" >> $logfile
+           saveconfig
          fi
       ;;
 
