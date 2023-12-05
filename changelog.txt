@@ -13,6 +13,12 @@ v0.3b    - ADDED: Brought over the "Unbound-over-VPN" functionality that was ori
            Definitely something that needs to be tested. Also, if other VPN connections are reset, the VPN Client Slot
            tied to "Unbound-over-VPN" will go out of sync, and will attempt to reset itself. This connection will always
            need to be the last one to reset itself, else it will continue to stay out-of-sync.
+         - FIXED: Apparently I overlooked making sure JQuery was being properly referenced as required during the setup
+           process. Thanks to @kuki68ster for noticing this! The script will now catch this and guide you through the
+           Entware component install process.
+         - FIXED: In certain situations, the autostart functionality would not save a setting back to the vpnmon-r3.cfg
+           file, and show that it was enabled. If you have this issue, simply re-save your choice, and it will make the
+           correct changes to the .cfg file now.
 
 v0.2b    - ADDED: Included "VPN Client Slot Server List Automation" functionality which allows you to free-form enter in
            various carefully crafted CURL statements which are designed to point to your VPN Provider's API functionality
