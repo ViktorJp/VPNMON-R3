@@ -1,23 +1,24 @@
 v0.3b    - ADDED: Brought over the "Unbound-over-VPN" functionality that was originally introduced in VPNMON-R2. Out of
-           all the integrations that were present in VPNMON-R2, I felt that this was one of the most important ones, and
-           one that I wanted to be completely functional in VPNMON-R3 if I am going to be using this full-time. Unbound
-           by default allows you to become your own DNS resolver, however, "Unbound-over-VPN" encrypts your unencrypted
-           DNS resolver traffic all the way through to your public VPN IP address, after which it traverses unencrypted
-           to the DNS Root Servers. This excellent feature prevents your ISP or other monitoring services from snooping
-           in on your otherwise unencrypted DNS resolver traffic that normally happens when running Unbound. Since you
-           are your own encrypted DNS resolver, no ISPs, or other DNS services will be able to snoop on your traffic.
-           The only entity here that could possibly snoop on this traffic would be your VPN provider, or any nefarious
-           services monitoring inbound/outbound VPN traffic at the VPN provider level. PLEASE NOTE: "Unbound-over-VPN"
-           is only able to bind to 1 VPN Client Slot. If you are running other VPN connections, this will continue to
-           work, however it is not guaranteed that the other VPN connections will be able to take advantage of Unbound.
-           Definitely something that needs to be tested. Also, if other VPN connections are reset, the VPN Client Slot
-           tied to "Unbound-over-VPN" will go out of sync, and will attempt to reset itself. This connection will always
-           need to be the last one to reset itself, else it will continue to stay out-of-sync.
-         - FIXED: Apparently I overlooked making sure JQuery was being properly referenced as required during the setup
-           process. Thanks to @kuki68ster for noticing this! The script will now catch this and guide you through the
+           all the integrations that were present in VPNMON-R2, I felt that this was one of the most important ones, and 
+           one that I wanted to be completely functional in VPNMON-R3 if I am going to be using this full-time. Unbound 
+           by default allows you to become your own DNS resolver, however, "Unbound-over-VPN" goes a step further and 
+           encrypts your unencrypted DNS resolver traffic all the way through to your public VPN IP address, after which 
+           it traverses unencrypted to the DNS Root Servers. This excellent feature prevents your ISP or other monitoring
+           services from snooping in on your otherwise unencrypted DNS resolver traffic that normally happens when
+           running Unbound. Since you are your own encrypted DNS resolver, no ISPs, or other DNS services (like Quad9, 
+           Cloudfare or Google, etc) will be able to snoop on your traffic. The only entity here that could possibly 
+           snoop on this traffic would be your VPN provider, or any nefarious services monitoring inbound/outbound VPN 
+           traffic at the VPN provider level. PLEASE NOTE: "Unbound-over-VPN" is only able to bind to 1 VPN Client Slot. 
+           If you are running other VPN connections, this will continue to work, however it is not guaranteed that the 
+           other VPN connections will be able to take advantage of Unbound. Definitely something that needs to be tested. 
+           Also, if other VPN connections are reset, the VPN Client Slot tied to "Unbound-over-VPN" will go out of sync, 
+           and will attempt to reset itself. This connection will always need to be the last one to reset itself, else it 
+           will continue to stay out-of-sync.
+         - FIXED: Apparently I overlooked making sure JQuery was being properly referenced as required during the setup 
+           process. Thanks to @kuki68ster for noticing this! The script will now catch this and guide you through the 
            Entware component install process.
-         - FIXED: In certain situations, the autostart functionality would not save a setting back to the vpnmon-r3.cfg
-           file, and show that it was enabled. If you have this issue, simply re-save your choice, and it will make the
+         - FIXED: In certain situations, the autostart functionality would not save a setting back to the vpnmon-r3.cfg 
+           file, and show that it was enabled. If you have this issue, simply re-save your choice, and it will make the 
            correct changes to the .cfg file now.
 
 v0.2b    - ADDED: Included "VPN Client Slot Server List Automation" functionality which allows you to free-form enter in
