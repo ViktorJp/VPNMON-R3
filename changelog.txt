@@ -1,3 +1,13 @@
+v0.3b    - ADDED: Brought over the "Unbound-over-VPN" functionality that was originally introduced in VPNMON-R2. Out of
+           all the integrations that were present in VPNMON-R2, I felt that this was one of the most important ones, and
+           one that I wanted to be completely functional in VPNMON-R3.  Unbound on its own allows you to become your own
+           DNS resolver, however, Unbound-over-VPN encrypts your unencrypted DNS resolver traffic all the way through to
+           your public VPN IP address, after which it traverses unencrypted to the DNS Root Servers. This excellent
+           feature prevents your ISP or other monitoring services from snooping in on your otherwise unencrypted DNS
+           resolver traffic that normally comes standard when running Unbound. Since you are your own DNS resolver, no
+           ISPs, or other DNS services will be able to snoop on your traffic.
+           
+
 v0.2b    - ADDED: Included "VPN Client Slot Server List Automation" functionality which allows you to free-form enter in
            various carefully crafted CURL statements which are designed to point to your VPN Provider's API functionality
            in order to export out a single list of VPN Server IPs/Hostnames to be imported into your VPN Client Slot 
