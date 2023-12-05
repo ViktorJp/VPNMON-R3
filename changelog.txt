@@ -7,7 +7,12 @@ v0.3b    - ADDED: Brought over the "Unbound-over-VPN" functionality that was ori
            in on your otherwise unencrypted DNS resolver traffic that normally happens when running Unbound. Since you
            are your own encrypted DNS resolver, no ISPs, or other DNS services will be able to snoop on your traffic.
            The only entity here that could possibly snoop on this traffic would be your VPN provider, or any nefarious
-           services monitoring inbound/outbound VPN traffic at the VPN provider level.           
+           services monitoring inbound/outbound VPN traffic at the VPN provider level. PLEASE NOTE: "Unbound-over-VPN"
+           is only able to bind to 1 VPN Client Slot. If you are running other VPN connections, this will continue to
+           work, however it is not guaranteed that the other VPN connections will be able to take advantage of Unbound.
+           Definitely something that needs to be tested. Also, if other VPN connections are reset, the VPN Client Slot
+           tied to "Unbound-over-VPN" will go out of sync, and will attempt to reset itself. This connection will always
+           need to be the last one to reset itself, else it will continue to stay out-of-sync.
 
 v0.2b    - ADDED: Included "VPN Client Slot Server List Automation" functionality which allows you to free-form enter in
            various carefully crafted CURL statements which are designed to point to your VPN Provider's API functionality
