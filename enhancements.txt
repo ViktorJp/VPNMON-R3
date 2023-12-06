@@ -1,4 +1,6 @@
-To-Do
+To-Do:
 
-1.) Build a VPN Server List builder that exports IPs into a certain Client Slot txt file
-2.) Consider building Unbound tie-in
+
+Done:
+- Build a VPN Server List builder that exports IPs into a certain Client Slot txt file
+- Consider building Unbound tie-in
