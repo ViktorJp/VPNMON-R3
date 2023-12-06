@@ -1,5 +1,5 @@
 To-Do:
-
+- Add ping values to main UI
 
 Done:
 - Build a VPN Server List builder that exports IPs into a certain Client Slot txt file
