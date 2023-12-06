@@ -1,3 +1,7 @@
+v0.4b    - FIXED: Eliminated many script restarts after exiting various menus and allows you to return to the main UI
+           without interference to the VPN city and Unbound Sync lookups.
+         - FIXED: Based on the timezone code length, the main UI bar now fixes its size so it stays a uniform length.
+
 v0.3b    - ADDED: Brought over the "Unbound-over-VPN" functionality that was originally introduced in VPNMON-R2. Out of
            all the integrations that were present in VPNMON-R2, I felt that this was one of the most important ones, and 
            one that I wanted to be completely functional in VPNMON-R3 if I am going to be using this full-time. Unbound 
