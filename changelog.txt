@@ -1,4 +1,7 @@
-v0.4b    - FIXED: Eliminated many script restarts after exiting various menus and allows you to return to the main UI
+v0.4b    - ADDED: Relented and included a single PING indicator across the VPN tunnel to at least show some stats of
+           what's going on with the connection. Formatted to handle 4 digits and 3 decimals, we should be good for the
+           worse of worsest situations. On the fence of supporting a > amount ping reset condition.
+         - FIXED: Eliminated many script restarts after exiting various menus and allows you to return to the main UI
            without interference to the VPN city and Unbound Sync lookups.
          - FIXED: Based on the timezone code length, the main UI bar now fixes its size so it stays a uniform length.
 
