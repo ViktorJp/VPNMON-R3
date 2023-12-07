@@ -1,6 +1,7 @@
 To-Do:
-- Add ping values to main UI
+
 
 Done:
+- Add ping values to main UI
 - Build a VPN Server List builder that exports IPs into a certain Client Slot txt file
 - Consider building Unbound tie-in
