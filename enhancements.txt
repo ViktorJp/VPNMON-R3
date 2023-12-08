@@ -1,6 +1,7 @@
 To-Do:
 - Create a separate thread with CURL examples for all R2-supported VPN providers
 - Integrate KILLMON functionality if there is any interest in having better killswitch capabilities
+- Automate running of custom CURL statements under server list automation using CRON
 
 Done:
 - Add ping values to main UI
