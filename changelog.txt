@@ -9,7 +9,6 @@ v0.5b    - ADDED: Created a new row under the Operations Menu to allow you to qu
            icanhazip.com comes back with an error message. Thanks to @TITAN for bringing this up.
          - FIXED: General cleanup of inconsistencies that kept bugging me. ;)
 
-
 v0.4b    - ADDED: Relented and included a single PING indicator across the VPN tunnel to at least show some stats of
            what's going on with the connection. Formatted to handle 4 digits and 3 decimals, we should be good for the
            worse of worsest situations. On the fence of supporting a > amount ping reset condition.
