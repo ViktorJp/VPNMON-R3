@@ -1,3 +1,10 @@
+v0.5b    - FIXED: Added some validation on obtaining the public VPN IP address in case NVRAM could not produce it, and
+           canihazip.com comes back with an error message. Thanks to @TITAN for bringing this up.
+         - FIXED: General cleanup of inconsistencies that kept bugging me. ;)
+         - ADDED: Created a thread with tutorials and examples on how to craft custom CURL+JQ statements in order to
+           query specific city and/or country IP address list from various VPN providers using their APIs. This is
+           thread is available here: https://www.snbforums.com/threads/vpnmon-r3-custom-server-list-generation-tutorials-and-examples.88022/
+
 v0.4b    - ADDED: Relented and included a single PING indicator across the VPN tunnel to at least show some stats of
            what's going on with the connection. Formatted to handle 4 digits and 3 decimals, we should be good for the
            worse of worsest situations. On the fence of supporting a > amount ping reset condition.
