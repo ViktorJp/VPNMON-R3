@@ -1,9 +1,14 @@
-v0.5b    - FIXED: Added some validation on obtaining the public VPN IP address in case NVRAM could not produce it, and
-           icanhazip.com comes back with an error message. Thanks to @TITAN for bringing this up.
-         - FIXED: General cleanup of inconsistencies that kept bugging me. ;)
+v0.5b    - ADDED: Created a new row under the Operations Menu to allow you to quickly stop + unmonitor a VPN Slot.
+           This was added to give you some more control over a VPN Client Slot that might be giving you trouble, or
+           don't want to have to go into the router UI to forcefully stop a VPN Client Slot. Performing this action
+           will also remove it from the monitored list, so it doesn't immediately try to reconnect it.
          - ADDED: Created a thread with tutorials and examples on how to craft custom CURL+JQ statements in order to
            query specific city and/or country IP address list from various VPN providers using their APIs. This is
            thread is available here: https://www.snbforums.com/threads/vpnmon-r3-custom-server-list-generation-tutorials-and-examples.88022/
+         - FIXED: Added some validation on obtaining the public VPN IP address in case NVRAM could not produce it, and
+           icanhazip.com comes back with an error message. Thanks to @TITAN for bringing this up.
+         - FIXED: General cleanup of inconsistencies that kept bugging me. ;)
+
 
 v0.4b    - ADDED: Relented and included a single PING indicator across the VPN tunnel to at least show some stats of
            what's going on with the connection. Formatted to handle 4 digits and 3 decimals, we should be good for the
