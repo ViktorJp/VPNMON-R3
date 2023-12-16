@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R3 v0.4b (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v0.5b (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
@@ -12,7 +12,7 @@
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="0.4b"                                                  # Version tracker
+version="0.5b"                                                  # Version tracker
 beta=1                                                          # Beta switch
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
 logfile="/jffs/addons/vpnmon-r3.d/vpnmon-r3.log"                # Static path to the log
@@ -164,11 +164,16 @@ progressbaroverride()
 
   if [ $key_press ]; then
       case $key_press in
-          [1]) restartvpn 1;;
-          [2]) restartvpn 2;;
-          [3]) restartvpn 3;;
-          [4]) restartvpn 4;;
-          [5]) restartvpn 5;;
+          [1]) echo ""; restartvpn 1; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [2]) echo ""; restartvpn 2; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [3]) echo ""; restartvpn 3; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [4]) echo ""; restartvpn 4; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [5]) echo ""; restartvpn 5; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [\!]) echo ""; killunmonvpn 1; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [\@]) echo ""; killunmonvpn 2; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [\#]) echo ""; killunmonvpn 3; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [\$]) echo ""; killunmonvpn 4; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [\%]) echo ""; killunmonvpn 5; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
           [Aa]) autostart;;
           [Cc]) vsetup;;
           [Ee]) echo -e "${CClear}\n"; exit 0;;
@@ -1716,6 +1721,34 @@ restartvpn()
   
 }
 
+# -------------------------------------------------------------------------------------------------------------------------
+# Kill a vpn connnection, and unmonitor it - $1 = slot number
+
+killunmonvpn()
+{
+  
+  # Stop the service
+  echo -e "${CGreen}\nMessages:                           ${CClear}"
+  echo ""
+  printf "${CGreen}\r[Stopping VPN Client $1]"
+  service stop_vpnclient$1 >/dev/null 2>&1
+  echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN$1 has been stopped and no longer being monitored" >> $logfile
+  sleep 5
+  printf "\r                            "
+  printf "${CGreen}\r[Unmonitoring VPN Client $1]"
+  # Write the VPN client file back with the correct monitoring configuration
+  sed -i "s/^VPN$1=.*/VPN$1=0/" "/jffs/addons/vpnmon-r3.d/vr3clients.txt"
+  sleep 3
+  
+  # Restart VPN Director Routing Services  
+  printf "\r                            "
+  printf "${CGreen}\r[Restarting VPN Routing]"
+  service restart_vpnrouting0 >/dev/null 2>&1
+  echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN Director Routing Service Restarted" >> $logfile
+  sleep 5
+  printf "\r                            "
+  
+}
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Reset the managed VPN connections
@@ -1776,7 +1809,8 @@ getvpnip()
   TUN="tun1"$1
   icanhazvpnip=$($timeoutcmd$timeoutsec nvram get vpn_client$1_rip)
   if [ -z $icanhazvpnip ]; then
-    icanhazvpnip=$(curl --silent --fail --interface $TUN --request GET --url https://ipv4.icanhazip.com) # Grab the public IP of the VPN Connection
+    icanhazvpnip="curl --silent --fail --interface $TUN --request GET --url https://ipv4.icanhazip.com" # Grab the public IP of the VPN Connection
+    icanhazvpnip="$(eval $icanhazvpnip)"; if echo $icanhazvpnip | grep -qoE 'Internet|traffic|Error|error'; then icanhazvpnip="0.0.0.0"; fi
   fi
   vpnip=$(printf '%03d.%03d.%03d.%03d'  ${icanhazvpnip//./ })
 
@@ -1990,6 +2024,7 @@ fi
 # Check to see if the reset option is being called
 if [ "$1" == "-reset" ]
   then
+    echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN Reset initiated through -RESET switch" >> $logfile
     vreset
 fi
 
@@ -2106,10 +2141,11 @@ while true; do
     
     #display operations menu
     echo -e "${InvGreen} ${InvDkGray}${CWhite} Operations Menu                                                                                    ${CClear}"
-    echo -e "${InvGreen} ${CClear} Reset VPN Slot ${CGreen}(1) (2) (3) (4) (5)    ${InvGreen} ${CClear} Main Setup/${CGreen}(C)${CClear}onfig Menu   ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN CRON Sched: $schedtime"
-    echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN Slots  ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim: ${CGreen}$logsizefmt${CClear}  ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer VPN Check Loop: ${CGreen}${timerloop}s${CClear}"
-    echo -e "${InvGreen} ${CClear} Update/Maintain ${CGreen}(V)${CClear}PN Server Lists    ${InvGreen} ${CClear} ${CGreen}(A)${CClear}utostart on Reboot: $rebootprot   ${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear} Edit/R${CGreen}(U)${CClear}n Server List Automation     ${InvGreen} ${CClear}                            ${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} Reset/Reconnect VPN ${CGreen}(1) (2) (3) (4) (5)     ${InvGreen} ${CClear} ${CGreen}(C)${CClear}onfiguration/Main Setup Menu${CClear}"
+    echo -e "${InvGreen} ${CClear} Stop/Unmonitor  VPN ${CGreen}(!) (@) (#) ($) (%)     ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN CRON Scheduler: $schedtime${CClear}"
+    echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN Slots        ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim Log Size: ${CGreen}$logsizefmt${CClear}"
+    echo -e "${InvGreen} ${CClear} Update/Maintain ${CGreen}(V)${CClear}PN Server Lists          ${InvGreen} ${CClear} ${CGreen}(A)${CClear}utostart Script on Reboot: $rebootprot${CClear}"
+    echo -e "${InvGreen} ${CClear} Edit/R${CGreen}(U)${CClear}n Server List Automation           ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer VPN Check Loop: ${CGreen}${timerloop}s${CClear}"
     echo -e "${InvGreen} ${CClear}${CDkGray}----------------------------------------------------------------------------------------------------${CClear}"
     echo ""
   else
@@ -2157,14 +2193,14 @@ while true; do
         vpnindicator="${InvDkGray} ${CClear}"
         vpnip="${CDkGray}[n/a]          ${CClear}"
         vpncity="${CDkGray}[n/a]${CClear}"
-        svrping="${CDkGray}[n/a ]    ${CClear}"
+        svrping="${CDkGray}[n/a]     ${CClear}"
       elif [ "$vpnstate" == "1" ]; then
         vpnstate="Connecting  "
         vpnhealth="${CDkGray}[n/a ]${CClear}"
         vpnindicator="${InvYellow} ${CClear}"
         vpnip="${CDkGray}[n/a]          ${CClear}"
         vpncity="${CDkGray}[n/a]${CClear}"
-        svrping="${CDkGray}[n/a ]    ${CClear}"
+        svrping="${CDkGray}[n/a]     ${CClear}"
       elif [ "$vpnstate" == "2" ]; then
         vpnstate="Connected   "
         checkvpn $i
@@ -2177,7 +2213,7 @@ while true; do
         vpnindicator="${InvDkGray} ${CClear}"
         vpnip="${CDkGray}[n/a]          ${CClear}"
         vpncity="${CDkGray}[n/a]${CClear}"
-        svrping="${CDkGray}[n/a ]    ${CClear}"
+        svrping="${CDkGray}[n/a]     ${CClear}"
       fi 
       
       #Determine how many server entries are in each of the vpn slot alternate server files
