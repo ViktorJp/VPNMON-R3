@@ -2141,11 +2141,11 @@ while true; do
     
     #display operations menu
     echo -e "${InvGreen} ${InvDkGray}${CWhite} Operations Menu                                                                                    ${CClear}"
-    echo -e "${InvGreen} ${CClear} Reset/Reconnect VPN ${CGreen}(1) (2) (3) (4) (5)     ${InvGreen} ${CClear} ${CGreen}(C)${CClear}onfiguration/Main Setup Menu${CClear}"
-    echo -e "${InvGreen} ${CClear} Stop/Unmonitor  VPN ${CGreen}(!) (@) (#) ($) (%)     ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN CRON Scheduler: $schedtime${CClear}"
-    echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN Slots        ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim Log Size: ${CGreen}$logsizefmt${CClear}"
-    echo -e "${InvGreen} ${CClear} Update/Maintain ${CGreen}(V)${CClear}PN Server Lists          ${InvGreen} ${CClear} ${CGreen}(A)${CClear}utostart Script on Reboot: $rebootprot${CClear}"
-    echo -e "${InvGreen} ${CClear} Edit/R${CGreen}(U)${CClear}n Server List Automation           ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer VPN Check Loop: ${CGreen}${timerloop}s${CClear}"
+    echo -e "${InvGreen} ${CClear} Reset/Reconnect VPN 1:${CGreen}(1)${CClear} 2:${CGreen}(2)${CClear} 3:${CGreen}(3)${CClear} 4:${CGreen}(4)${CClear} 5:${CGreen}(5)${CClear} ${InvGreen} ${CClear} ${CGreen}(C)${CClear}onfiguration/Main Setup Menu${CClear}"
+    echo -e "${InvGreen} ${CClear} Stop/Unmonitor  VPN 1:${CGreen}(!)${CClear} 2:${CGreen}(@)${CClear} 3:${CGreen}(#)${CClear} 4:${CGreen}($)${CClear} 5:${CGreen}(%)${CClear} ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN CRON Scheduler: $schedtime${CClear}"
+    echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN Slots              ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim Log Size: ${CGreen}$logsizefmt${CClear}"
+    echo -e "${InvGreen} ${CClear} Update/Maintain ${CGreen}(V)${CClear}PN Server Lists                ${InvGreen} ${CClear} ${CGreen}(A)${CClear}utostart Script on Reboot: $rebootprot${CClear}"
+    echo -e "${InvGreen} ${CClear} Edit/R${CGreen}(U)${CClear}n Server List Automation                 ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer VPN Check Loop: ${CGreen}${timerloop}s${CClear}"
     echo -e "${InvGreen} ${CClear}${CDkGray}----------------------------------------------------------------------------------------------------${CClear}"
     echo ""
   else
@@ -2162,7 +2162,7 @@ while true; do
   elif [ $tzonechars = 5 ]; then tzspaces="    "; fi
   
   #Display VPN client slot grid
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 - v$version | ${CGreen}(S)${CWhite}how/${CGreen}(H)${CWhite}ide Operations Menu | $(date)$tzspaces             ${CClear}"
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 - v$version | ${CGreen}(S)${CWhite}how/${CGreen}(H)${CWhite}ide Operations Menu ${InvGreen} ${InvDkGray} $(date)$tzspaces             ${CClear}"
   if [ "$UpdateNotify" != "0" ]; then echo -e "$UpdateNotify\n"; else echo -e "${CClear}"; fi
   if [ $unboundclient -ne 0 ]; then
     echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | City Exit / Unbound"
