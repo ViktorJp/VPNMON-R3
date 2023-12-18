@@ -1,3 +1,9 @@
+v0.6b    - ADDED: New menu item under the setup/configuration menu: "Refresh Custom Server Lists on -RESET Switch",
+           with thanks to @salvo for the suggestion. This option will refresh any custom VPN Client Slot Server Lists
+           you have defined, and will refresh these when running a VPNMON-R3 with a -reset command. This is typically
+           done through a CRON job, but can be run manually at any time as well depending on your needs.
+         - FIXED: Various cleanup and inconsistencies as well as spacing here & there...
+
 v0.5b    - ADDED: Created a new row under the Operations Menu to allow you to quickly stop + unmonitor a VPN Slot.
            This was added to give you some more control over a VPN Client Slot that might be giving you trouble, or
            don't want to have to go into the router UI to forcefully stop a VPN Client Slot. Performing this action
