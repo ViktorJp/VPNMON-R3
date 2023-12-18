@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R3 v0.5b (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v0.6b (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
@@ -12,7 +12,7 @@
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="0.5b"                                                  # Version tracker
+version="0.6b"                                                  # Version tracker
 beta=1                                                          # Beta switch
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
 logfile="/jffs/addons/vpnmon-r3.d/vpnmon-r3.log"                # Static path to the log
@@ -29,6 +29,7 @@ autostart=0                                                     # Auto start on 
 unboundclient=0                                                 # Unbound bound to VPN client slot#
 ResolverTimer=1                                                 # Timer to give DNS resolver time to settle
 vpnping=0                                                       # Tracking VPN Tunnel Pings
+refreshserverlists=0                                            # Tracking Automated Custom VPN Server List Reset
 
 # Color variables
 CBlack="\e[1;30m"
@@ -389,12 +390,30 @@ done
 vconfig() 
 {
 
+# Grab the VPNMON-R3 config file and read it in
+if [ -f $config ]; then
+  source $config
+else
+  clear
+  echo -e "${CRed}ERROR: VPNMON-R3 is not configured.  Please run 'vpnmon-r3.sh -setup' first."
+  echo ""
+  echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - ERROR: VPNMON-R3 config file not found. Please run the setup/configuration utility" >> $logfile
+  echo -e "${CClear}"
+  exit 0
+fi
+  
 while true; do
 
   if [ $unboundclient -eq 0 ]; then 
     unboundclientexp="Disabled"
   else
     unboundclientexp="Enabled, VPN$unboundclient"
+  fi
+  
+  if [ $refreshserverlists -eq 0 ]; then 
+    refreshserverlistsdisp="Disabled"
+  else
+    refreshserverlistsdisp="Enabled"
   fi
 
   clear
@@ -408,12 +427,13 @@ while true; do
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(2)${CClear} : Custom PING host to determine VPN health     : ${CGreen}$PINGHOST"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(3)${CClear} : Custom Event Log size (rows)                 : ${CGreen}$logsize"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(4)${CClear} : Unbound DNS Lookups over VPN Integration     : ${CGreen}$unboundclientexp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(5)${CClear} : Refresh Custom Server Lists on -RESET Switch : ${CGreen}$refreshserverlistsdisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} | ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(e)${CClear} : Exit${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo ""
-  read -p "Please select? (1-4, e=Exit): " SelectSlot
+  read -p "Please select? (1-5, e=Exit): " SelectSlot
     case $SelectSlot in
       1)
         clear
@@ -674,6 +694,34 @@ while true; do
             echo -e "${CClear}\n[Exiting]"; sleep 2; break
           fi
         done
+      ;;
+      
+      5) 
+        clear
+        echo -e "${InvGreen} ${InvDkGray}${CWhite} Refresh Custom Server Lists on -RESET Switch                                          ${CClear}"
+        echo -e "${InvGreen} ${CClear}"
+        echo -e "${InvGreen} ${CClear} Please indicate below if you would like to automatically refresh your custom Server${CClear}"
+        echo -e "${InvGreen} ${CClear} Lists specified under the Edit/Run Server List Automation menu. This function will${CClear}"
+        echo -e "${InvGreen} ${CClear} run any defined CURL+JQ statements you have configured and save them back to your${CClear}"
+        echo -e "${InvGreen} ${CClear} Client Slot Server List files that will be used for VPN connections.${CClear}"
+        echo -e "${InvGreen} ${CClear} Use 0 to disable, 1 to enable. (Default = 0)"
+        echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+        echo ""
+        echo -e "${CClear}Current: ${CGreen}$refreshserverlistsdisp${CClear}"
+        echo ""
+        read -p "Please Choose? (Disable = 0, Enable = 1, e=Exit): " newrefreshserverlist
+
+          if [ "$newrefreshserverlist" == "e" ]; then
+            echo -e "\n[Exiting]"; sleep 2
+          elif [ $newrefreshserverlist -eq 0 ]; then
+            refreshserverlists=0
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom Server Lists Disabled on -RESET Switch" >> $logfile
+            saveconfig
+          else
+            refreshserverlists=1
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom Server Lists Enabled on -RESET Switch" >> $logfile
+            saveconfig          
+          fi
       ;;
 
       [Ee]) echo -e "${CClear}\n[Exiting]"; sleep 2; break ;;
@@ -1066,6 +1114,21 @@ while true; do
          echo -e "${CClear}Running: $automation1unenc"
          echo ""
          eval "$automation1unenc" > /jffs/addons/vpnmon-r3.d/vr3svr1.txt
+         #Determine how many server entries are in each of the vpn slot alternate server files
+         if [ -f /jffs/addons/vpnmon-r3.d/vr3svr1.txt ]; then
+           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svr1.txt | wc -l) >/dev/null 2>&1 
+           if [ $dlcnt -lt 1 ]; then 
+             dlcnt=0
+           elif [ -z $dlcnt ]; then 
+             dlcnt=0
+           fi
+         else
+           dlcnt=0
+         fi
+         echo ""
+         echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
+         echo ""
+         echo -e "${CGreen}[Saved to VPN Client Slot 1 Server List]${CClear}"
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 1" >> $logfile
@@ -1101,6 +1164,21 @@ while true; do
          echo -e "${CClear}Running: $automation2unenc"
          echo ""
          eval "$automation2unenc" > /jffs/addons/vpnmon-r3.d/vr3svr2.txt
+         #Determine how many server entries are in each of the vpn slot alternate server files
+         if [ -f /jffs/addons/vpnmon-r3.d/vr3svr2.txt ]; then
+           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svr2.txt | wc -l) >/dev/null 2>&1 
+           if [ $dlcnt -lt 1 ]; then 
+             dlcnt=0
+           elif [ -z $dlcnt ]; then 
+             dlcnt=0
+           fi
+         else
+           dlcnt=0
+         fi
+         echo ""
+         echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
+         echo ""
+         echo -e "${CGreen}[Saved to VPN Client Slot 2 Server List]${CClear}"         
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 2" >> $logfile
@@ -1136,6 +1214,21 @@ while true; do
          echo -e "${CClear}Running: $automation3unenc"
          echo ""
          eval "$automation3unenc" > /jffs/addons/vpnmon-r3.d/vr3svr3.txt
+         #Determine how many server entries are in each of the vpn slot alternate server files
+         if [ -f /jffs/addons/vpnmon-r3.d/vr3svr3.txt ]; then
+           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svr3.txt | wc -l) >/dev/null 2>&1 
+           if [ $dlcnt -lt 1 ]; then 
+             dlcnt=0
+           elif [ -z $dlcnt ]; then 
+             dlcnt=0
+           fi
+         else
+           dlcnt=0
+         fi
+         echo ""
+         echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
+         echo ""
+         echo -e "${CGreen}[Saved to VPN Client Slot 3 Server List]${CClear}"         
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 3" >> $logfile
@@ -1197,6 +1290,21 @@ while true; do
          echo -e "${CClear}Running: $automation1unenc"
          echo ""
          eval "$automation1unenc" > /jffs/addons/vpnmon-r3.d/vr3svr1.txt
+         #Determine how many server entries are in each of the vpn slot alternate server files
+         if [ -f /jffs/addons/vpnmon-r3.d/vr3svr1.txt ]; then
+           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svr1.txt | wc -l) >/dev/null 2>&1 
+           if [ $dlcnt -lt 1 ]; then 
+             dlcnt=0
+           elif [ -z $dlcnt ]; then 
+             dlcnt=0
+           fi
+         else
+           dlcnt=0
+         fi
+         echo ""
+         echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
+         echo ""
+         echo -e "${CGreen}[Saved to VPN Client Slot 1 Server List]${CClear}"         
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 1" >> $logfile
@@ -1232,6 +1340,21 @@ while true; do
          echo -e "${CClear}Running: $automation2unenc"
          echo ""
          eval "$automation2unenc" > /jffs/addons/vpnmon-r3.d/vr3svr2.txt
+         #Determine how many server entries are in each of the vpn slot alternate server files
+         if [ -f /jffs/addons/vpnmon-r3.d/vr3svr2.txt ]; then
+           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svr2.txt | wc -l) >/dev/null 2>&1 
+           if [ $dlcnt -lt 1 ]; then 
+             dlcnt=0
+           elif [ -z $dlcnt ]; then 
+             dlcnt=0
+           fi
+         else
+           dlcnt=0
+         fi
+         echo ""
+         echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
+         echo ""
+         echo -e "${CGreen}[Saved to VPN Client Slot 2 Server List]${CClear}"         
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 2" >> $logfile
@@ -1267,6 +1390,21 @@ while true; do
          echo -e "${CClear}Running: $automation3unenc"
          echo ""
          eval "$automation3unenc" > /jffs/addons/vpnmon-r3.d/vr3svr3.txt
+         #Determine how many server entries are in each of the vpn slot alternate server files
+         if [ -f /jffs/addons/vpnmon-r3.d/vr3svr3.txt ]; then
+           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svr3.txt | wc -l) >/dev/null 2>&1 
+           if [ $dlcnt -lt 1 ]; then 
+             dlcnt=0
+           elif [ -z $dlcnt ]; then 
+             dlcnt=0
+           fi
+         else
+           dlcnt=0
+         fi
+         echo ""
+         echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
+         echo ""
+         echo -e "${CGreen}[Saved to VPN Client Slot 3 Server List]${CClear}"         
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 3" >> $logfile
@@ -1302,6 +1440,21 @@ while true; do
          echo -e "${CClear}Running: $automation4unenc"
          echo ""
          eval "$automation4unenc" > /jffs/addons/vpnmon-r3.d/vr3svr4.txt
+         #Determine how many server entries are in each of the vpn slot alternate server files
+         if [ -f /jffs/addons/vpnmon-r3.d/vr3svr4.txt ]; then
+           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svr4.txt | wc -l) >/dev/null 2>&1 
+           if [ $dlcnt -lt 1 ]; then 
+             dlcnt=0
+           elif [ -z $dlcnt ]; then 
+             dlcnt=0
+           fi
+         else
+           dlcnt=0
+         fi
+         echo ""
+         echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
+         echo ""
+         echo -e "${CGreen}[Saved to VPN Client Slot 4 Server List]${CClear}"         
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 4" >> $logfile
@@ -1337,6 +1490,21 @@ while true; do
          echo -e "${CClear}Running: $automation5unenc"
          echo ""
          eval "$automation5unenc" > /jffs/addons/vpnmon-r3.d/vr3svr5.txt
+         #Determine how many server entries are in each of the vpn slot alternate server files
+         if [ -f /jffs/addons/vpnmon-r3.d/vr3svr5.txt ]; then
+           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svr5.txt | wc -l) >/dev/null 2>&1 
+           if [ $dlcnt -lt 1 ]; then 
+             dlcnt=0
+           elif [ -z $dlcnt ]; then 
+             dlcnt=0
+           fi
+         else
+           dlcnt=0
+         fi
+         echo ""
+         echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
+         echo ""
+         echo -e "${CGreen}[Saved to VPN Client Slot 5 Server List]${CClear}"         
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 5" >> $logfile
@@ -1637,6 +1805,7 @@ saveconfig()
      echo 'automation3="'"$automation3"'"'
      echo 'automation4="'"$automation4"'"'
      echo 'automation5="'"$automation5"'"'
+     echo 'refreshserverlists='$refreshserverlists
      echo 'unboundclient='$unboundclient
    } > $config
    
@@ -1787,11 +1956,47 @@ vreset()
       clear
       echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 - v$version | $(date)                                         ${CClear}\n"
       echo -e "${CGreen}[VPN Connection Reset Commencing]"
+      echo ""
+      echo -e "${CGreen}[Checking VPN Slot $slot]"
+      echo ""
       sleep 2
-
+      
       #determine if the slot is monitored and reset it
       if [ "$((VPN$slot))" == "1" ]; then
+        
+        if [ $refreshserverlists -eq 1 ]; then
+          if [ -f /jffs/addons/vpnmon-r3.d/vr3svr$slot.txt ]; then
+            echo -e "${CGreen}[Executing Custom Server List Script for VPN Slot $slot]${CClear}"
+            slottmp="automation${slot}"
+            eval slottmp="\$${slottmp}"
+            automationunenc=$(echo "$slottmp" | openssl enc -d -base64 -A)
+            echo ""
+            echo -e "${CClear}Running: $automationunenc"
+            echo ""
+            eval "$automationunenc" > /jffs/addons/vpnmon-r3.d/vr3svr$slot.txt
+            if [ -f /jffs/addons/vpnmon-r3.d/vr3svr$slot.txt ]; then
+              dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svr$slot.txt | wc -l) >/dev/null 2>&1 
+              if [ $dlcnt -lt 1 ]; then 
+                dlcnt=0
+              elif [ -z $dlcnt ]; then 
+                dlcnt=0
+              fi
+            else
+              dlcnt=0
+            fi
+            echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Client Server List Executed for VPN Slot $slot ($dlcnt rows)" >> $logfile
+            sleep 3
+          else
+            echo ""
+            echo -e "${CRed}[Custom VPN Client Server List not found for VPN Slot $slot]${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List not found for VPN Slot $slot" >> $logfile
+            sleep 3
+          fi
+        fi
+        
         restartvpn $slot
+        
       fi
           
   done
@@ -1977,7 +2182,7 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-setup" ] || [ "$1" == 
   else
     clear
     echo ""
-    echo "VPNMON-R3 v$Version"
+    echo "VPNMON-R3 v$version"
     echo ""
     echo "Exiting due to invalid commandline options!"
     echo "(run 'vpnmon-r3 -h' for help)"
@@ -1991,7 +2196,7 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ]
   then
   clear
   echo ""
-  echo "VPNMON-R3 v$Version Commandline Option Usage:"
+  echo "VPNMON-R3 v$version Commandline Option Usage:"
   echo ""
   echo "vpnmon-r3 -h | -help"
   echo "vpnmon-r3 -setup"
@@ -2048,7 +2253,7 @@ if [ "$1" == "-screen" ]
         exit 0
       else
         clear
-        echo -e "${CClear}Connecting to existing ${CGreen}VPNMON-R3 v$Version${CClear} SCREEN session...${CClear}"
+        echo -e "${CClear}Connecting to existing ${CGreen}VPNMON-R3 v$version${CClear} SCREEN session...${CClear}"
         echo ""
         echo -e "${CClear}IMPORTANT:${CClear}"
         echo -e "${CClear}In order to keep VPNMON-R3 running in the background,${CClear}"
@@ -2145,7 +2350,7 @@ while true; do
     echo -e "${InvGreen} ${CClear} Stop/Unmonitor  VPN 1:${CGreen}(!)${CClear} 2:${CGreen}(@)${CClear} 3:${CGreen}(#)${CClear} 4:${CGreen}($)${CClear} 5:${CGreen}(%)${CClear} ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN CRON Scheduler: $schedtime${CClear}"
     echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN Slots              ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim Log Size: ${CGreen}$logsizefmt${CClear}"
     echo -e "${InvGreen} ${CClear} Update/Maintain ${CGreen}(V)${CClear}PN Server Lists                ${InvGreen} ${CClear} ${CGreen}(A)${CClear}utostart Script on Reboot: $rebootprot${CClear}"
-    echo -e "${InvGreen} ${CClear} Edit/R${CGreen}(U)${CClear}n Server List Automation                 ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer VPN Check Loop: ${CGreen}${timerloop}s${CClear}"
+    echo -e "${InvGreen} ${CClear} Edit/R${CGreen}(U)${CClear}n Server List Automation                 ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer VPN Check Loop: ${CGreen}${timerloop}sec${CClear}"
     echo -e "${InvGreen} ${CClear}${CDkGray}----------------------------------------------------------------------------------------------------${CClear}"
     echo ""
   else
