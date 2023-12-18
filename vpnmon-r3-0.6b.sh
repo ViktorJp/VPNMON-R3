@@ -1965,27 +1965,34 @@ vreset()
       if [ "$((VPN$slot))" == "1" ]; then
         
         if [ $refreshserverlists -eq 1 ]; then
-          echo -e "${CGreen}[Executing Custom Server List Script for VPN Slot $slot]${CClear}"
-          slottmp="automation${slot}"
-          eval slottmp="\$${slottmp}"
-          automationunenc=$(echo "$slottmp" | openssl enc -d -base64 -A)
-          echo ""
-          echo -e "${CClear}Running: $automationunenc"
-          echo ""
-          eval "$automationunenc" > /jffs/addons/vpnmon-r3.d/vr3svr$slot.txt
           if [ -f /jffs/addons/vpnmon-r3.d/vr3svr$slot.txt ]; then
-            dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svr$slot.txt | wc -l) >/dev/null 2>&1 
-            if [ $dlcnt -lt 1 ]; then 
-              dlcnt=0
-            elif [ -z $dlcnt ]; then 
+            echo -e "${CGreen}[Executing Custom Server List Script for VPN Slot $slot]${CClear}"
+            slottmp="automation${slot}"
+            eval slottmp="\$${slottmp}"
+            automationunenc=$(echo "$slottmp" | openssl enc -d -base64 -A)
+            echo ""
+            echo -e "${CClear}Running: $automationunenc"
+            echo ""
+            eval "$automationunenc" > /jffs/addons/vpnmon-r3.d/vr3svr$slot.txt
+            if [ -f /jffs/addons/vpnmon-r3.d/vr3svr$slot.txt ]; then
+              dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svr$slot.txt | wc -l) >/dev/null 2>&1 
+              if [ $dlcnt -lt 1 ]; then 
+                dlcnt=0
+              elif [ -z $dlcnt ]; then 
+                dlcnt=0
+              fi
+            else
               dlcnt=0
             fi
+            echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Client Server List Executed for VPN Slot $slot ($dlcnt rows)" >> $logfile
+            sleep 3
           else
-            dlcnt=0
+            echo ""
+            echo -e "${CRed}[Custom VPN Client Server List not found for VPN Slot $slot]${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List not found for VPN Slot $slot" >> $logfile
+            sleep 3
           fi
-          echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
-          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom Server List Executed for VPN Slot $slot ($dlcnt rows)" >> $logfile
-          sleep 3
         fi
         
         restartvpn $slot
@@ -2175,7 +2182,7 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-setup" ] || [ "$1" == 
   else
     clear
     echo ""
-    echo "VPNMON-R3 v$Version"
+    echo "VPNMON-R3 v$version"
     echo ""
     echo "Exiting due to invalid commandline options!"
     echo "(run 'vpnmon-r3 -h' for help)"
@@ -2189,7 +2196,7 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ]
   then
   clear
   echo ""
-  echo "VPNMON-R3 v$Version Commandline Option Usage:"
+  echo "VPNMON-R3 v$version Commandline Option Usage:"
   echo ""
   echo "vpnmon-r3 -h | -help"
   echo "vpnmon-r3 -setup"
@@ -2246,7 +2253,7 @@ if [ "$1" == "-screen" ]
         exit 0
       else
         clear
-        echo -e "${CClear}Connecting to existing ${CGreen}VPNMON-R3 v$Version${CClear} SCREEN session...${CClear}"
+        echo -e "${CClear}Connecting to existing ${CGreen}VPNMON-R3 v$version${CClear} SCREEN session...${CClear}"
         echo ""
         echo -e "${CClear}IMPORTANT:${CClear}"
         echo -e "${CClear}In order to keep VPNMON-R3 running in the background,${CClear}"
