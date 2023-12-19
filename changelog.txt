@@ -1,3 +1,10 @@
+v0.7b    - ADDED: Now including the total time a VPN connection has remained connected. This info is displayed on the
+           main UI next to the exit city name. Time is tracked when the VPN drops and reconnects, and will only be
+           displayed for VPN Client Slots that are actively being monitored.
+         - MINOR: Changed the Unbound stat on the main UI in an effort to shorten. This has now been changed from a
+           Red/Yellow/Green "- [SYNC]", to a Red/Yellow/Green "-X[UB]" "-?[UB]" and "->[UB]" giving an indication of
+           the Unbound [UB] sync state.
+
 v0.6b    - ADDED: New menu item under the setup/configuration menu: "Refresh Custom Server Lists on -RESET Switch",
            with thanks to @salvo for the suggestion. This option will refresh any custom VPN Client Slot Server Lists
            you have defined, and will refresh these when running a VPNMON-R3 with a -reset command. This is typically
