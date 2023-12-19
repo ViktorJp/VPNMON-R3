@@ -1568,29 +1568,36 @@ while true; do
   echo -e "${InvGreen} ${CClear} Current: ${CGreen}$timerloop sec${CClear}"
   echo ""
   read -p "Please enter value (1-999)? (e=Exit): " EnterTimerLoop
-    if [[ $EnterTimerLoop != [[:alpha:]] ]]; then
-      if [ "$EnterTimerLoop" == "e" ]; then 
-        echo ""
-        #exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
-        timer=$timerloop
-        break
-      else
-        echo ""
-        echo -e "${CRed}ERROR: Invalid entry. Please use a value between 1 and 999, or Exit=e"; echo ""
-        sleep 3
-      fi
-    elif [ $EnterTimerLoop -gt 0 ] && [ $EnterTimerLoop -le 999 ]; then
+  case $EnterTimerLoop in
+    [1-9]) 
       timerloop=$EnterTimerLoop
       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Timer Loop Configuration saved" >> $logfile
       saveconfig
-      #exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
       timer=$timerloop
-      break
-    else
+    ;;
+    
+    [1-9][0-9])
+      timerloop=$EnterTimerLoop
+      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Timer Loop Configuration saved" >> $logfile
+      saveconfig
+      timer=$timerloop    
+    ;;
+    
+    [1-9][0-9][0-9])
+      timerloop=$EnterTimerLoop
+      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Timer Loop Configuration saved" >> $logfile
+      saveconfig
+      timer=$timerloop    
+    ;;
+    
+    *)
       echo ""
-      echo -e "${CRed}ERROR: Invalid entry. Please use a value between 1 and 999"; echo ""
-      sleep 3
-    fi
+      echo -e "${CClear}[Exiting]"
+      timer=$timerloop
+      break    
+    ;;
+  esac
+
 done
 
 }
