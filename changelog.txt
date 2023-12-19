@@ -4,6 +4,9 @@ v0.7b    - ADDED: Now including the total time a VPN connection has remained con
          - MINOR: Changed the Unbound stat on the main UI in an effort to shorten. This has now been changed from a
            Red/Yellow/Green "- [SYNC]", to a Red/Yellow/Green "-X[UB]" "-?[UB]" and "->[UB]" giving an indication of
            the Unbound [UB] sync state.
+         - FIXED: There was an issue with the logic behind the function that allowed you to pick how many seconds you
+           would like the timer to run for. Apparently it's not so easy when asking for alpha and numeric input up to
+           3 characters. Patched it up. Good to go! Thanks to @pchtz for catching this one! :)
 
 v0.6b    - ADDED: New menu item under the setup/configuration menu: "Refresh Custom Server Lists on -RESET Switch",
            with thanks to @salvo for the suggestion. This option will refresh any custom VPN Client Slot Server Lists
