@@ -1,8 +1,8 @@
 To-Do:
 - Integrate KILLMON functionality if there is any interest in having better killswitch capabilities
-- Automate running of custom CURL statements under server list automation using CRON
 
 Done:
+- Automate running of custom CURL statements under server list automation using CRON
 - Create a separate thread with CURL examples for all R2-supported VPN providers
 - Add ping values to main UI
 - Build a VPN Server List builder that exports IPs into a certain Client Slot txt file
