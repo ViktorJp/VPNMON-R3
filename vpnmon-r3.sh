@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R3 v0.6b (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v0.7b (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
@@ -12,7 +12,7 @@
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="0.6b"                                                  # Version tracker
+version="0.7b"                                                  # Version tracker
 beta=1                                                          # Beta switch
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
 logfile="/jffs/addons/vpnmon-r3.d/vpnmon-r3.log"                # Static path to the log
@@ -192,6 +192,50 @@ progressbaroverride()
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
+# creates needed config files if they don't exist
+
+createconfigs()
+{
+  # Create initial vr3clients.txt & vr3timers.txt file
+  if [ ! -f /jffs/addons/vpnmon-r3.d/vr3clients.txt ]; then
+    if [ "$availableslots" == "1 2 3" ]; then
+      { echo 'VPN1=0'
+        echo 'VPN2=0'
+        echo 'VPN3=0'
+      } > /jffs/addons/vpnmon-r3.d/vr3clients.txt
+      
+    elif [ "$availableslots" == "1 2 3 4 5" ]; then
+      { echo 'VPN1=0'
+        echo 'VPN2=0'
+        echo 'VPN3=0'
+        echo 'VPN4=0'
+        echo 'VPN5=0'
+      } > /jffs/addons/vpnmon-r3.d/vr3clients.txt
+      
+    fi
+  fi
+  
+  if [ ! -f /jffs/addons/vpnmon-r3.d/vr3timers.txt ]; then
+    if [ "$availableslots" == "1 2 3" ]; then
+      { echo 'VPNTIMER1=0'
+        echo 'VPNTIMER2=0'
+        echo 'VPNTIMER3=0'
+      } > /jffs/addons/vpnmon-r3.d/vr3timers.txt
+      
+    elif [ "$availableslots" == "1 2 3 4 5" ]; then
+      { echo 'VPNTIMER1=0'
+        echo 'VPNTIMER2=0'
+        echo 'VPNTIMER3=0'
+        echo 'VPNTIMER4=0'
+        echo 'VPNTIMER5=0'
+      } > /jffs/addons/vpnmon-r3.d/vr3timers.txt
+      
+    fi
+  fi
+  
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
 # vsetup provide a menu interface to allow for initial component installs, uninstall, etc.
 
 vsetup()
@@ -203,23 +247,8 @@ while true; do
   if [ ! -f $config ]; then # Write /jffs/addons/vpnmon-r3.d/vpnmon-r3.cfg
     saveconfig
   fi
-
-  # Create initial vr3clients.txt file
-  if [ ! -f /jffs/addons/vpnmon-r3.d/vr3clients.txt ]; then
-    if [ "$availableslots" == "1 2 3" ]; then
-      { echo 'VPN1=0'
-        echo 'VPN2=0'
-        echo 'VPN3=0'
-      } > /jffs/addons/vpnmon-r3.d/vr3clients.txt
-    elif [ "$availableslots" == "1 2 3 4 5" ]; then
-      { echo 'VPN1=0'
-        echo 'VPN2=0'
-        echo 'VPN3=0'
-        echo 'VPN4=0'
-        echo 'VPN5=0'
-      } > /jffs/addons/vpnmon-r3.d/vr3clients.txt
-    fi
-  fi
+  
+  createconfigs
 
   echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 Main Setup and Configuration Menu                                           ${CClear}"
   echo -e "${InvGreen} ${CClear}"
@@ -1852,6 +1881,7 @@ restartvpn()
         printf "${CGreen}\r[Starting VPN Client $1]"
         service start_vpnclient$1 >/dev/null 2>&1
         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN$1 Connection Restarted" >> $logfile
+        resettimer $1
         sleep 10
       else
         #Pick a random server from the alternate servers file, populate in vpn client slot, and restart
@@ -1868,6 +1898,7 @@ restartvpn()
         printf "${CGreen}\r[Starting VPN Client $1]"
         service start_vpnclient$1 >/dev/null 2>&1
         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN$1 Connection Restarted" >> $logfile
+        resettimer $1
         sleep 10
       fi
     else
@@ -1876,6 +1907,7 @@ restartvpn()
       printf "${CGreen}\r[Starting VPN Client $1]"
       service start_vpnclient$1 >/dev/null 2>&1
       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN$1 Connection Restarted" >> $logfile
+      resettimer $1
       sleep 10
     fi
   
@@ -1917,6 +1949,37 @@ killunmonvpn()
   sleep 5
   printf "\r                            "
   
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+# Reset the  VPN connection timer
+
+resettimer()
+{
+
+ # Create initial vr3timers.txt file if it does not exist
+  if [ ! -f /jffs/addons/vpnmon-r3.d/vr3timers.txt ]; then
+    if [ "$availableslots" == "1 2 3" ]; then
+      { echo 'VPNTIMER1=0'
+        echo 'VPNTIMER2=0'
+        echo 'VPNTIMER3=0'
+      } > /jffs/addons/vpnmon-r3.d/vr3timers.txt
+      
+    elif [ "$availableslots" == "1 2 3 4 5" ]; then
+      { echo 'VPNTIMER1=0'
+        echo 'VPNTIMER2=0'
+        echo 'VPNTIMER3=0'
+        echo 'VPNTIMER4=0'
+        echo 'VPNTIMER5=0'
+      } > /jffs/addons/vpnmon-r3.d/vr3timers.txt
+      
+    fi
+  fi
+
+  sed -i "s/^VPNTIMER$1=.*/VPNTIMER$1=$(date +%s)/" "/jffs/addons/vpnmon-r3.d/vr3timers.txt"
+  
+  source /jffs/addons/vpnmon-r3.d/vr3timers.txt
+
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -2023,25 +2086,25 @@ getvpnip()
   
     if [ $ResolverTimer -eq 1 ]; then
       ResolverTimer=0
-      ubsync="${CYellow}- [SYNC UKN]${CClear}"
+      ubsync="${CYellow}-?[UB]${CClear}"
     else
 	    # Huge thanks to @SomewhereOverTheRainbow for his expertise in troublshooting and coming up with this DNS Resolver methodology!
 	    DNSResolver="$({ unbound-control flush whoami.akamai.net >/dev/null 2>&1; } && dig whoami.akamai.net +short @"$(netstat -nlp 2>/dev/null | awk '/.*(unbound){1}.*/{split($4, ip_addr, ":");if(substr($4,11) !~ /.*953.*/)print ip_addr[1];if(substr($4,11) !~ /.*953.*/)exit}')" -p "$(netstat -nlp 2>/dev/null | awk '/.*(unbound){1}.*/{if(substr($4,11) !~ /.*953.*/)print substr($4,11);if(substr($4,11) !~ /.*953.*/)exit}')" 2>/dev/null)"
 
 	    if [ -z "$DNSResolver" ]; then
-	      ubsync="${CRed}- [SYNC]${CClear}"
+	      ubsync="${CRed}-X[UB]${CClear}"
 	    # rudimentary check to make sure value coming back is in the format of an IP address... Don't care if it's more than 255.
 	    elif expr "$DNSResolver" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
 	      # If the DNS resolver and public VPN IP address don't match in our Unbound scenario, reset!
 	      if [ "$DNSResolver" != "$icanhazvpnip" ]; then
-	        ubsync="${CRed}- [SYNC]${CClear}"
+	        ubsync="${CRed}-X[UB]${CClear}"
 	        ResolverTimer=1
 	        unboundreset=$1
 	      else
-	        ubsync="${CGreen}- [SYNC]${CClear}"
+	        ubsync="${CGreen}->[UB]${CClear}"
 	      fi
 	    else
-	      ubsync="${CYellow}- [SYNC UKN]${CClear}"
+	      ubsync="${CYellow}-?[UB]${CClear}"
 	    fi
 	  fi
   else
@@ -2271,7 +2334,7 @@ fi
 if [ "$1" == "-noswitch" ]
   then
     clear #last switch before the main program starts
-    if [ ! -f $cfgpath ] && [ ! -f "/opt/bin/timeout" ] && [ ! -f "/opt/sbin/screen" ]; then
+    if [ ! -f $cfgpath ] && [ ! -f "/opt/bin/timeout" ] && [ ! -f "/opt/sbin/screen" ] && [ ! -f "/opt/bin/jq" ]; then
         echo -e "${CRed}ERROR: VPNMON-R3 is not configured.  Please run 'vpnmon-r3 -setup' first.${CClear}"
         echo ""
         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - ERROR: VPNMON-R3 is not configured. Please run the setup/configuration utility" >> $logfile
@@ -2305,6 +2368,20 @@ while true; do
     exit 0
   fi
   
+  createconfigs
+  
+  # Grab the monitored slots file and read it in
+  if [ -f /jffs/addons/vpnmon-r3.d/vr3timers.txt ]; then
+    source /jffs/addons/vpnmon-r3.d/vr3timers.txt
+  else
+    clear
+    echo -e "${CRed}ERROR: VPNMON-R3 is not configured.  Please run 'vpnmon-r3.sh -setup' first."
+    echo ""
+    echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - ERROR: VPNMON-R3 VPN Timer Monitoring file not found. Please run the setup/configuration utility" >> $logfile
+    echo -e "${CClear}"
+    exit 0
+  fi
+  
   if [ -f "/opt/bin/timeout" ] # If the timeout utility is available then use it and assign variables
     then
       timeoutcmd="timeout "
@@ -2333,9 +2410,9 @@ while true; do
     
     #autostart colors and indicators
     if [ "$autostart" == "0" ]; then
-      rebootprot="${CDkGray}N${CClear}"
+      rebootprot="${CDkGray}Disabled${CClear}"
     elif [ "$autostart" == "1" ]; then
-      rebootprot="${CGreen}Y${CClear}"
+      rebootprot="${CGreen}Enabled${CClear}"
     fi
     
     if [ $logsize -gt 0 ]; then
@@ -2370,9 +2447,9 @@ while true; do
   echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 - v$version | ${CGreen}(S)${CWhite}how/${CGreen}(H)${CWhite}ide Operations Menu ${InvGreen} ${InvDkGray} $(date)$tzspaces             ${CClear}"
   if [ "$UpdateNotify" != "0" ]; then echo -e "$UpdateNotify\n"; else echo -e "${CClear}"; fi
   if [ $unboundclient -ne 0 ]; then
-    echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | City Exit / Unbound"
+    echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | City Exit / Time / UB"
   else
-    echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | City Exit"
+    echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | City Exit / Time"
   fi
   echo -e "-------|-----|--------|--------|--------------|-----------------|------------|-----------------------"
   
@@ -2434,9 +2511,18 @@ while true; do
       else
         servercnt="${CRed}[0000]${CClear}"
       fi
-          
+      
+      #Calculate connected time for current VPN slot
+      if [ $((VPNTIMER$i)) == "0" ] || [ "$((VPN$i))" == "0" ]; then
+        sincelastreset=""
+      else
+        currtime=$(date +%s)
+        timediff=$((currtime-VPNTIMER$i))
+        sincelastreset=$(printf ': %dd %02dh:%02dm\n' $(($timediff/86400)) $(($timediff%86400/3600)) $(($timediff%3600/60)))
+      fi
+      
       #print the results of all data gathered sofar
-      echo -e "$vpnindicator${InvDkGray}${CWhite} VPN$i${CClear} | $monitored | $servercnt | $vpnhealth | $vpnstate | $vpnip | $svrping | $vpncity $citychange$ubsync"
+      echo -e "$vpnindicator${InvDkGray}${CWhite} VPN$i${CClear} | $monitored | $servercnt | $vpnhealth | $vpnstate | $vpnip | $svrping | $vpncity$sincelastreset $citychange$ubsync"
             
       #if a vpn is monitored and disconnected, try to restart it
       if [ "$((VPN$i))" == "1" ] && [ "$vpnstate" == "Disconnected" ]; then #reconnect
@@ -2452,6 +2538,7 @@ while true; do
 
       #Reset variables
       ubsync=""
+      sincelastreset=""
 
   done
 
