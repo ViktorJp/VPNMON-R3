@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R3 v0.7b (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.01 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
@@ -12,8 +12,8 @@
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="0.7b"                                                  # Version tracker
-beta=1                                                          # Beta switch
+version="1.01"                                                  # Version tracker
+beta=0                                                          # Beta switch
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
 logfile="/jffs/addons/vpnmon-r3.d/vpnmon-r3.log"                # Static path to the log
 dlverpath="/jffs/addons/vpnmon-r3.d/version.txt"                # Static path to the version file
@@ -839,7 +839,7 @@ updatecheck()
       if [ "$beta" == "1" ]; then   # Check if Dev/Beta Mode is enabled and disable notification message
         UpdateNotify=0
       elif [ "$DLversion" != "$version" ]; then
-        UpdateNotify="${InvYellow} ${InvDkGray}${CWhite} Update available: v$version -> v$DLversion                                                      ${CClear}"
+        UpdateNotify="${InvYellow} ${InvDkGray}${CWhite} Update available: v$version -> v$DLversion                                                                   ${CClear}"
         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: A new update (v$DLversion) is available to download" >> $logfile
       else
         UpdateNotify=0
@@ -2039,28 +2039,33 @@ vreset()
             echo -e "${CGreen}[Executing Custom Server List Script for VPN Slot $slot]${CClear}"
             slottmp="automation${slot}"
             eval slottmp="\$${slottmp}"
-            automationunenc=$(echo "$slottmp" | openssl enc -d -base64 -A)
-            echo ""
-            echo -e "${CClear}Running: $automationunenc"
-            echo ""
-            eval "$automationunenc" > /jffs/addons/vpnmon-r3.d/vr3svr$slot.txt
-            if [ -f /jffs/addons/vpnmon-r3.d/vr3svr$slot.txt ]; then
-              dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svr$slot.txt | wc -l) >/dev/null 2>&1 
-              if [ $dlcnt -lt 1 ]; then 
-                dlcnt=0
-              elif [ -z $dlcnt ]; then 
+            if [ -z $slottmp ] || [ $slottmp == "" ]; then
+            	echo ""
+            	echo -e "${CGreen}[Custom VPN Client Server Query not found for VPN Slot $slot]${CClear}"
+            else
+              automationunenc=$(echo "$slottmp" | openssl enc -d -base64 -A)
+              echo ""
+              echo -e "${CClear}Running: $automationunenc"
+              echo ""
+              eval "$automationunenc" > /jffs/addons/vpnmon-r3.d/vr3svr$slot.txt
+              if [ -f /jffs/addons/vpnmon-r3.d/vr3svr$slot.txt ]; then
+                dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svr$slot.txt | wc -l) >/dev/null 2>&1 
+                if [ $dlcnt -lt 1 ]; then 
+                  dlcnt=0
+                elif [ -z $dlcnt ]; then 
+                  dlcnt=0
+                fi
+              else
                 dlcnt=0
               fi
-            else
-              dlcnt=0
+              echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Client Server List Query Executed for VPN Slot $slot ($dlcnt rows)" >> $logfile
+              sleep 3
             fi
-            echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Client Server List Executed for VPN Slot $slot ($dlcnt rows)" >> $logfile
-            sleep 3
           else
             echo ""
-            echo -e "${CRed}[Custom VPN Client Server List not found for VPN Slot $slot]${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List not found for VPN Slot $slot" >> $logfile
+            echo -e "${CRed}[Custom VPN Client Server List File not found for VPN Slot $slot]${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List File not found for VPN Slot $slot" >> $logfile
             sleep 3
           fi
         fi
