@@ -1,3 +1,5 @@
+v1.01    - FINAL RELEASE: Merry Christmas! ;)
+
 v0.7b    - ADDED: Now including the total time a VPN connection has remained connected. This info is displayed on the
            main UI next to the exit city name. Time is tracked when the VPN drops and reconnects, and will only be
            displayed for VPN Client Slots that are actively being monitored.
