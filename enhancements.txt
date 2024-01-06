@@ -1,5 +1,6 @@
 To-Do:
 - Integrate KILLMON functionality if there is any interest in having better killswitch capabilities
+- Potentially monitoring for WAN drops/outages as in R2
 
 Done:
 - Automate running of custom CURL statements under server list automation using CRON
