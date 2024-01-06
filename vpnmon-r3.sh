@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.01 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.03 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
@@ -12,12 +12,13 @@
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.01"                                                  # Version tracker
+version="1.03"                                                  # Version tracker
 beta=0                                                          # Beta switch
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
 logfile="/jffs/addons/vpnmon-r3.d/vpnmon-r3.log"                # Static path to the log
 dlverpath="/jffs/addons/vpnmon-r3.d/version.txt"                # Static path to the version file
-config="/jffs/addons/vpnmon-r3.d/vpnmon-r3.cfg"                 # Static path to the config file    
+config="/jffs/addons/vpnmon-r3.d/vpnmon-r3.cfg"                 # Static path to the config file
+lockfile="/jffs/addons/vpnmon-r3.d/resetlock.txt"               # Static path to the reset lock file
 availableslots="1 2 3 4 5"                                      # Available slots tracker
 PINGHOST="8.8.8.8"                                              # Ping host
 logsize=2000                                                    # Log file size in rows
@@ -1867,6 +1868,28 @@ _VPN_GetClientState_()
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
+# Testing to see if VPNMON-R3 external reset is currently running, and if so, hold off until it finishes
+lockcheck() 
+{
+ 
+  while [ -f "$lockfile" ]; do
+    # clear screen
+    clear
+    SPIN=15
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} External VPN Reset Currently In-Progress                                              ${CClear}"
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} VPNMON-R3 is currently performing an external scheduled reset of the VPN through${CClear}"
+    echo -e "${InvGreen} ${CClear} the means of the '-reset' commandline option, or scheduled CRON job.${CClear}"
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} [Retrying to resume normal operations every $SPIN seconds]${CClear}"  
+    echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+    echo ""
+    spinner
+  done
+}
+
+
+# -------------------------------------------------------------------------------------------------------------------------
 # Initiate a VPN restart - $1 = slot number
 
 restartvpn()
@@ -2019,6 +2042,9 @@ vreset()
     exit 0
   fi
   
+  # Create a rudimentary lockfile so that VPNMON-R2 doesn't interfere during the reset
+  echo -n > $lockfile
+  
   slot=0
   for slot in $availableslots #loop through the 3/5 vpn slots
     do
@@ -2075,6 +2101,9 @@ vreset()
       fi
           
   done
+  
+  # Clean up lockfile
+  rm $lockfile >/dev/null 2>&1
   
   echo -e "\n${CClear}"
   exit 0
@@ -2200,9 +2229,16 @@ checkvpn() {
     ICANHAZIP=$(curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail --interface $TUN --request GET --url https://ipv4.icanhazip.com) # Grab the public IP of the VPN Connection
     IC=$?
     if [ $RC -eq 0 ] && [ $IC -eq 0 ]; then  # If both ping/curl come back successful, then proceed
-      vpnping=$(ping -I $TUN -c 1 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1
-      vpnhealth="${CGreen}[ OK ]${CClear}"
-      vpnindicator="${InvGreen} ${CClear}"
+      vpnping=$(ping -I $TUN -c 1 -W 2 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1
+      VP=$?
+      if [ $VP -eq 0 ]; then
+        vpnhealth="${CGreen}[ OK ]${CClear}"
+        vpnindicator="${InvGreen} ${CClear}"
+      else
+        vpnping=0
+      	vpnhealth="${CYellow}[UNKN]${CClear}"
+        vpnindicator="${InvYellow} ${CClear}"
+      fi
       break
     else
       sleep 1 # Giving the VPN a chance to recover a certain number of times
@@ -2346,6 +2382,10 @@ fi
 if [ "$1" == "-noswitch" ]
   then
     clear #last switch before the main program starts
+    
+    # Clean up lockfile
+    rm $lockfile >/dev/null 2>&1
+  
     if [ ! -f $cfgpath ] && [ ! -f "/opt/bin/timeout" ] && [ ! -f "/opt/sbin/screen" ] && [ ! -f "/opt/bin/jq" ]; then
         echo -e "${CRed}ERROR: VPNMON-R3 is not configured.  Please run 'vpnmon-r3 -setup' first.${CClear}"
         echo ""
@@ -2406,8 +2446,11 @@ while true; do
   #Set variables
   resetvpn=0
   
+  #Check to see if a reset is currently underway
+  lockcheck
+  
   clear #display the header
-    
+  
   if [ "$hideoptions" == "0" ]; then
     resettimer=0
     
@@ -2564,12 +2607,11 @@ while true; do
       timer=$(($timer+1))
       preparebar 46 "|"
       progressbaroverride $timer $timerloop "" "s" "Standard"
-      sleep 1
+      #sleep 1
       if [ "$resettimer" == "1" ]; then timer=$timerloop; fi
   done
   
   #if Unbound is active and out of sync, try to restart it
-  
   if [ $unboundclient -ne 0 ] && [ $ResolverTimer -eq 1 ]; then
   	echo ""
     restartvpn $unboundreset
