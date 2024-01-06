@@ -1,6 +1,8 @@
-v1.02    - ADDED: When VPNMON-R3 is executing a scheduled -RESET, the main UI will enter a 'pause' state, giving some
+v1.03    - ADDED: When VPNMON-R3 is executing a scheduled -RESET, the main UI will enter a 'pause' state, giving some
            feedback that a vpn reset is currently underway, and will retry to resume normal operations every 15 secs.
            Thanks to @salvo for the suggestion!
+         - ADDED: More checks and stability added to ensuring values returning from the ping functions are valid, and
+           hoping to catch any errors before returning the occasional 'unexpected token' error as found by @salvo.
 
 v1.01    - FINAL RELEASE: Merry Christmas! ;)
 
