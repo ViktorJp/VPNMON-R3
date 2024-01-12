@@ -141,6 +141,7 @@ progressbaroverride()
   # $7 - alternate value for progressbar exceeding 100%
 
   insertspc=" "
+  bypasswancheck=0
 
   if [ $1 -eq -1 ]; then
     printf "\r  $barspaces\r"
@@ -190,6 +191,7 @@ progressbaroverride()
           [Vv]) vpnserverlistmaint;;
           *) timer=timerloop;;
       esac
+      bypasswancheck=1
   fi
 }
 
@@ -2316,6 +2318,7 @@ checkwan()
   wandownbreakertrip=0
   testssl="8.8.8.8"
   
+  printf "\33[2K\r"
   printf "\r${InvYellow} ${CClear} [Checking WAN Connectivity]..."
   
   #Run main checkwan loop
@@ -2766,6 +2769,7 @@ fi
 if [ "$1" == "-noswitch" ]
   then
     clear #last switch before the main program starts
+    firstrun=1
     
     # Clean up lockfile
     rm $lockfile >/dev/null 2>&1
@@ -2891,10 +2895,13 @@ while true; do
   if [ "$UpdateNotify" != "0" ]; then echo -e "$UpdateNotify\n"; else echo -e "${CClear}"; fi
 
   #If WAN Monitoring is enabled, test WAN connection and show the following grid
-  if [ $monitorwan -eq 1 ]; then
+  if [ $monitorwan -eq 1 ] && [ $firstrun -eq 1 ]; then
     #Check to see if the WAN is up
     checkwan
-
+    firstrun=0
+  fi
+  
+  if [ $monitorwan -eq 1 ] && [ $firstrun -eq 0 ]; then
     #Display WAN ports grid
     echo -e "${CClear}  Port | Mon | IFace  | Health | WAN State    | Public WAN IP   | Ping-->WAN | City Exit"
     echo -e "-------|-----|--------|--------|--------------|-----------------|------------|-----------------------"
@@ -3022,6 +3029,13 @@ while true; do
       #sleep 1
       if [ "$resettimer" == "1" ]; then timer=$timerloop; fi
   done
+  
+  #Check to see if the WAN is up
+  if [ $bypasswancheck -eq 0 ]; then
+    checkwan
+  fi
+  
+  firstrun=0
   
   #if Unbound is active and out of sync, try to restart it
   if [ $unboundclient -ne 0 ] && [ $ResolverTimer -eq 1 ]; then
