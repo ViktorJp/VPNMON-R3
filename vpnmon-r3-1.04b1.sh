@@ -2891,7 +2891,7 @@ while true; do
   #Display VPNMON-R3 client header
   echo -en "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 - v"
   printf "%-6s" $version
-  echo -e " | ${CGreen}(S)${CWhite}how/${CGreen}(H)${CWhite}ide Operations Menu ${InvGreen} ${InvDkGray} $(date)$tzspaces                     ${CClear}"
+  echo -e "                 ${CGreen}(S)${CWhite}how/${CGreen}(H)${CWhite}ide Operations Menu ${InvDkGray}        $tzspaces$(date) ${CClear}"
   if [ "$UpdateNotify" != "0" ]; then echo -e "$UpdateNotify\n"; else echo -e "${CClear}"; fi
 
   #If WAN Monitoring is enabled, test WAN connection and show the following grid
