@@ -2867,13 +2867,13 @@ while true; do
     fi
     
     #display operations menu
-    echo -e "${InvGreen} ${InvDkGray}${CWhite} Operations Menu                                                                                    ${CClear}"
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} Operations Menu                                                                                              ${CClear}"
     echo -e "${InvGreen} ${CClear} Reset/Reconnect VPN 1:${CGreen}(1)${CClear} 2:${CGreen}(2)${CClear} 3:${CGreen}(3)${CClear} 4:${CGreen}(4)${CClear} 5:${CGreen}(5)${CClear}   ${InvGreen} ${CClear} ${CGreen}(C)${CClear}onfiguration/Main Setup Menu${CClear}"
     echo -e "${InvGreen} ${CClear} Stop/Unmonitor  VPN 1:${CGreen}(!)${CClear} 2:${CGreen}(@)${CClear} 3:${CGreen}(#)${CClear} 4:${CGreen}($)${CClear} 5:${CGreen}(%)${CClear}   ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN CRON Scheduler: $schedtime${CClear}"
     echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN Slots                ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim Log Size: ${CGreen}$logsizefmt${CClear}"
     echo -e "${InvGreen} ${CClear} Update/Maintain ${CGreen}(V)${CClear}PN Server Lists                  ${InvGreen} ${CClear} ${CGreen}(A)${CClear}utostart Script on Reboot: $rebootprot${CClear}"
     echo -e "${InvGreen} ${CClear} Edit/R${CGreen}(U)${CClear}n Server List Automation                   ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer VPN Check Loop: ${CGreen}${timerloop}sec${CClear}"
-    echo -e "${InvGreen} ${CClear}${CDkGray}----------------------------------------------------------------------------------------------------${CClear}"
+    echo -e "${InvGreen} ${CClear}${CDkGray}--------------------------------------------------------------------------------------------------------------${CClear}"
     echo ""
   else
     resettimer=0
@@ -2891,7 +2891,7 @@ while true; do
   #Display VPNMON-R3 client header
   echo -en "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 - v"
   printf "%-6s" $version
-  echo -e " | ${CGreen}(S)${CWhite}how/${CGreen}(H)${CWhite}ide Operations Menu ${InvGreen} ${InvDkGray} $(date)$tzspaces           ${CClear}"
+  echo -e " | ${CGreen}(S)${CWhite}how/${CGreen}(H)${CWhite}ide Operations Menu ${InvGreen} ${InvDkGray} $(date)$tzspaces                     ${CClear}"
   if [ "$UpdateNotify" != "0" ]; then echo -e "$UpdateNotify\n"; else echo -e "${CClear}"; fi
 
   #If WAN Monitoring is enabled, test WAN connection and show the following grid
@@ -2904,7 +2904,7 @@ while true; do
   if [ $monitorwan -eq 1 ] && [ $firstrun -eq 0 ]; then
     #Display WAN ports grid
     echo -e "${CClear}  Port | Mon | IFace  | Health | WAN State    | Public WAN IP   | Ping-->WAN | City Exit"
-    echo -e "-------|-----|--------|--------|--------------|-----------------|------------|-----------------------"
+    echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
 
     #Cycle through the WANCheck connection function to display ping/city info
     wans=0
@@ -2912,9 +2912,9 @@ while true; do
       do
         wancheck $wans
     done
- 	  echo -e "-------|-----|--------|--------|--------------|-----------------|------------|-----------------------"
+ 	  echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
    	echo ""
-    echo -e "${InvDkGray}                                                                                                     ${CClear}"
+    echo -e "${InvDkGray}                                                                                                               ${CClear}"
     echo ""
   fi
   
@@ -2924,7 +2924,7 @@ while true; do
   else
     echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | City Exit / Time"
   fi
-  echo -e "-------|-----|--------|--------|--------------|-----------------|------------|-----------------------"
+  echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
   
   i=0
   for i in $availableslots #loop through the 3/5 vpn slots
@@ -3016,7 +3016,7 @@ while true; do
 
   done
 
-  echo -e "-------|-----|--------|--------|--------------|-----------------|------------|-----------------------"
+  echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
   echo ""
 
   #display a standard timer
