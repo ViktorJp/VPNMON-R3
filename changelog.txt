@@ -1,4 +1,4 @@
-v1.04b1  - MAJOR: In one of the recent storms that brough down my WAN connection, I quickly found out that VPNMON-R3
+v1.04b2  - MAJOR: In one of the recent storms that brough down my WAN connection, I quickly found out that VPNMON-R3
            does not like that, and caused the script to hang for some unknown reason. Thinking it might be a good idea
            to break out the WAN monitoring functionality from R2, this has now been incorporated as a selectable
            option. When enabled, VPNMON-R3 will test the WAN on each cycle, and if determined that the WAN is down,
@@ -9,6 +9,8 @@ v1.04b1  - MAJOR: In one of the recent storms that brough down my WAN connection
            the modem, simulating a WAN outage, and bringing back up to ensure R3 was able to recover correctly.
          - ADDED: Few more log entries for various reset conditions were added.
          - FIXED: Minor corrections to wording or other on-screen layouts to make the UI more pleasing to the eye.
+         - FIXED: Made some revisions to how variables were used in order to cut down on some Unknown Operand errors
+           that were initially captured by @Ripshod. Thank you!
 
 v1.03    - ADDED: When VPNMON-R3 is executing a scheduled -RESET, the main UI will enter a 'pause' state, giving some
            feedback that a vpn reset is currently underway, and will retry to resume normal operations every 15 secs.
