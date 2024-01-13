@@ -8,6 +8,7 @@ v1.04b1  - MAJOR: In one of the recent storms that brough down my WAN connection
            Dual-WAN configurations. This has been tested on a single WAN0 connection where I completely powered off
            the modem, simulating a WAN outage, and bringing back up to ensure R3 was able to recover correctly.
          - ADDED: Few more log entries for various reset conditions were added.
+         - FIXED: Minor corrections to wording or other on-screen layouts to make the UI more pleasing to the eye.
 
 v1.03    - ADDED: When VPNMON-R3 is executing a scheduled -RESET, the main UI will enter a 'pause' state, giving some
            feedback that a vpn reset is currently underway, and will retry to resume normal operations every 15 secs.
