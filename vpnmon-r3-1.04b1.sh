@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.04 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.04b1 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
@@ -2190,7 +2190,7 @@ getvpnip()
 	        unboundreset=$1
 	      else
 	        ubsync="${CGreen}->[UB]${CClear}"
-	        #vpnip="101.202.211.100" # Remove
+	        #vpnip="132.231.213.123" # Remove
 	      fi
 	    else
 	      ubsync="${CYellow}-?[UB]${CClear}"
@@ -2354,6 +2354,7 @@ checkwan()
             state2="$(_VPN_GetClientState_ 2)"
             state3="$(_VPN_GetClientState_ 3)"
             printf "\r${InvGreen} ${CClear} [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2 3:$state3                         "
+            sleep 3
           elif [ "$availableslots" == "1 2 3 4 5" ]; then
             state1="$(_VPN_GetClientState_ 1)"
             state2="$(_VPN_GetClientState_ 2)"
@@ -2361,16 +2362,16 @@ checkwan()
             state4="$(_VPN_GetClientState_ 4)"
             state5="$(_VPN_GetClientState_ 5)"
             printf "\r${InvGreen} ${CClear} [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2 3:$state3 4:$state4 5:$state5     "  
+            sleep 3
           fi
 
           # Preemptively kill all the VPN Clients incase they're trying to reconnect on their own
           for slot in $availableslots
             do
-              sleep 1
               if [ $((state$slot)) -ne 0 ]; then
                 printf "\r${InvGreen} ${CClear} [Retrying Kill Command on VPN$slot Client Connection]...              "
                 service stop_vpnclient$slot >/dev/null 2>&1
-                sleep 1
+                sleep 3
               fi
           done
 
@@ -2405,12 +2406,12 @@ checkwan()
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - WARNING:  WAN Link Detected -- Trying to reconnect/Reset VPN" >> $logfile
           wandownbreakertrip=0
           clear
-          echo -e "${InvGreen} ${InvDkGray}${CWhite} Router is Currently Experiencing a WAN Down Situation                                 ${CClear}"
+          echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 is currently recovering from a WAN Down Situation                           ${CClear}"
           echo -e "${InvGreen} ${CClear}"
           echo -e "${InvGreen} ${CClear} Router has detected a WAN Link/Modem and waiting 300 seconds for general network${CClear}"
-          echo -e "${InvGreen} ${CClear} connectivity to stabilize in order to re-establish VPN connectivity.${CClear}"
+          echo -e "${InvGreen} ${CClear} connectivity to stabilize before re-establishing VPN connectivity.${CClear}"
           echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} [Retrying to resume normal operations every 300 seconds]${CClear}"  
+          echo -e "${InvGreen} ${CClear} [Retrying to resume normal operations in 300 seconds...Please stand by!]${CClear}"  
           echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
           echo ""
           spinner 300
@@ -2864,11 +2865,11 @@ while true; do
     
     #display operations menu
     echo -e "${InvGreen} ${InvDkGray}${CWhite} Operations Menu                                                                                              ${CClear}"
-    echo -e "${InvGreen} ${CClear} Reset/Reconnect VPN 1:${CGreen}(1)${CClear} 2:${CGreen}(2)${CClear} 3:${CGreen}(3)${CClear} 4:${CGreen}(4)${CClear} 5:${CGreen}(5)${CClear}   ${InvGreen} ${CClear} ${CGreen}(C)${CClear}onfiguration/Main Setup Menu${CClear}"
-    echo -e "${InvGreen} ${CClear} Stop/Unmonitor  VPN 1:${CGreen}(!)${CClear} 2:${CGreen}(@)${CClear} 3:${CGreen}(#)${CClear} 4:${CGreen}($)${CClear} 5:${CGreen}(%)${CClear}   ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN CRON Scheduler: $schedtime${CClear}"
-    echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN Slots                ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim Log Size: ${CGreen}$logsizefmt${CClear}"
-    echo -e "${InvGreen} ${CClear} Update/Maintain ${CGreen}(V)${CClear}PN Server Lists                  ${InvGreen} ${CClear} ${CGreen}(A)${CClear}utostart Script on Reboot: $rebootprot${CClear}"
-    echo -e "${InvGreen} ${CClear} Edit/R${CGreen}(U)${CClear}n Server List Automation                   ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer VPN Check Loop: ${CGreen}${timerloop}sec${CClear}"
+    echo -e "${InvGreen} ${CClear} Reset/Reconnect VPN 1:${CGreen}(1)${CClear} 2:${CGreen}(2)${CClear} 3:${CGreen}(3)${CClear} 4:${CGreen}(4)${CClear} 5:${CGreen}(5)${CClear}    ${InvGreen} ${CClear} ${CGreen}(C)${CClear}onfiguration Menu / Main Setup Menu${CClear}"
+    echo -e "${InvGreen} ${CClear} Stop/Unmonitor  VPN 1:${CGreen}(!)${CClear} 2:${CGreen}(@)${CClear} 3:${CGreen}(#)${CClear} 4:${CGreen}($)${CClear} 5:${CGreen}(%)${CClear}    ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN CRON Time Scheduler: $schedtime${CClear}"
+    echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN Slots                 ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim Log Size (rows): ${CGreen}$logsizefmt${CClear}"
+    echo -e "${InvGreen} ${CClear} Update/Maintain ${CGreen}(V)${CClear}PN Server Lists                   ${InvGreen} ${CClear} ${CGreen}(A)${CClear}utostart VPNMON-R3 on Reboot: $rebootprot${CClear}"
+    echo -e "${InvGreen} ${CClear} Edit/R${CGreen}(U)${CClear}n Server List Automation                    ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer VPN Check Loop Interval: ${CGreen}${timerloop}sec${CClear}"
     echo -e "${InvGreen} ${CClear}${CDkGray}--------------------------------------------------------------------------------------------------------------${CClear}"
     echo ""
   else
@@ -3005,7 +3006,7 @@ while true; do
         restartvpn $resetvpn
         exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
       fi
-
+      
       #Reset variables
       ubsync=""
       sincelastreset=""
@@ -3026,20 +3027,20 @@ while true; do
       if [ "$resettimer" == "1" ]; then timer=$timerloop; fi
   done
   
+  #if Unbound is active and out of sync, try to restart it
+  if [ $unboundclient -ne 0 ] && [ $ResolverTimer -eq 1 ]; then
+    echo ""
+    echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - WARNING: VPN$unboundreset is out of sync with Unbound DNS Resolver" >> $logfile
+    restartvpn $unboundreset
+    exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
+  fi
+      
   #Check to see if the WAN is up
   if [ $bypasswancheck -eq 0 ]; then
     checkwan
   fi
   
   firstrun=0
-  
-  #if Unbound is active and out of sync, try to restart it
-  if [ $unboundclient -ne 0 ] && [ $ResolverTimer -eq 1 ]; then
-  	echo ""
-  	echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - WARNING: VPN$unboundreset is out of sync with Unbound DNS Resolver" >> $logfile
-    restartvpn $unboundreset
-    exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
-  fi
 
 done
 echo -e "${CClear}"
