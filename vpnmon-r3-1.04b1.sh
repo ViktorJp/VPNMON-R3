@@ -831,7 +831,7 @@ while true; do
       if promptyn "(y/n): "; then
         echo ""
         echo -e "\nDownloading VPNMON-R3 ${CGreen}v$DLversion${CClear}"
-        curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R3/main/vpnmon-r3-$DLversion.sh" -o "/jffs/scripts/vpnmon-r3.sh" && chmod 755 "/jffs/scripts/vpnmon-r3.sh"
+        curl --silent --retry 3 --connect-timeout 3 --max-time 5 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/ViktorJp/VPNMON-R3/main/vpnmon-r3-$DLversion.sh" -o "/jffs/scripts/vpnmon-r3.sh" && chmod 755 "/jffs/scripts/vpnmon-r3.sh"
         echo ""
         echo -e "Download successful!${CClear}"
         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Successfully downloaded and installed VPNMON-R3 v$DLversion" >> $logfile
@@ -850,7 +850,7 @@ while true; do
       if promptyn " (y/n): "; then
         echo ""
         echo -e "\nDownloading VPNMON-R3 ${CGreen}v$DLversion${CClear}"
-        curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R3/main/vpnmon-r3-$DLversion.sh" -o "/jffs/scripts/vpnmon-r3.sh" && chmod 755 "/jffs/scripts/vpnmon-r3.sh"
+        curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/ViktorJp/VPNMON-R3/main/vpnmon-r3-$DLversion.sh" -o "/jffs/scripts/vpnmon-r3.sh" && chmod 755 "/jffs/scripts/vpnmon-r3.sh"
         echo ""
         echo -e "Download successful!${CClear}"
         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Successfully downloaded and installed VPNMON-R3 v$DLversion" >> $logfile
@@ -876,7 +876,7 @@ updatecheck()
 {
 
   # Download the latest version file from the source repository
-  curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R3/main/version.txt" -o "/jffs/addons/vpnmon-r3.d/version.txt"
+  curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/ViktorJp/VPNMON-R3/main/version.txt" -o "/jffs/addons/vpnmon-r3.d/version.txt"
 
   if [ -f $dlverpath ]
     then
@@ -1923,16 +1923,15 @@ lockcheck()
   while [ -f "$lockfile" ]; do
     # clear screen
     clear
-    SPIN=15
     echo -e "${InvGreen} ${InvDkGray}${CWhite} External VPN Reset Currently In-Progress                                              ${CClear}"
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear} VPNMON-R3 is currently performing an external scheduled reset of the VPN through${CClear}"
     echo -e "${InvGreen} ${CClear} the means of the '-reset' commandline option, or scheduled CRON job.${CClear}"
     echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear} [Retrying to resume normal operations every $SPIN seconds]${CClear}"  
+    echo -e "${InvGreen} ${CClear} [Retrying to resume normal operations every 15 seconds]${CClear}"  
     echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
     echo ""
-    spinner
+    spinner 15
   done
 }
 
@@ -2349,25 +2348,24 @@ checkwan()
       then
         # The WAN is most likely down, and keep looping through until NVRAM reports that it's back up
         while [ "$wandownbreakertrip" == "1" ]; do
+ 
+          if [ "$availableslots" == "1 2 3" ]; then
+            state1="$(_VPN_GetClientState_ 1)"
+            state2="$(_VPN_GetClientState_ 2)"
+            state3="$(_VPN_GetClientState_ 3)"
+            printf "\r${InvGreen} ${CClear} [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2 3:$state3                         "
+          elif [ "$availableslots" == "1 2 3 4 5" ]; then
+            state1="$(_VPN_GetClientState_ 1)"
+            state2="$(_VPN_GetClientState_ 2)"
+            state3="$(_VPN_GetClientState_ 3)"
+            state4="$(_VPN_GetClientState_ 4)"
+            state5="$(_VPN_GetClientState_ 5)"
+            printf "\r${InvGreen} ${CClear} [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2 3:$state3 4:$state4 5:$state5     "  
+          fi
 
           # Preemptively kill all the VPN Clients incase they're trying to reconnect on their own
           for slot in $availableslots
             do
-              
-              if [ $availableslots == "1 2 3" ]; then
-                state1="$(_VPN_GetClientState_ 1)"
-                state2="$(_VPN_GetClientState_ 2)"
-                state3="$(_VPN_GetClientState_ 3)"
-                printf "\r${InvGreen} ${CClear} [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2 3:$state3                         "
-              else
-                state1="$(_VPN_GetClientState_ 1)"
-                state2="$(_VPN_GetClientState_ 2)"
-                state3="$(_VPN_GetClientState_ 3)"
-                state4="$(_VPN_GetClientState_ 4)"
-                state5="$(_VPN_GetClientState_ 5)"
-                printf "\r${InvGreen} ${CClear} [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2 3:$state3 4:$state4 5:$state5     "  
-              fi
-
               sleep 1
               if [ $((state$slot)) -ne 0 ]; then
                 printf "\r${InvGreen} ${CClear} [Retrying Kill Command on VPN$slot Client Connection]...              "
@@ -2382,17 +2380,16 @@ checkwan()
               # Continue to loop and retest the WAN every 15 seconds
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - ERROR: WAN DOWN" >> $logfile
               clear
-              SPIN=15
               echo -e "${InvGreen} ${InvDkGray}${CWhite} Router is Currently Experiencing a WAN Down Situation                                 ${CClear}"
               echo -e "${InvGreen} ${CClear}"
               echo -e "${InvGreen} ${CClear} Router is unable to provide a stable WAN connection. Please reboot your modem,${CClear}"
               echo -e "${InvGreen} ${CClear} check with your ISP, or perform general internet connectivity troubleshooting${CClear}"
               echo -e "${InvGreen} ${CClear} in order to re-establish a stable VPN connection.${CClear}"              
               echo -e "${InvGreen} ${CClear}"
-              echo -e "${InvGreen} ${CClear} [Retrying to resume normal operations every $SPIN seconds]${CClear}"  
+              echo -e "${InvGreen} ${CClear} [Retrying to resume normal operations every 15 seconds]${CClear}"  
               echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
               echo ""
-              spinner
+              spinner 15
               wandownbreakertrip=1
             else
               wandownbreakertrip=2
@@ -2408,16 +2405,15 @@ checkwan()
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - WARNING:  WAN Link Detected -- Trying to reconnect/Reset VPN" >> $logfile
           wandownbreakertrip=0
           clear
-          SPIN=300
           echo -e "${InvGreen} ${InvDkGray}${CWhite} Router is Currently Experiencing a WAN Down Situation                                 ${CClear}"
           echo -e "${InvGreen} ${CClear}"
           echo -e "${InvGreen} ${CClear} Router has detected a WAN Link/Modem and waiting 300 seconds for general network${CClear}"
           echo -e "${InvGreen} ${CClear} connectivity to stabilize in order to re-establish VPN connectivity.${CClear}"
           echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} [Retrying to resume normal operations every $SPIN seconds]${CClear}"  
+          echo -e "${InvGreen} ${CClear} [Retrying to resume normal operations every 300 seconds]${CClear}"  
           echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
           echo ""
-          spinner
+          spinner 300
           exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
       fi
 
