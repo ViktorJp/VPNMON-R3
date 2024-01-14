@@ -1,4 +1,5 @@
-v1.04b2  - MAJOR: In one of the recent storms that brough down my WAN connection, I quickly found out that VPNMON-R3
+v1.04b2  - (January 13, 2024)
+         - MAJOR: In one of the recent storms that brough down my WAN connection, I quickly found out that VPNMON-R3
            does not like that, and caused the script to hang for some unknown reason. Thinking it might be a good idea
            to break out the WAN monitoring functionality from R2, this has now been incorporated as a selectable
            option. When enabled, VPNMON-R3 will test the WAN on each cycle, and if determined that the WAN is down,
@@ -12,7 +13,8 @@ v1.04b2  - MAJOR: In one of the recent storms that brough down my WAN connection
          - FIXED: Made some revisions to how variables were used in order to cut down on some Unknown Operand errors
            that were initially captured by @Ripshod. Thank you!
 
-v1.03    - ADDED: When VPNMON-R3 is executing a scheduled -RESET, the main UI will enter a 'pause' state, giving some
+v1.03    - (January 6, 2024)
+         - ADDED: When VPNMON-R3 is executing a scheduled -RESET, the main UI will enter a 'pause' state, giving some
            feedback that a vpn reset is currently underway, and will retry to resume normal operations every 15 secs.
            Thanks to @salvo for the suggestion!
          - ADDED: More checks and stability added to ensuring values returning from the ping functions are valid, and
@@ -20,7 +22,8 @@ v1.03    - ADDED: When VPNMON-R3 is executing a scheduled -RESET, the main UI wi
          - FIXED: Noticed that the timer loop was actually taking 2x as long to complete... I knew seconds couldn't
            take that long, and wasn't going crazy afterall. Fixed.
 
-v1.01    - FINAL RELEASE: Merry Christmas! ;)
+v1.01    - (December 24, 2023)
+         - FINAL RELEASE: Merry Christmas! ;)
 
 v0.7b    - ADDED: Now including the total time a VPN connection has remained connected. This info is displayed on the
            main UI next to the exit city name. Time is tracked when the VPN drops and reconnects, and will only be
