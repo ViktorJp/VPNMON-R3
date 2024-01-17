@@ -9,6 +9,9 @@ v1.04b2  - (January 13, 2024)
            Dual-WAN configurations. This has been tested on a single WAN0 connection where I completely powered off
            the modem, simulating a WAN outage, and bringing back up to ensure R3 was able to recover correctly.
          - ADDED: Few more log entries for various reset conditions were added.
+         - ADDED: More checks while determining vpn health, and adding more logic around failed connections, including
+           an indicator showing the number of attempts a certain vpn slot has undergone if it comes back failing the
+           ping and curl tests.
          - FIXED: Minor corrections to wording or other on-screen layouts to make the UI more pleasing to the eye.
          - FIXED: Made some revisions to how variables were used in order to cut down on some Unknown Operand errors
            that were initially captured by @Ripshod. Thank you!
