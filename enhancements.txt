@@ -1,8 +1,10 @@
 To-Do:
-- Integrate KILLMON functionality if there is any interest in having better killswitch capabilities
-- Potentially monitoring for WAN drops/outages as in R2
+- option: Unmonitor slot after X failed connections
+- method: Get to usable operations menu before wan/vpn checks
+- Possibility: Integrate KILLMON functionality if there is any interest in having better killswitch capabilities
 
 Done:
+- Monitoring for WAN drops/outages as in R2
 - Automate running of custom CURL statements under server list automation using CRON
 - Create a separate thread with CURL examples for all R2-supported VPN providers
 - Add ping values to main UI
