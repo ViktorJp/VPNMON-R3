@@ -1,6 +1,7 @@
 To-Do:
 - option: Unmonitor slot after X failed connections
 - method: Get to usable operations menu before wan/vpn checks
+- add ip address/host to log when it disconnects
 - Possibility: Integrate KILLMON functionality if there is any interest in having better killswitch capabilities
 
 Done:
