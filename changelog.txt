@@ -1,4 +1,4 @@
-v1.04b3  - (TBA)
+v1.04b4  - (January 19, 2024)
          - ADDED: More checks while determining vpn health, and adding more logic around failed connections, including
            an indicator showing the number of attempts a certain vpn slot has undergone if it comes back failing the
            ping and curl tests.
