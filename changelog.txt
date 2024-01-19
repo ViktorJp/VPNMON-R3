@@ -2,6 +2,12 @@ v1.04b3  - (TBA)
          - ADDED: More checks while determining vpn health, and adding more logic around failed connections, including
            an indicator showing the number of attempts a certain vpn slot has undergone if it comes back failing the
            ping and curl tests.
+         - ADDED: When a VPN connection fails, an intermediate 5 second counter will appear allowing you to (P}ause
+           execution. This allows you to enter the Operations Menu, should you need to make any adjustments. I found
+           that with successive failures, it was nearly impossible to get to the Operations menu in order to exclude
+           a certain slot that was causing issues.
+         - FIXED: When the -reset switch is thrown, VPNMON-R3 will immediately drop to the waiting screen. Thanks to
+           @salvo for noticing!
 
 v1.04b2  - (January 13, 2024)
          - MAJOR: In one of the recent storms that brough down my WAN connection, I quickly found out that VPNMON-R3
