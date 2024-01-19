@@ -2,6 +2,9 @@ v1.04b3  - (TBA)
          - ADDED: More checks while determining vpn health, and adding more logic around failed connections, including
            an indicator showing the number of attempts a certain vpn slot has undergone if it comes back failing the
            ping and curl tests.
+         - ADDED: Also, timing delays to allow for tunnels to connect, disconnect and settle have been extended. No,
+           your router hasn't slowed down. I'm just making sure processes aren't stepping over each other to give you
+           a the most stable monitoring experience.
          - ADDED: When a VPN connection fails, an intermediate 5 second counter will appear allowing you to (P}ause
            execution. This allows you to enter the Operations Menu, should you need to make any adjustments. I found
            that with successive failures, it was nearly impossible to get to the Operations menu in order to exclude
