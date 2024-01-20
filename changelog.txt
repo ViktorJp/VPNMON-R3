@@ -1,4 +1,4 @@
-v1.04b5  - (TBA)
+v1.04b5  - (January 19, 2024)
          - FIXED: WAN checks were still happening even when disabled. Thanks to @salvo! Fixed!
 
 v1.04b4  - (January 19, 2024)
