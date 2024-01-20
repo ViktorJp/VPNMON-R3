@@ -1,3 +1,10 @@
+v1.04b6  - (TBA)
+         - ADDED: Under the Run Automations operations menu item, the ability to import your custom VPN Slot lists
+           can now be imported into Skynet! In the past, certain blocklists would also prevent you from connecting to
+           certain VPN servers because they were actively being blocked. From this menu, pressing s1-s5 will import
+           the contents directly to Skynet, giving you peace of mind that your VPN server endpoints are whitelisted.
+         - FIXED: The timing on connecting, stopping and settling have been dropped slightly.
+
 v1.04b5  - (January 19, 2024)
          - FIXED: WAN checks were still happening even when disabled. Thanks to @salvo! Fixed!
 
