@@ -4,7 +4,9 @@ v1.04b6  - (TBA)
            certain VPN servers because they were actively being blocked. From this menu, pressing s1-s5 will import
            the contents directly to Skynet, giving you peace of mind that your VPN server endpoints are whitelisted.
          - FIXED: The timing on connecting, stopping and settling have been dropped slightly. Also, shaved more time
-           by not spending 10 seconds forcing a service_stop on a connection that has already stopped. ;)
+           by not spending 10 seconds forcing a service_stop on a connection that has already stopped. Likewise,
+           checking for VPN slots in an error (-1) state, and force stopping these, then forcing an NVRAM state
+           reset on them to change them back to 0 (disconnected).
 
 v1.04b5  - (January 19, 2024)
          - FIXED: WAN checks were still happening even when disabled. Thanks to @salvo! Fixed!
