@@ -3224,6 +3224,8 @@ while true; do
         getvpncity $i
         if [ -z $vpnping ] || [ "$vpnping" == "" ]; then
           svrping="${CRed}[PING ERR]${CClear}"
+          vpnhealth="${CYellow}[UNKN]${CClear}"
+          vpnindicator="${InvYellow} ${CClear}"
         else
           svrping=$(awk "BEGIN {printf \"[%08.3f]\", ${vpnping}}")
         fi
