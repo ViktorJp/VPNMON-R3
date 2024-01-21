@@ -1,4 +1,4 @@
-v1.04b6  - (TBA)
+v1.04b6  - (January 21, 2024)
          - ADDED: Under the Run Automations operations menu item, the ability to import your custom VPN Slot lists
            into Skynet is now a possibility! In the past, certain blocklists would also prevent you from connecting to
            certain VPN servers because they were actively being blocked. From this menu, pressing s1-s5 will import
