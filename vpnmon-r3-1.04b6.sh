@@ -1246,6 +1246,7 @@ while true; do
          read -rp 'Enter New Script (e=Exit): ' automation1new
          if [ "$automation1new" == "" ] || [ -z "$automation1new" ]; then 
            automation1=""
+           saveconfig
          elif [ "$automation1new" == "e" ]; then 
            echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else 
@@ -1309,6 +1310,7 @@ while true; do
          read -rp 'Enter New Script (e=Exit): ' automation2new
          if [ "$automation2new" == "" ] || [ -z "$automation2new" ]; then 
            automation2=""
+           saveconfig
          elif [ "$automation2new" == "e" ]; then 
            echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else 
@@ -1372,6 +1374,7 @@ while true; do
          read -rp 'Enter New Script (e=Exit): ' automation3new
          if [ "$automation3new" == "" ] || [ -z "$automation3new" ]; then 
            automation3=""
+           saveconfig
          elif [ "$automation3new" == "e" ]; then 
            echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else 
@@ -1461,6 +1464,7 @@ while true; do
          read -rp 'Enter New Script (e=Exit): ' automation1new
          if [ "$automation1new" == "" ] || [ -z "$automation1new" ]; then 
            automation1=""
+           saveconfig
          elif [ "$automation1new" == "e" ]; then 
            echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else 
@@ -1524,6 +1528,7 @@ while true; do
          read -rp 'Enter New Script (e=Exit): ' automation2new
          if [ "$automation2new" == "" ] || [ -z "$automation2new" ]; then 
            automation2=""
+           saveconfig
          elif [ "$automation2new" == "e" ]; then 
            echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else 
@@ -1587,6 +1592,7 @@ while true; do
          read -rp 'Enter New Script (e=Exit): ' automation3new
          if [ "$automation3new" == "" ] || [ -z "$automation3new" ]; then 
            automation3=""
+           saveconfig
          elif [ "$automation3new" == "e" ]; then 
            echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else 
@@ -1650,6 +1656,7 @@ while true; do
          read -rp 'Enter New Script (e=Exit): ' automation4new
          if [ "$automation4new" == "" ] || [ -z "$automation4new" ]; then 
            automation4=""
+           saveconfig
          elif [ "$automation4new" == "e" ]; then 
            echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else 
@@ -1713,6 +1720,7 @@ while true; do
          read -rp 'Enter New Script (e=Exit): ' automation5new
          if [ "$automation5new" == "" ] || [ -z "$automation5new" ]; then 
            automation5=""
+           saveconfig
          elif [ "$automation5new" == "e" ]; then 
            echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else 
