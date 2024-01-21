@@ -1211,7 +1211,7 @@ while true; do
       echo -e "${InvGreen} ${CClear} Contents: <blank>"
     else
       automation1unenc=$(echo "$automation1" | openssl enc -d -base64 -A)
-      echo -en "${InvGreen} ${CClear} Contents: "; printf "%.75s>\n" "$automation1unenc"
+      echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$automation1unenc"
     fi
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN2${CClear} ${CGreen}(e2)${CClear} View/Edit | ${CGreen}(x2)${CClear} Execute | ${CGreen}(s2)${CClear} Skynet WL Import${CClear}"
@@ -1219,7 +1219,7 @@ while true; do
       echo -e "${InvGreen} ${CClear} Contents: <blank>"
     else
       automation2unenc=$(echo "$automation2" | openssl enc -d -base64 -A)
-      echo -en "${InvGreen} ${CClear} Contents: "; printf "%.75s>\n" "$automation2unenc"
+      echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$automation2unenc"
     fi
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN3${CClear} ${CGreen}(e3)${CClear} View/Edit | ${CGreen}(x3)${CClear} Execute | ${CGreen}(s3)${CClear} Skynet WL Import${CClear}"
@@ -1227,7 +1227,7 @@ while true; do
       echo -e "${InvGreen} ${CClear} Contents: <blank>"
     else
       automation3unenc=$(echo "$automation3" | openssl enc -d -base64 -A)
-      echo -en "${InvGreen} ${CClear} Contents: "; printf "%.75s>\n" "$automation3unenc"
+      echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$automation3unenc"
     fi
   echo -e "${InvGreen} ${CClear}"
   
@@ -1438,7 +1438,7 @@ while true; do
         echo -e "${InvGreen} ${CClear} Contents: <blank>"
     else
       automation4unenc=$(echo "$automation4" | openssl enc -d -base64 -A)
-      echo -en "${InvGreen} ${CClear} Contents: "; printf "%.75s>\n" "$automation4unenc"
+      echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$automation4unenc"
     fi
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN5${CClear} ${CGreen}(e5)${CClear} View/Edit | ${CGreen}(x5)${CClear} Execute | ${CGreen}(s5)${CClear} Skynet WL Import${CClear}"
@@ -1446,7 +1446,7 @@ while true; do
       echo -e "${InvGreen} ${CClear} Contents: <blank>"
     else
       automation5unenc=$(echo "$automation5" | openssl enc -d -base64 -A)
-      echo -en "${InvGreen} ${CClear} Contents: "; printf "%.75s>\n" "$automation5unenc"
+      echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$automation5unenc"
     fi
     echo ""
     
