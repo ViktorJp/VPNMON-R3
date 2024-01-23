@@ -1,3 +1,11 @@
+v1.10    - (TBA)
+         - MAJOR: VPNMON-R2 sunset notification banner is added if found that R2 is still installed. I have made the
+           difficult decision to sunset R2, and drive adoption of R3 so that I may focus on developing it further.
+           When pressing the (X) key, users will be driven to an R2 uninstall menu, allowing you to uninstall all
+           R2 files and components directly from R3. Similarly, in R2, an update banner will be prominently displayed
+           at all times, driving people to the update menu, to upgrade to R3 directly from within R2. In the near
+           future, new installs of R2 will no longer be possible, and will be driven to install R3.
+
 v1.04b6  - (January 21, 2024)
          - ADDED: Under the Run Automations operations menu item, the ability to import your custom VPN Slot lists
            into Skynet is now a possibility! In the past, certain blocklists would also prevent you from connecting to
