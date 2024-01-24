@@ -1,10 +1,10 @@
 To-Do:
 - option: Unmonitor slot after X failed connections
-- method: Get to usable operations menu before wan/vpn checks
-- add ip address/host to log when it disconnects
 - Possibility: Integrate KILLMON functionality if there is any interest in having better killswitch capabilities
 
 Done:
+- add ip address/host to log when it disconnects
+- method: Get to usable operations menu before wan/vpn checks
 - Monitoring for WAN drops/outages as in R2
 - Automate running of custom CURL statements under server list automation using CRON
 - Create a separate thread with CURL examples for all R2-supported VPN providers
