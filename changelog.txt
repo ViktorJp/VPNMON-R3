@@ -1,11 +1,10 @@
-v1.10    - (TBA)
+v1.10    - (January 23, 2024)
          - MAJOR: VPNMON-R2 sunset notification banner is added if found that R2 is still installed. I have made the
            difficult decision to sunset R2, and drive adoption of R3 so that I may focus on developing it further.
            When pressing the (X) key, users will be driven to an R2 uninstall menu, allowing you to uninstall all
            R2 files and components directly from R3. Similarly, in R2, an update banner will be prominently displayed
            at all times, driving people to the update menu, to upgrade to R3 directly from within R2. In the near
            future, new installs of R2 will no longer be possible, and will be driven to install R3.
-
 v1.04b6  - (January 21, 2024)
          - ADDED: Under the Run Automations operations menu item, the ability to import your custom VPN Slot lists
            into Skynet is now a possibility! In the past, certain blocklists would also prevent you from connecting to
@@ -15,10 +14,8 @@ v1.04b6  - (January 21, 2024)
            by not spending 10 seconds forcing a service_stop on a connection that has already stopped. Likewise,
            checking for VPN slots in an error (-1) state, and force stopping these, then forcing an NVRAM state
            reset on them to change them back to 0 (disconnected).
-
 v1.04b5  - (January 19, 2024)
          - FIXED: WAN checks were still happening even when disabled. Thanks to @salvo! Fixed!
-
 v1.04b4  - (January 19, 2024)
          - ADDED: More checks while determining vpn health, and adding more logic around failed connections, including
            an indicator showing the number of attempts a certain vpn slot has undergone if it comes back failing the
@@ -32,7 +29,6 @@ v1.04b4  - (January 19, 2024)
            a certain slot that was causing issues.
          - FIXED: When the -reset switch is thrown, VPNMON-R3 will immediately drop to the waiting screen. Thanks to
            @salvo for noticing!
-
 v1.04b2  - (January 13, 2024)
          - MAJOR: In one of the recent storms that brough down my WAN connection, I quickly found out that VPNMON-R3
            does not like that, and caused the script to hang for some unknown reason. Thinking it might be a good idea
