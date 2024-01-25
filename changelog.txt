@@ -1,3 +1,8 @@
+v1.1x    - (TBA)
+         - ADDED: New commandline switch "-now" to be used in conjunction with "-screen" that will allow you to
+           bypass the screen timer and instructions, and will launch VPNMON-R3 directly into the screen environment
+           without having to wait.  (Usage example:  vpnmon-r3 -screen -now)  Thanks @TITAN for the request.
+
 v1.10    - (January 23, 2024)
          - MAJOR: VPNMON-R2 sunset notification banner is added if found that R2 is still installed. I have made the
            difficult decision to sunset R2, and drive adoption of R3 so that I may focus on developing it further.
