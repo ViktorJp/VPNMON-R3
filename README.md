@@ -1,4 +1,4 @@
-## VPNMON-R3 v1.10
+## VPNMON-R3 v1.11
 Asus-Merlin VPN Monitor R3
 ![image](https://github.com/ViktorJp/VPNMON-R3/assets/97465574/cdcdc658-8d7d-43f4-b462-bd322c62a214)
 
