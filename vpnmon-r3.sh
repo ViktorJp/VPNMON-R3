@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.10 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.11 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
@@ -12,7 +12,7 @@
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.10"                                                  # Version tracker
+version="1.11"                                                  # Version tracker
 beta=0                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -34,6 +34,7 @@ vpnping=0                                                       # Tracking VPN T
 refreshserverlists=0                                            # Tracking Automated Custom VPN Server List Reset
 monitorwan=0                                                    # Tracking WAN/Dual WAN Monitoring
 lockactive=0                                                    # Check for active locks
+bypassscreentimer=0                                             # Check to see if screen timer can be bypassed
 
 # Color variables
 CBlack="\e[1;30m"
@@ -1075,7 +1076,7 @@ while true; do
         echo ""
         echo -e "\nVPNMON-R3 has been uninstalled...${CClear}"
         echo ""
-        kill 0
+        exit 0
       else
         echo ""
         echo -e "\nExiting Uninstall Utility...${CClear}"
@@ -3039,7 +3040,7 @@ if [ $# -eq 0 ]
 fi
 
 # Check and see if an invalid commandline option is being used
-if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-setup" ] || [ "$1" == "-reset" ] || [ "$1" == "-bw" ] || [ "$1" == "-noswitch" ] || [ "$1" == "-screen" ] 
+if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-setup" ] || [ "$1" == "-reset" ] || [ "$1" == "-bw" ] || [ "$1" == "-noswitch" ] || [ "$1" == "-screen" ] || [ "$1" == "-now" ] 
   then
     clear
   else
@@ -3083,6 +3084,12 @@ if [ "$1" == "-bw" ] || [ "$2" == "-bw" ]
     blackwhite
 fi
 
+# Check to see if the -now parameter is being called to bypass the screen timer
+if [ "$2" == "-now" ]
+  then
+    bypassscreentimer=1
+fi
+
 # Check to see if the setup option is being called
 if [ "$1" == "-setup" ]
   then
@@ -3104,28 +3111,38 @@ if [ "$1" == "-screen" ]
     sleep 1
     ScreenSess=$(screen -ls | grep "vpnmon-r3" | awk '{print $1}' | cut -d . -f 1)
       if [ -z $ScreenSess ]; then
-        clear
-        echo -e "${CClear}Executing ${CGreen}VPNMON-R3 v$version${CClear} using the SCREEN utility..."
-        echo ""
-        echo -e "${CClear}IMPORTANT:"
-        echo -e "${CClear}In order to keep VPNMON-R3 running in the background,"
-        echo -e "${CClear}properly exit the SCREEN session by using: ${CGreen}CTRL-A + D${CClear}"
-        echo ""
-        screen -dmS "vpnmon-r3" $apppath -noswitch
-        sleep 5
-        screen -r vpnmon-r3
-        exit 0
+        if [ "$bypassscreentimer" == "1" ]; then
+          screen -dmS "vpnmon-r3" $apppath -noswitch
+          sleep 1
+          screen -r vpnmon-r3        
+        else
+          clear
+          echo -e "${CClear}Executing ${CGreen}VPNMON-R3 v$version${CClear} using the SCREEN utility..."
+          echo ""
+          echo -e "${CClear}IMPORTANT:"
+          echo -e "${CClear}In order to keep VPNMON-R3 running in the background,"
+          echo -e "${CClear}properly exit the SCREEN session by using: ${CGreen}CTRL-A + D${CClear}"
+          echo ""
+          screen -dmS "vpnmon-r3" $apppath -noswitch
+          sleep 5
+          screen -r vpnmon-r3
+          exit 0
+        fi
       else
-        clear
-        echo -e "${CClear}Connecting to existing ${CGreen}VPNMON-R3 v$version${CClear} SCREEN session...${CClear}"
-        echo ""
-        echo -e "${CClear}IMPORTANT:${CClear}"
-        echo -e "${CClear}In order to keep VPNMON-R3 running in the background,${CClear}"
-        echo -e "${CClear}properly exit the SCREEN session by using: ${CGreen}CTRL-A + D${CClear}"
-        echo ""
-        echo -e "${CClear}Switching to the SCREEN session in T-5 sec...${CClear}"
-        echo -e "${CClear}"
-        spinner 5
+        if [ "$bypassscreentimer" == "1" ]; then
+          sleep 1   
+        else
+          clear
+          echo -e "${CClear}Connecting to existing ${CGreen}VPNMON-R3 v$version${CClear} SCREEN session...${CClear}"
+          echo ""
+          echo -e "${CClear}IMPORTANT:${CClear}"
+          echo -e "${CClear}In order to keep VPNMON-R3 running in the background,${CClear}"
+          echo -e "${CClear}properly exit the SCREEN session by using: ${CGreen}CTRL-A + D${CClear}"
+          echo ""
+          echo -e "${CClear}Switching to the SCREEN session in T-5 sec...${CClear}"
+          echo -e "${CClear}"
+          spinner 5
+        fi
       fi
     screen -dr $ScreenSess
     exit 0
@@ -3144,7 +3161,7 @@ if [ "$1" == "-noswitch" ]
       echo -e "${CRed}ERROR: VPNMON-R3 is not configured.  Please run 'vpnmon-r3 -setup' first.${CClear}"
       echo ""
       echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - ERROR: VPNMON-R3 is not configured. Please run the setup/configuration utility" >> $logfile
-      kill 0
+      exit 0
     fi
 fi
 
