@@ -3,7 +3,7 @@ v1.1x    - (TBA)
            Configurable from the Operations Menu, using hotkey "P", you are able to change this value. Example
            Usage: If this setting is set to 100ms, and the ping value for this tunnel exceeds 100ms, then R3 will
            reset the connection in favor of a new connection with a lower ping value. Having a lower ping should
-           help with speed, latency and performance issues.
+           help with speed, latency and performance issues. Thanks to @TITAN for the request!
          - FIXED: Realized that certain older models (like the AC68U) only have a max of 2 VPN client slots, not
            3. Fixed the configs and menus to allow for up to 2 VPN client slots for this particular older router
            limitation.
