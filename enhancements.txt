@@ -1,5 +1,6 @@
 To-Do:
 - option: Unmonitor slot after X failed connections
+- ping reset > ms
 - Possibility: Integrate KILLMON functionality if there is any interest in having better killswitch capabilities
 
 Done:
