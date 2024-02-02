@@ -1,4 +1,4 @@
-v1.1x    - (TBA)
+v1.12    - (February 2, 2024)
          - ADDED: Another feature request coming over from R2 -- Reset VPN if ping across tunnel is > than X ms.
            Configurable from the Operations Menu, using hotkey "P", you are able to change this value. Example
            Usage: If this setting is set to 100ms, and the ping value for this tunnel exceeds 100ms, then R3 will
