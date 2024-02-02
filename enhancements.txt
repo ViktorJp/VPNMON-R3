@@ -1,9 +1,9 @@
 To-Do:
 - option: Unmonitor slot after X failed connections
-- ping reset > ms
 - Possibility: Integrate KILLMON functionality if there is any interest in having better killswitch capabilities
 
 Done:
+- ping reset > ms
 - add ip address/host to log when it disconnects
 - method: Get to usable operations menu before wan/vpn checks
 - Monitoring for WAN drops/outages as in R2
