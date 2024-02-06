@@ -4,9 +4,9 @@ v1.1.4   - (TBA)
            it was probably time for me as well. All my scripts moving forward will go this route.
          - FIXED: Found a situation where if someone was still using older VPN Slot allocations (like "1 2 3") and
            didn't update to the newer "1 2" or "1 2 3 4 5" slot allocations, then it would prevent the operations
-           menu from showing, since it is geared towards either one of these two. VPNMON now has some logic added
-           that will force a "1 2 3" configuration to "1 2", and will require you to select which slots need to be
-           monitored. Thanks to @TITAN for finding this one and working with me on the diagnosis! :)
+           menu from showing, since it is geared towards either one of these two options. VPNMON now has some logic 
+           added that will force a "1 2 3" configuration to "1 2", and will require you to select which slots need
+           to be monitored. Thanks to @TITAN for finding this one and working with me on the diagnosis! :)
 
 v1.12    - (February 2, 2024)
          - ADDED: Another feature request coming over from R2 -- Reset VPN if ping across tunnel is > than X ms.
