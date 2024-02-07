@@ -1,6 +1,6 @@
 v1.1.4   - (TBA)
          - ADDED: Changed the versioning logic to align with the general accepted way of versioning, using the
-           notation: major.minor.bugfix ... finally, right? After seeing @thelonelycoder changing his ways, I
+           notation: major.minor.patch ... finally, right? After seeing @thelonelycoder changing his ways, I
            figured it was probably time for me as well. All my scripts moving forward will go this route.
          - FIXED: Found a situation where if someone was still using older VPN Slot allocations (like "1 2 3") and
            didn't update to the newer "1 2" or "1 2 3 4 5" slot allocations, then it would prevent the operations
