@@ -1,5 +1,6 @@
 To-Do:
-- option: Unmonitor slot after X failed connections
+- automatically unmonitor slot after X failed connections?
+- Skynet whitelist your vpn ip server lists
 - Possibility: Integrate KILLMON functionality if there is any interest in having better killswitch capabilities
 
 Done:
