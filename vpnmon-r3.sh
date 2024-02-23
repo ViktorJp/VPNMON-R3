@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.1.5 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.2.1 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
@@ -12,7 +12,7 @@
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.1.5"                                                 # Version tracker
+version="1.2.1"                                                 # Version tracker
 beta=0                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -36,6 +36,7 @@ monitorwan=0                                                    # Tracking WAN/D
 lockactive=0                                                    # Check for active locks
 bypassscreentimer=0                                             # Check to see if screen timer can be bypassed
 pingreset=500                                                   # Maximum ping in ms before reset
+updateskynet=0                                                  # Check for VPN IP whitelisting in Skynet
 
 # Color variables
 CBlack="\e[1;30m"
@@ -640,6 +641,12 @@ while true; do
   else
     monitorwandisp="Enabled"
   fi
+  
+  if [ $updateskynet -eq 0 ]; then
+    updateskynetdisp="Disabled"
+  else
+    updateskynetdisp="Enabled"
+  fi
 
   clear
   echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 Configuration Options                                                       ${CClear}"
@@ -654,12 +661,13 @@ while true; do
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(4)${CClear} : Unbound DNS Lookups over VPN Integration     : ${CGreen}$unboundclientexp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(5)${CClear} : Refresh Custom Server Lists on -RESET Switch : ${CGreen}$refreshserverlistsdisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(6)${CClear} : Provide additional WAN/Dual WAN monitoring   : ${CGreen}$monitorwandisp"  
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(7)${CClear} : Whitelist VPN Server IP Lists in Skynet      : ${CGreen}$updateskynetdisp"  
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} | ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(e)${CClear} : Exit${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo ""
-  read -p "Please select? (1-6, e=Exit): " SelectSlot
+  read -p "Please select? (1-7, e=Exit): " SelectSlot
     case $SelectSlot in
       1)
         clear
@@ -983,6 +991,36 @@ while true; do
           else
             monitorwan=1
             echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: WAN Monitoring Enabled" >> $logfile
+            saveconfig          
+          fi
+      ;;
+
+      7) 
+        clear
+        echo -e "${InvGreen} ${InvDkGray}${CWhite} Whitelist VPN Server IP Lists in Skynet                                               ${CClear}"
+        echo -e "${InvGreen} ${CClear}"
+        echo -e "${InvGreen} ${CClear} Please indicate below if you would like to whitelist your VPN Server IP lists in${CClear}"
+        echo -e "${InvGreen} ${CClear} the Skynet Firewall. This provides for better stability in connecting to your VPN${CClear}"
+        echo -e "${InvGreen} ${CClear} provider, as there have been occasions where the Skynet blacklist will prevent${CClear}"
+        echo -e "${InvGreen} ${CClear} connections to your VPN Servers. This could cause a disruption in being able to${CClear}"
+        echo -e "${InvGreen} ${CClear} maintain a stable VPN connection.${CClear}" 
+        echo -e "${InvGreen} ${CClear}"
+        echo -e "${InvGreen} ${CClear} Use 0 to Disable, 1 to Enable. (Default = 0)"
+        echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+        echo ""
+        echo -e "${CClear}Current: ${CGreen}$updateskynetdisp${CClear}"
+        echo ""
+        read -p "Please Choose? (Disable = 0, Enable = 1, e=Exit): " newupdateskynet
+
+          if [ "$newupdateskynet" == "e" ]; then
+            echo -e "\n[Exiting]"; sleep 2
+          elif [ $newupdateskynet -eq 0 ]; then
+            updateskynet=0
+            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN Server IP Skynet Whitelisting Disabled" >> $logfile
+            saveconfig
+          else
+            updateskynet=1
+            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN Server IP Skynet Whitelisting Enabled" >> $logfile
             saveconfig          
           fi
       ;;
@@ -1389,6 +1427,8 @@ while true; do
          echo -e "${CGreen}[Execution Complete]${CClear}"
          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 1" >> $logfile
          echo ""
+         skynetwhitelist 1
+         echo ""
          read -rsp $'Press any key to acknowledge...\n' -n1 key
       ;;
 
@@ -1452,6 +1492,8 @@ while true; do
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 2" >> $logfile
+         echo ""
+         skynetwhitelist 2
          echo ""
          read -rsp $'Press any key to acknowledge...\n' -n1 key
       ;;
@@ -1551,6 +1593,8 @@ while true; do
          echo -e "${CGreen}[Execution Complete]${CClear}"
          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 1" >> $logfile
          echo ""
+         skynetwhitelist 1
+         echo ""
          read -rsp $'Press any key to acknowledge...\n' -n1 key
       ;;
 
@@ -1614,6 +1658,8 @@ while true; do
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 2" >> $logfile
+         echo ""
+         skynetwhitelist 2
          echo ""
          read -rsp $'Press any key to acknowledge...\n' -n1 key
       ;;
@@ -1679,6 +1725,8 @@ while true; do
          echo -e "${CGreen}[Execution Complete]${CClear}"
          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 3" >> $logfile
          echo ""
+         skynetwhitelist 3
+         echo ""
          read -rsp $'Press any key to acknowledge...\n' -n1 key
       ;;
         
@@ -1743,6 +1791,8 @@ while true; do
          echo -e "${CGreen}[Execution Complete]${CClear}"
          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 4" >> $logfile
          echo ""
+         skynetwhitelist 4
+         echo ""
          read -rsp $'Press any key to acknowledge...\n' -n1 key
       ;;
 
@@ -1806,6 +1856,8 @@ while true; do
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 5" >> $logfile
+         echo ""
+         skynetwhitelist 5
          echo ""
          read -rsp $'Press any key to acknowledge...\n' -n1 key
       ;;
@@ -2188,6 +2240,7 @@ saveconfig()
      echo 'refreshserverlists='$refreshserverlists
      echo 'unboundclient='$unboundclient
      echo 'monitorwan='$monitorwan
+     echo 'updateskynet='$updateskynet
    } > $config
    
    echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: New vpnmon-r3.cfg File Saved" >> $logfile
@@ -2355,6 +2408,21 @@ killunmonvpn()
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
+# Whitelist Server Slot IP lists in Skynet - $1 = VPN Slot
+
+skynetwhitelist()
+{
+
+  if [ "$updateskynet" == "1" ]; then
+    printf "${CGreen}\r[Whitelisting VPN Server Slot $1 List in the Skynet Firewall]${CClear}\n"
+    firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr$1.txt "VPNMON-R3 - VPN Server Slot $1 Whitelist" >/dev/null 2>&1
+    echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN Server Slot $1 List has been whitelisted in Skynet" >> $logfile
+    sleep 5
+  fi
+  #printf "\33[2K\r"
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
 # Reset the  VPN connection timer
 
 resettimer()
@@ -2460,6 +2528,9 @@ vreset()
               echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
               echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Client Server List Query Executed for VPN Slot $slot ($dlcnt rows)" >> $logfile
               sleep 3
+              echo ""
+              skynetwhitelist $slot
+              echo ""
             fi
           else
             echo ""
