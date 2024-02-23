@@ -1,3 +1,13 @@
+v1.2.1   - (TBA)
+         - MINOR: Added a new configuration menu item that allows you to enable/disable the ability to import your
+           VPN Server IP lists directly into the Skynet Firewall for whitelisting purposes. This is another feature
+           coming over from VPNMON-R2, as there have been instances in the past where the Skynet blacklist would
+           prevent a connection to a perfectly legitimate VPN Server that belongs to your VPN provider. This
+           function will fire off each time you execute a VPN Server List automation under option (U), and will
+           also run each time a "vpnmon-r3 -reset" command is executed.
+         - PATCH: The update logic now pulls the vpnmon-r3.sh directly from github starting from versions after
+           1.2.1, instead of the vpnmon-r3-X.Y.Z.sh file based on the version number from the version.txt file.
+
 v1.1.5   - (February 7, 2024)
          - PATCH: Changed the versioning logic to align with the general accepted way of versioning, using the
            notation: major.minor.patch ... finally, right? After seeing @thelonelycoder changing his ways, I
