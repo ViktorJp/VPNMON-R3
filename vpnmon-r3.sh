@@ -1003,7 +1003,8 @@ while true; do
         echo -e "${InvGreen} ${CClear} the Skynet Firewall. This provides for better stability in connecting to your VPN${CClear}"
         echo -e "${InvGreen} ${CClear} provider, as there have been occasions where the Skynet blacklist will prevent${CClear}"
         echo -e "${InvGreen} ${CClear} connections to your VPN Servers. This could cause a disruption in being able to${CClear}"
-        echo -e "${InvGreen} ${CClear} maintain a stable VPN connection.${CClear}" 
+        echo -e "${InvGreen} ${CClear} maintain a stable VPN connection. Note: Skynet must already be installed and${CClear}" 
+        echo -e "${InvGreen} ${CClear} operational for this functionality to work.${CClear}"
         echo -e "${InvGreen} ${CClear}"
         echo -e "${InvGreen} ${CClear} Use 0 to Disable, 1 to Enable. (Default = 0)"
         echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
@@ -1014,14 +1015,14 @@ while true; do
 
           if [ "$newupdateskynet" == "e" ]; then
             echo -e "\n[Exiting]"; sleep 2
-          elif [ $newupdateskynet -eq 0 ]; then
+          elif [ $newupdateskynet -eq 1 ]; then
+            updateskynet=1
+            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN Server IP Skynet Whitelisting Enabled" >> $logfile
+            saveconfig
+          else
             updateskynet=0
             echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN Server IP Skynet Whitelisting Disabled" >> $logfile
             saveconfig
-          else
-            updateskynet=1
-            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN Server IP Skynet Whitelisting Enabled" >> $logfile
-            saveconfig          
           fi
       ;;
 
