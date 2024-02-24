@@ -920,10 +920,9 @@ while true; do
 
               echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Unbound-over-VPN was enabled for VPNMON-R3" >> $logfile
               echo -e "${CClear}"
-              read -rsp $'Please reboot your router now if this is your first time or re-enabled Unbound over VPN...\n' -n1 key
-              
-              unboundclient=$unboundovervpn
               saveconfig
+              unboundclient=$unboundovervpn
+              read -rsp $'Please reboot your router now if this is your first time or re-enabled Unbound over VPN...\n' -n1 key
               break
 
             elif [ "$unboundovervpn" == "e" ]; then
