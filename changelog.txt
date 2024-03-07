@@ -1,3 +1,9 @@
+v1.2.x   - (TBA)
+         - PATCH: Change to the logic for switching back and forth between the number of available slots. Will now
+           recreate the vr3timers.txt and vr3clients.txt, as they were not being refreshed when different selections
+           were being made.
+         - PATCH: General fixes and optimizations as being found and identified.
+
 v1.2.1   - (February 23, 2024)
          - MINOR: Added a new configuration menu item that allows you to enable/disable the ability to import your
            VPN Server IP lists directly into the Skynet Firewall for whitelisting purposes. This is another feature
