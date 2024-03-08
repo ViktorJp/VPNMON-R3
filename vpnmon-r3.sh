@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.2.1 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.2.3 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
@@ -12,7 +12,7 @@
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.2.1"                                                 # Version tracker
+version="1.2.3"                                                 # Version tracker
 beta=0                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -686,16 +686,25 @@ while true; do
           if [ "$EnterAvailableSlots" == "2" ]; then
             availableslots="1 2"
             echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslots" >> $logfile
+            rm -f /jffs/addons/vpnmon-r3.d/vr3clients.txt
+            rm -f /jffs/addons/vpnmon-r3.d/vr3timers.txt
             saveconfig
+            createconfigs
           elif [ "$EnterAvailableSlots" == "5" ]; then
             availableslots="1 2 3 4 5"
             echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslots" >> $logfile
+            rm -f /jffs/addons/vpnmon-r3.d/vr3clients.txt
+            rm -f /jffs/addons/vpnmon-r3.d/vr3timers.txt
             saveconfig
+            createconfigs
           elif [ "$EnterAvailableSlots" == "e" ]; then
             echo -e "\n[Exiting]"; sleep 2
           else availableslots="1 2 3 4 5"
             echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslots" >> $logfile
+            rm -f /jffs/addons/vpnmon-r3.d/vr3clients.txt
+            rm -f /jffs/addons/vpnmon-r3.d/vr3timers.txt
             saveconfig
+            createconfigs
           fi
       ;;
 
@@ -746,7 +755,7 @@ while true; do
           else
             logsize=2000
             echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: New custom Event Log Size entered (in rows): $logsize" >> $logfile
-            saveconfig          
+            saveconfig
           fi
       ;;
 
@@ -771,6 +780,10 @@ while true; do
           echo -e "${InvGreen} ${CClear} requires additional scripts and configurations to get it working correctly. Please know${CClear}"
           echo -e "${InvGreen} ${CClear} that multiple files will either be downloaded or modified, and may increase the${CClear}"
           echo -e "${InvGreen} ${CClear} complexity in troubleshooting DNS lookup issues.${CClear}"
+          echo -e "${InvGreen} ${CClear}"
+          echo -e "${InvGreen} ${CClear} ${CRed}WARNING: As of around March 1 2024, the Unbound integration no longer works with the${CClear}"
+          echo -e "${InvGreen} ${CClear} ${CRed}NordVPN Service due to possible blocking on their end. This service continues to work${CClear}"
+          echo -e "${InvGreen} ${CClear} ${CRed}as advertised with other VPN Providers, like AirVPN. Use at your own risk.${CClear}"
           echo -e "${InvGreen} ${CClear}"
           echo -e "${InvGreen} ${CClear} ${CGreen}Requirements:"
           echo -e "${InvGreen} ${CClear} ${CGreen}1. Unbound must already be installed and functioning (AMTM)"
@@ -920,9 +933,10 @@ while true; do
 
               echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Unbound-over-VPN was enabled for VPNMON-R3" >> $logfile
               echo -e "${CClear}"
-              saveconfig
               unboundclient=$unboundovervpn
-              read -rsp $'Please reboot your router now if this is your first time or re-enabled Unbound over VPN...\n' -n1 key
+              saveconfig
+              echo "Please reboot your router now if this is your first time or re-enabled Unbound over VPN"
+              read -rsp $'Press any key to continue...\n' -n1 key
               break
 
             elif [ "$unboundovervpn" == "e" ]; then
@@ -2143,7 +2157,6 @@ while true; do
       echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Reboot Protection Disabled" >> $logfile
       saveconfig
       sleep 2
-      #exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
       timer=$timerloop
       break
     fi
@@ -2160,7 +2173,6 @@ while true; do
         echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Reboot Protection Enabled" >> $logfile
         saveconfig
         sleep 2
-        #exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
         timer=$timerloop
         break
       else
@@ -2180,7 +2192,6 @@ while true; do
       echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Reboot Protection Enabled" >> $logfile
       saveconfig
       sleep 2
-      #exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
       timer=$timerloop
       break
     fi
