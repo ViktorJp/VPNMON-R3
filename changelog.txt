@@ -1,3 +1,11 @@
+v1.2.3   - (March 8, 2024)
+         - PATCH: Change to the logic for switching back and forth between the number of available slots. Will now
+           recreate the vr3timers.txt and vr3clients.txt, as they were not being refreshed when different selections
+           were being made. General fixes and optimizations made as being found and identified.
+         - PATCH: Added verbiage in the Unbound integration configuration menu item to give a visual warning that
+           as of Mar 1 2024, the NordVPN service no longer works with the Unbound integration due to some apparent
+           blocking on their end. Hopefully at some point in the future, we can remove this and carry on with Nord.
+
 v1.2.1   - (February 23, 2024)
          - MINOR: Added a new configuration menu item that allows you to enable/disable the ability to import your
            VPN Server IP lists directly into the Skynet Firewall for whitelisting purposes. This is another feature
