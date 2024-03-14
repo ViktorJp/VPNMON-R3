@@ -1,4 +1,9 @@
-v1.2.x   - (TBA)
+v1.x.x   - (TBA)
+         - MINOR: AMTM Email Notification capabilities have been added thanks to @Martinski's shared email functions
+           library that he has made available. Once AMTM email (AMTM->em) has been configured, you can activate this
+           feature in VPNMON-R3. You have the ability to distinguish between receiving either success, failures or 
+           both types of emails as it pertains to your WAN/VPN connectivity. An operations menu item has also been
+           added to quickly enable/disable this feature when needed.
          - PATCH: Minor logic correction to a function that determined max server ping would every so often run
            into issues with the info it got back from the ping command, and would display invalid operand errors.
 
