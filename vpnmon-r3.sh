@@ -336,10 +336,10 @@ while true; do
     printf "${CClear}Please select? (${CGreen}n${CClear}=UNpause, ${CGreen}e${CClear}=Exit)"
     read -p ": " SelectSlot
       case $SelectSlot in
-            [1]) echo ""; restartvpn 1; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [2]) echo ""; restartvpn 2; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [\!]) echo ""; killunmonvpn 1; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [\@]) echo ""; killunmonvpn 2; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [1]) echo ""; restartvpn 1; sendmessage 0 "VPN Reset" 1; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [2]) echo ""; restartvpn 2; sendmessage 0 "VPN Reset" 2; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [\!]) echo ""; killunmonvpn 1; sendmessage 0 "VPN Killed" 1; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [\@]) echo ""; killunmonvpn 2; sendmessage 0 "VPN Killed" 2; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [Aa]) autostart;;
             [Cc]) vsetup;;
             [Ee]) echo -e "${CClear}\n"; exit 0;;
@@ -360,16 +360,16 @@ while true; do
     printf "${CClear}Please select? (${CGreen}n${CClear}=UNpause, ${CGreen}e${CClear}=Exit)"
     read -p ": " SelectSlot
       case $SelectSlot in
-            [1]) echo ""; restartvpn 1; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [2]) echo ""; restartvpn 2; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [3]) echo ""; restartvpn 3; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [4]) echo ""; restartvpn 4; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [5]) echo ""; restartvpn 5; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [\!]) echo ""; killunmonvpn 1; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [\@]) echo ""; killunmonvpn 2; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [\#]) echo ""; killunmonvpn 3; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [\$]) echo ""; killunmonvpn 4; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [\%]) echo ""; killunmonvpn 5; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [1]) echo ""; restartvpn 1; sendmessage 0 "VPN Reset" 1; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [2]) echo ""; restartvpn 2; sendmessage 0 "VPN Reset" 2; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [3]) echo ""; restartvpn 3; sendmessage 0 "VPN Reset" 3; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [4]) echo ""; restartvpn 4; sendmessage 0 "VPN Reset" 4; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [5]) echo ""; restartvpn 5; sendmessage 0 "VPN Reset" 5; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [\!]) echo ""; killunmonvpn 1; sendmessage 0 "VPN Killed" 1; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [\@]) echo ""; killunmonvpn 2; sendmessage 0 "VPN Killed" 2; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [\#]) echo ""; killunmonvpn 3; sendmessage 0 "VPN Killed" 3; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [\$]) echo ""; killunmonvpn 4; sendmessage 0 "VPN Killed" 4; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [\%]) echo ""; killunmonvpn 5; sendmessage 0 "VPN Killed" 5; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [Aa]) autostart;;
             [Cc]) vsetup;;
             [Ee]) echo -e "${CClear}\n"; exit 0;;
@@ -1312,7 +1312,7 @@ while true; do
   echo -e "${InvGreen} ${CClear} download an AMTM email interface library courtesey of @Martinsky, and will be${CClear}"
   echo -e "${InvGreen} ${CClear} located under a new common shared library folder called: /jffs/addons/shared-libs.${CClear}"
   echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} Use the corresponding ${CGreen}()${CClear} key to enable/disable monitoring for each slot:${CClear}"
+  echo -e "${InvGreen} ${CClear} Use the corresponding ${CGreen}()${CClear} key to enable/disable email event notifications:${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
 
   if [ "$amtmemailsuccess" == "1" ]; then amtmemailsuccessdisp="${CGreen}Y${CCyan}"; else amtmemailsuccess=0; amtmemailsuccessdisp="${CRed}N${CCyan}"; fi
@@ -2580,6 +2580,28 @@ fi
     printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
     printf "\n"
     printf "<b>SUCCESS: VPNMON-R3</b> completed a successful manual/scheduled reset on VPN Slot $3\n"
+    printf "\n"
+    } > "$tmpEMailBodyFile"
+  elif [ "$2" == "VPN Reset" ]; then
+    emailSubject="SUCCESS: VPN Slot $3 Manual Reset"
+    emailBodyTitle="SUCCESS: VPN Slot $3 Manual Reset"
+    {
+    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+    printf "\n"
+    printf "<b>SUCCESS: VPNMON-R3</b> completed a successful manual reset on VPN Slot $3\n"
+    printf "\n"
+    } > "$tmpEMailBodyFile"
+  elif [ "$2" == "VPN Killed" ]; then
+    emailSubject="SUCCESS: VPN Slot $3 Manually Stopped & Unmonitored"
+    emailBodyTitle="SUCCESS: VPN Slot $3 Manually Stopped & Unmonitored"
+    {
+    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+    printf "\n"
+    printf "<b>SUCCESS: VPNMON-R3</b> successfully manually stopped and unmonitored VPN Slot $3\n"
     printf "\n"
     } > "$tmpEMailBodyFile"
   fi
