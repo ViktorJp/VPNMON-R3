@@ -1,9 +1,10 @@
 To-Do:
+- AMTM Email notifications on: WAN Restore, VPN Reconnections
 - automatically unmonitor slot after X failed connections?
-- Skynet whitelist your vpn ip server lists
 - Possibility: Integrate KILLMON functionality if there is any interest in having better killswitch capabilities
 
 Done:
+- Skynet whitelist your vpn ip server lists
 - ping reset > ms
 - add ip address/host to log when it disconnects
 - method: Get to usable operations menu before wan/vpn checks
