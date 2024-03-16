@@ -1,4 +1,4 @@
-v1.x.x   - (TBA)
+v1.3.1   - (March 16, 2024)
          - MINOR: AMTM Email Notification capabilities have been added thanks to @Martinski's shared email functions
            library that he has made available. Once AMTM email (AMTM->em) has been configured, you can activate this
            feature in VPNMON-R3. You have the ability to distinguish between receiving either success, failures or 
