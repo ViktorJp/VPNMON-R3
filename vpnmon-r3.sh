@@ -37,8 +37,8 @@ lockactive=0                                                    # Check for acti
 bypassscreentimer=0                                             # Check to see if screen timer can be bypassed
 pingreset=500                                                   # Maximum ping in ms before reset
 updateskynet=0                                                  # Check for VPN IP whitelisting in Skynet
-AMTMEMAILSUCCESS=0                                              # AMTM Email Success Message Option
-AMTMEMAILFAILURE=0                                              # AMTM Email Failure Message Option
+amtmemailsuccess=0                                              # AMTM Email Success Message Option
+amtmemailfailure=0                                              # AMTM Email Failure Message Option
 
 #AMTM Email Notification Variables
 readonly scriptFileName="${0##*/}"
