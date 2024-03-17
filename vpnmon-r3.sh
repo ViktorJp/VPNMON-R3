@@ -662,13 +662,13 @@ while true; do
     updateskynetdisp="Enabled"
   fi
   
-  if [ $amtmemailsuccess -eq 0 ] && [ $amtmemailfailure -eq 0 ]; then
+  if [ "$amtmemailsuccess" == "0" ] && [ "$amtmemailfailure" == "0" ]; then
     amtmemailsuccfaildisp="Disabled"
-  elif [ $amtmemailsuccess -eq 1 ] && [ $amtmemailfailure -eq 0 ]; then
+  elif [ "$amtmemailsuccess" == "1" ] && [ "$amtmemailfailure" == "0" ]; then
     amtmemailsuccfaildisp="Success"
-  elif [ $amtmemailsuccess -eq 0 ] && [ $amtmemailfailure -eq 1 ]; then
+  elif [ "$amtmemailsuccess" == "0" ] && [ "$amtmemailfailure" == "1" ]; then
     amtmemailsuccfaildisp="Failure"
-  elif [ $amtmemailsuccess -eq 1 ] && [ $amtmemailfailure -eq 1 ]; then
+  elif [ "$amtmemailsuccess" == "1" ] && [ "$amtmemailfailure" == "1" ]; then
     amtmemailsuccfaildisp="Success, Failure"
   else
     amtmemailsuccfaildisp="Disabled"
@@ -3454,13 +3454,13 @@ displayopsmenu()
       pingresetdisp="${CGreen}${pingreset}ms${CClear}"
     fi
 
-    if [ $amtmemailsuccess -eq 0 ] && [ $amtmemailfailure -eq 0 ]; then
+    if [ "$amtmemailsuccess" == "0" ] && [ "$amtmemailfailure" == "0" ]; then
       amtmdisp="${CDkGray}Disabled        "
-    elif [ $amtmemailsuccess -eq 1 ] && [ $amtmemailfailure -eq 0 ]; then
+    elif [ "$amtmemailsuccess" == "1" ] && [ "$amtmemailfailure" == "0" ]; then
       amtmdisp="${CGreen}Success         "
-    elif [ $amtmemailsuccess -eq 0 ] && [ $amtmemailfailure -eq 1 ]; then
+    elif [ "$amtmemailsuccess" == "0" ] && [ "$amtmemailfailure" == "1" ]; then
       amtmdisp="${CGreen}Failure         "
-    elif [ $amtmemailsuccess -eq 1 ] && [ $amtmemailfailure -eq 1 ]; then
+    elif [ "$amtmemailsuccess" == "1" ] && [ "$amtmemailfailure" == "1" ]; then
       amtmdisp="${CGreen}Success, Failure"
     else
       amtmdisp="${CDkGray}Disabled        "
