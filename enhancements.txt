@@ -2,6 +2,7 @@ To-Do:
 - AMTM Email notifications on: WAN Restore, VPN Reconnections
 - automatically unmonitor slot after X failed connections?
 - Possibility: Integrate KILLMON functionality if there is any interest in having better killswitch capabilities
+- Wireguard compatibility
 
 Done:
 - Skynet whitelist your vpn ip server lists
