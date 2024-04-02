@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.3.2 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.3.3 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
@@ -12,7 +12,7 @@
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.3.2"                                                 # Version tracker
+version="1.3.3"                                                 # Version tracker
 beta=0                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
