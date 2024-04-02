@@ -1,3 +1,12 @@
+v1.3.3   - (TBA)
+         - PATCH: Fixed a small issue that was present in BACKUPMON and also affected VPNMON-R3 where it was creating
+           success/failure emails in the /tmp/var/tmp folder and was not deleting these tmp email files if you opted
+           not to receive success or failure emails. Thanks to the keen eye of @ExtremeFiretop watching his precious
+           disk space slowly but surely getting eaten up with unsent emails that weren't deleting, this has now been
+           patched! Also, huge props to him for testing out the fix in record time!
+         - PATCH: Made some small eye-candy improvements to incorporate a little splash-screen effect when running
+           "vpnmon-r3 -setup", or when hitting the (e)xit key.
+
 v1.3.1   - (March 16, 2024)
          - MINOR: AMTM Email Notification capabilities have been added thanks to @Martinski's shared email functions
            library that he has made available. Once AMTM email (AMTM->em) has been configured, you can activate this
