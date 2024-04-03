@@ -1,4 +1,4 @@
-v1.3.3   - (TBA)
+v1.3.3   - (April 2, 2024)
          - PATCH: Fixed a small issue that was present in BACKUPMON and also affected VPNMON-R3 where it was creating
            success/failure emails in the /tmp/var/tmp folder and was not deleting these tmp email files if you opted
            not to receive success or failure emails. Thanks to the keen eye of @ExtremeFiretop watching his precious
