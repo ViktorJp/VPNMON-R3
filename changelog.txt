@@ -5,7 +5,7 @@ v1.3.3   - (TBA)
            disk space slowly but surely getting eaten up with unsent emails that weren't deleting, this has now been
            patched! Also, huge props to him for testing out the fix in record time!
          - PATCH: Made some small eye-candy improvements to incorporate a little splash-screen effect when running
-           "vpnmon-r3 -setup", or when hitting the (e)xit key.
+           "vpnmon-r3 -setup", or when hitting the (e)xit key... just to keep the OG logo around a little longer. ;)
 
 v1.3.1   - (March 16, 2024)
          - MINOR: AMTM Email Notification capabilities have been added thanks to @Martinski's shared email functions
