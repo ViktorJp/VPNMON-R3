@@ -158,7 +158,7 @@ logoNMexit () {
   echo ""
   printf "\r                            ${CGreen}    [ SHUTTING DOWN ]     ${CClear}"
   sleep 1
-  printf "\r                            ${CDkGray}      [ GOODBYE... ]     ${CClear}\n"
+  printf "\r                            ${CDkGray}      [ GOODBYE... ]     ${CClear}\n\n"
   sleep 2
 }
 
