@@ -1,3 +1,8 @@
+v1.3.4   - (TBA)
+         - PATCH: Small bugfix after looking into issues with the vr3timers.txt file. Seems that there was a variable
+           and a function both named the same thing, which could cause an issue down the road, and made sure these
+           were formally separated into their own entities from this point forward.
+
 v1.3.3   - (April 2, 2024)
          - PATCH: Fixed a small issue that was present in BACKUPMON and also affected VPNMON-R3 where it was creating
            success/failure emails in the /tmp/var/tmp folder and was not deleting these tmp email files if you opted
