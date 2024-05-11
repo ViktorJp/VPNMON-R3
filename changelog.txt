@@ -1,3 +1,12 @@
+v1.3.5   - (May 11, 2024)
+         - PATCH: Small bugfix after looking into issues with the vr3timers.txt file. Seems that there was a variable
+           and a function both named the same thing, which could cause an issue down the road, and made sure these
+           were formally separated into their own entities from this point forward.
+         - PATCH: When the script has detected an issue with the WAN, and falls back into its waiting loop, I seem to
+           have mistakenly put in an email notification during this time. I thought it was helpful. Guess not, 
+           because it doesn't work when the internet is down, and just throws errors, so I've removed this particular
+           email notification. ;)
+
 v1.3.3   - (April 2, 2024)
          - PATCH: Fixed a small issue that was present in BACKUPMON and also affected VPNMON-R3 where it was creating
            success/failure emails in the /tmp/var/tmp folder and was not deleting these tmp email files if you opted
