@@ -1,4 +1,5 @@
 To-Do:
+- Custom IP to do WAN check against (to remove need for 8.8.8.8 for those who block google)
 - automatically unmonitor slot after X failed connections?
 - Possibility: Integrate KILLMON functionality if there is any interest in having better killswitch capabilities
 - Wireguard compatibility
