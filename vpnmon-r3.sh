@@ -7,7 +7,7 @@
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2024-Oct-06
+# Last Modified: 2024-Oct-08
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
@@ -53,6 +53,29 @@ readonly IPv4addrs_RegEx="(${IPv4octet_RegEx}\.){3}${IPv4octet_RegEx}"
 LAN_HostName=""
 
 PINGHOST="$PING_HOST_Deflt"                                     # Ping host
+
+##-------------------------------------##
+## Added by Martinski W. [2024-Oct-08] ##
+##-------------------------------------##
+#----------------------------------------------------------------#
+# Set to true to select a new display format for IP address.
+# ONE and ONLY ONE of the variables should be set to true.
+# If BOTH vars are set to false the "old" format will be used.
+#----------------------------------------------------------------#
+                        ##| xxx.xxx.xxx.xxx |##
+doIPaddrFormat1=true    ##|         1.2.3.4 |##
+doIPaddrFormat2=false   ##|   1.  2.  3.  4 |##
+_IPAddressDisplayFormat_()
+{
+   if [ $# -eq 0 ] || [ -z "$1" ]
+   then echo "" ; return 1 ; fi
+   if "$doIPaddrFormat1"
+   then printf '%15s' "$1"
+   elif "$doIPaddrFormat2"
+   then printf '%3d.%3d.%3d.%3d' ${1//./ }
+   else printf '%03d.%03d.%03d.%03d' ${1//./ }
+   fi
+}
 
 ## Custom Email Library Notification Variables ##
 readonly scriptFileName="${0##*/}"
@@ -3147,23 +3170,24 @@ getvpnip()
   ubsync=""
   TUN="tun1$1"
 
-  icanhazvpnip=$($timeoutcmd$timeoutsec nvram get vpn_client$1_rip)
-  if [ -z $icanhazvpnip ] || [ "$icanhazvpnip" == "unknown" ]; then
-    icanhazvpnip="curl --silent --fail --interface $TUN --request GET --url https://ipv4.icanhazip.com" # Grab the public IP of the VPN Connection
-    icanhazvpnip="$(eval $icanhazvpnip)"; if echo $icanhazvpnip | grep -qoE 'Internet|traffic|Error|error'; then icanhazvpnip="0.0.0.0"; fi
+  icanhazvpnip="$($timeoutcmd$timeoutsec nvram get vpn_client$1_rip)"
+  if [ -z "$icanhazvpnip" ] || [ "$icanhazvpnip" = "unknown" ]
+  then
+     icanhazvpnip="curl --silent --fail --interface $TUN --request GET --url https://ipv4.icanhazip.com" # Grab the public IP of the VPN Connection
+     icanhazvpnip="$(eval $icanhazvpnip)"; if echo "$icanhazvpnip" | grep -qoE 'Internet|traffic|Error|error'; then icanhazvpnip="0.0.0.0"; fi
   fi
 
   if [ -z "$icanhazvpnip" ]
   then
-    vpnip="000.000.000.000"
-    return
+     vpnip="000.000.000.000"
+     return
   else
-    vpnip="$(printf '%03d.%03d.%03d.%03d'  ${icanhazvpnip//./ })"
+     vpnip="$(_IPAddressDisplayFormat_ "$icanhazvpnip")"
   fi
 
-  if [ $unboundclient -ne 0 ] && [ $unboundclient -eq $1 ]
+  if [ "$unboundclient" -ne 0 ] && [ "$unboundclient" -eq "$1" ]
   then
-    if [ $ResolverTimer -eq 1 ]; then
+    if [ "$ResolverTimer" -eq 1 ]; then
       ResolverTimer=0
       ubsync="${CYellow}-?[UB]${CClear}"
     else
@@ -3191,8 +3215,8 @@ getvpnip()
   fi
 
   # Insert bogus IP if screenshotmode is on
-  if [ "$screenshotmode" == "1" ]; then
-    vpnip="123.456.789.012"
+  if [ "$screenshotmode" = "1" ]; then
+     vpnip="$(_IPAddressDisplayFormat_ "12.34.56.78")"
   fi
 }
 
@@ -3259,7 +3283,7 @@ getvpncity()
   fi
 
   # Insert bogus City if screenshotmode is on
-  if [ "$screenshotmode" == "1" ]; then
+  if [ "$screenshotmode" = "1" ]; then
     vpncity="Gotham City"
   fi
 
@@ -3463,14 +3487,14 @@ wancheck()
            WAN0IP="$(curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail --interface "$WAN0IFNAME" --request GET --url https://ipv4.icanhazip.com)"
            WAN0CITY="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$WAN0IP | jq --raw-output .city"
            WAN0CITY="$(eval $WAN0CITY)"; if echo "$WAN0CITY" | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then WAN0CITY="$WAN0IP"; fi
-           WAN0IP="$(printf '%03d.%03d.%03d.%03d'  ${WAN0IP//./ })"
+           WAN0IP="$(_IPAddressDisplayFormat_ "$WAN0IP")"
         fi
 
         # Insert bogus IP and City if screenshotmode is on
-        if [ "$screenshotmode" == "1" ]
+        if [ "$screenshotmode" = "1" ]
         then
            WAN0CITY="Metropolis"
-           WAN0IP="101.202.303.404"
+           WAN0IP="$(_IPAddressDisplayFormat_ "11.22.33.44")"
         fi
 
         if [ "$WAN0PING" = "FAILOVER" ]
@@ -3514,7 +3538,7 @@ wancheck()
            WAN1IP="$(curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail --interface "$WAN1IFNAME" --request GET --url https://ipv4.icanhazip.com)"
            WAN1CITY="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$WAN1IP | jq --raw-output .city"
            WAN1CITY="$(eval $WAN1CITY)"; if echo "$WAN1CITY" | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then WAN1CITY="$WAN1IP"; fi
-           WAN1IP="$(printf '%03d.%03d.%03d.%03d'  ${WAN1IP//./ })"
+           WAN1IP="$(_IPAddressDisplayFormat_ "$WAN1IP")"
         fi
 
         if [ "$WAN1PING" = "FAILOVER" ]
