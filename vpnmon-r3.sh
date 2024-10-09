@@ -54,29 +54,6 @@ LAN_HostName=""
 
 PINGHOST="$PING_HOST_Deflt"                                     # Ping host
 
-##-------------------------------------##
-## Added by Martinski W. [2024-Oct-08] ##
-##-------------------------------------##
-#----------------------------------------------------------------#
-# Set to true to select a new display format for IP address.
-# ONE and ONLY ONE of the variables should be set to true.
-# If BOTH vars are set to false the "old" format will be used.
-#----------------------------------------------------------------#
-                        ##| xxx.xxx.xxx.xxx |##
-doIPaddrFormat1=true    ##|         1.2.3.4 |##
-doIPaddrFormat2=false   ##|   1.  2.  3.  4 |##
-_IPAddressDisplayFormat_()
-{
-   if [ $# -eq 0 ] || [ -z "$1" ]
-   then echo "" ; return 1 ; fi
-   if "$doIPaddrFormat1"
-   then printf '%15s' "$1"
-   elif "$doIPaddrFormat2"
-   then printf '%3d.%3d.%3d.%3d' ${1//./ }
-   else printf '%03d.%03d.%03d.%03d' ${1//./ }
-   fi
-}
-
 ## Custom Email Library Notification Variables ##
 readonly scriptFileName="${0##*/}"
 readonly scriptFileNTag="${scriptFileName%.*}"
@@ -3182,7 +3159,7 @@ getvpnip()
      vpnip="000.000.000.000"
      return
   else
-     vpnip="$(_IPAddressDisplayFormat_ "$icanhazvpnip")"
+     vpnip="$(printf '%15s' "$icanhazvpnip")"
   fi
 
   if [ "$unboundclient" -ne 0 ] && [ "$unboundclient" -eq "$1" ]
@@ -3216,7 +3193,7 @@ getvpnip()
 
   # Insert bogus IP if screenshotmode is on
   if [ "$screenshotmode" = "1" ]; then
-     vpnip="$(_IPAddressDisplayFormat_ "12.34.56.78")"
+     vpnip="$(printf '%15s' "12.34.56.78")"
   fi
 }
 
@@ -3487,14 +3464,14 @@ wancheck()
            WAN0IP="$(curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail --interface "$WAN0IFNAME" --request GET --url https://ipv4.icanhazip.com)"
            WAN0CITY="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$WAN0IP | jq --raw-output .city"
            WAN0CITY="$(eval $WAN0CITY)"; if echo "$WAN0CITY" | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then WAN0CITY="$WAN0IP"; fi
-           WAN0IP="$(_IPAddressDisplayFormat_ "$WAN0IP")"
+           WAN0IP="$(printf '%15s' "$WAN0IP")"
         fi
 
         # Insert bogus IP and City if screenshotmode is on
         if [ "$screenshotmode" = "1" ]
         then
            WAN0CITY="Metropolis"
-           WAN0IP="$(_IPAddressDisplayFormat_ "11.22.33.44")"
+           WAN0IP="$(printf '%15s' "11.22.33.44")"
         fi
 
         if [ "$WAN0PING" = "FAILOVER" ]
@@ -3538,7 +3515,7 @@ wancheck()
            WAN1IP="$(curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail --interface "$WAN1IFNAME" --request GET --url https://ipv4.icanhazip.com)"
            WAN1CITY="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$WAN1IP | jq --raw-output .city"
            WAN1CITY="$(eval $WAN1CITY)"; if echo "$WAN1CITY" | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then WAN1CITY="$WAN1IP"; fi
-           WAN1IP="$(_IPAddressDisplayFormat_ "$WAN1IP")"
+           WAN1IP="$(printf '%15s' "$WAN1IP")"
         fi
 
         if [ "$WAN1PING" = "FAILOVER" ]
