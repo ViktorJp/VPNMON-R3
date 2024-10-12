@@ -1,3 +1,36 @@
+v1.3.6   - (October 12, 2024)
+         - PATCH: After selecting menu option 1 ("Number of VPN Client Slots available"), if the user simply pressed
+           the <Enter> key without entering any new value, the currently selected value was reset to "1 2 3 4 5"
+           regardless of the current setting.
+         - PATCH: After selecting menu option 2 ("Custom PING host to determine VPN health"), if the user simply
+           pressed the <Enter> key without entering any new value, the currently selected value was set to empty/NULL
+           regardless of the current setting.
+         - PATCH: When selecting menu option 2 ("Custom PING host to determine VPN health"), any user input was
+           accepted for the IP address because there was no IPv4 address format validation.
+         - PATCH: After selecting menu option 3 ("Custom Event Log size (rows)"), if the user simply pressed the
+           <Enter> key without entering any new value, the currently selected value was reset to "2000" regardless of
+           the current setting. In addition, the error message "[: 0: unknown operand" was generated.
+         - PATCH: After selecting menu option 5 ("Refresh Custom Server Lists on -RESET Switch"), if the user simply
+           pressed the <Enter> key without entering any new value, the currently selected value was reset to
+           "Enabled" regardless of the current setting. In addition, the error message "[: 0: unknown operand" was
+           generated.
+         - PATCH: After selecting menu option 6 ("Provide additional WAN/Dual WAN monitoring"), if the user simply
+           pressed the <Enter> key without entering any new value, the currently selected value was reset to
+           "Enabled" regardless of the current setting. In addition, the error message "[: 0: unknown operand" was
+           generated.
+         - PATCH: After selecting menu option 7 ("Whitelist VPN Server IP Lists in Skynet"), if the user simply
+           pressed the <Enter> key without entering any new value, the currently selected value was reset to
+           "Disabled" regardless of the current setting. In addition, the error message "[: 0: unknown operand" was
+           generated.
+         - PATCH: Added user input validation for Cron Job hours & minutes
+         - PATCH: Adjusted display format of the number of servers to avoid left-padding with zeros while still
+           maintaining table alignment.
+         - PATCH: Adjusted display format of ping values to avoid left-padding with zeros while still maintaining
+           table alignment.
+         - PATCH: Adjusted display format of IPv4 addresses to avoid left-padding with zeros while still maintaining
+           table alignment.
+         - PATCH: Various other coding improvements & fine-tuning.
+
 v1.3.5   - (May 11, 2024)
          - PATCH: Small bugfix after looking into issues with the vr3timers.txt file. Seems that there was a variable
            and a function both named the same thing, which could cause an issue down the road, and made sure these
