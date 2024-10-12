@@ -1,18 +1,19 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.3.5 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.3.6 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
+# Last Modified: 2024-Oct-08
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.3.5"                                                 # Version tracker
+version="1.3.6"                                                 # Version tracker
 beta=0                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -21,7 +22,6 @@ dlverpath="/jffs/addons/vpnmon-r3.d/version.txt"                # Static path to
 config="/jffs/addons/vpnmon-r3.d/vpnmon-r3.cfg"                 # Static path to the config file
 lockfile="/jffs/addons/vpnmon-r3.d/resetlock.txt"               # Static path to the reset lock file
 availableslots="1 2 3 4 5"                                      # Available slots tracker
-PINGHOST="8.8.8.8"                                              # Ping host
 logsize=2000                                                    # Log file size in rows
 timerloop=60                                                    # Timer loop in sec
 schedule=0                                                      # Scheduler enable y/n
@@ -39,8 +39,22 @@ pingreset=500                                                   # Maximum ping i
 updateskynet=0                                                  # Check for VPN IP whitelisting in Skynet
 amtmemailsuccess=0                                              # AMTM Email Success Message Option
 amtmemailfailure=0                                              # AMTM Email Failure Message Option
+timeoutcmd=""                                                   # For "timeout" cmd for "nvram" calls
+timeoutsec=""                                                   # For "timeout" cmd for "nvram" calls
+timeoutlng=""                                                   # For "timeout" cmd for "nvram" calls
+hideoptions=1                                                   # Hide/Show menu options flag
 
-#AMTM Email Notification Variables
+##-------------------------------------##
+## Added by Martinski W. [2024-Oct-05] ##
+##-------------------------------------##
+readonly PING_HOST_Deflt="8.8.8.8"
+readonly IPv4octet_RegEx="([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])"
+readonly IPv4addrs_RegEx="(${IPv4octet_RegEx}\.){3}${IPv4octet_RegEx}"
+LAN_HostName=""
+
+PINGHOST="$PING_HOST_Deflt"                                     # Ping host
+
+## Custom Email Library Notification Variables ##
 readonly scriptFileName="${0##*/}"
 readonly scriptFileNTag="${scriptFileName%.*}"
 readonly CEM_LIB_TAG="master"
@@ -202,9 +216,9 @@ spinner()
 
 preparebar()
 {
-  barlen=$1
-  barspaces=$(printf "%*s" "$1")
-  barchars=$(printf "%*s" "$1" | tr ' ' "$2")
+  barlen="$1"
+  barspaces="$(printf "%*s" "$1")"
+  barchars="$(printf "%*s" "$1" | tr ' ' "$2")"
 }
 
 progressbaroverride()
@@ -212,30 +226,34 @@ progressbaroverride()
   insertspc=" "
   bypasswancheck=0
 
-  if [ $1 -eq -1 ]; then
-    printf "\r  $barspaces\r"
+  if [ "$1" -eq -1 ]
+  then
+     printf "\r  $barspaces\r"
   else
-    if [ ! -z $7 ] && [ $1 -ge $7 ]; then
-      barch=$(($7*barlen/$2))
-      barsp=$((barlen-barch))
-      progr=$((100*$1/$2))
-    else
-      barch=$(($1*barlen/$2))
-      barsp=$((barlen-barch))
-      progr=$((100*$1/$2))
-    fi
+     if [ $# -gt 6 ] && [ -n "$7" ] && [ "$1" -ge "$7" ]
+     then
+        barch="$(($7*barlen/$2))"
+        barsp="$((barlen-barch))"
+        progr="$((100*$1/$2))"
+     else
+        barch="$(($1*barlen/$2))"
+        barsp="$((barlen-barch))"
+        progr="$((100*$1/$2))"
+     fi
 
-    if [ ! -z $6 ]; then AltNum=$6; else AltNum=$1; fi
+     if [ $# -gt 5 ] && [ -n "$6" ]; then AltNum="$6" ; else AltNum="$1" ; fi
 
-    if [ "$5" == "Standard" ]; then
-      printf "  ${CWhite}${InvDkGray}$AltNum${4} / ${progr}%%${CClear} [${CGreen}e${CClear}=Exit] [Selection? ${InvGreen} ${CClear}${CGreen}]\r${CClear}" "$barchars" "$barspaces"
-    fi
+     if [ "$5" = "Standard" ]
+     then
+        printf "  ${CWhite}${InvDkGray}$AltNum${4} / ${progr}%%${CClear} [${CGreen}e${CClear}=Exit] [Selection? ${InvGreen} ${CClear}${CGreen}]\r${CClear}" "$barchars" "$barspaces"
+     fi
   fi
 
   # Borrowed this wonderful keypress capturing mechanism from @Eibgrad... thank you! :)
   key_press=''; read -rsn1 -t 1 key_press < "$(tty 0>&2)"
 
-  if [ $key_press ]; then
+  if [ $key_press ]
+  then
       case $key_press in
           [1]) echo ""; restartvpn 1; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
           [2]) echo ""; restartvpn 2; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
@@ -261,7 +279,7 @@ progressbaroverride()
           [Uu]) vpnserverlistautomation;;
           [Vv]) vpnserverlistmaint;;
           [Xx]) uninstallr2;;
-          *) timer=$timerloop;;
+          *) timer="$timerloop" ;;
       esac
       bypasswancheck=1
   fi
@@ -272,30 +290,34 @@ progressbarpause()
   insertspc=" "
   bypasswancheck=0
 
-  if [ $1 -eq -1 ]; then
-    printf "\r  $barspaces\r"
+  if [ "$1" -eq -1 ]
+  then
+     printf "\r  $barspaces\r"
   else
-    if [ ! -z $7 ] && [ $1 -ge $7 ]; then
-      barch=$(($7*barlen/$2))
-      barsp=$((barlen-barch))
-      progr=$((100*$1/$2))
+    if [ $# -gt 6 ] && [ -n "$7" ] && [ "$1" -ge "$7" ]
+    then
+       barch="$(($7*barlen/$2))"
+       barsp="$((barlen-barch))"
+       progr="$((100*$1/$2))"
     else
-      barch=$(($1*barlen/$2))
-      barsp=$((barlen-barch))
-      progr=$((100*$1/$2))
+       barch="$(($1*barlen/$2))"
+       barsp="$((barlen-barch))"
+       progr="$((100*$1/$2))"
     fi
 
-    if [ ! -z $6 ]; then AltNum=$6; else AltNum=$1; fi
+    if [ $# -gt 5 ] && [ -n "$6" ]; then AltNum="$6" ; else AltNum="$1" ; fi
 
-    if [ "$5" == "Standard" ]; then
-      printf "  ${CWhite}${InvDkGray}Continuing Reset in $AltNum/5...${CClear} [${CGreen}p${CClear}=Pause] [${CGreen}e${CClear}=Exit] [Selection? ${InvGreen} ${CClear}${CGreen}]\r${CClear}" "$barchars" "$barspaces"
+    if [ "$5" = "Standard" ]
+    then
+       printf "  ${CWhite}${InvDkGray}Continuing Reset in $AltNum/5...${CClear} [${CGreen}p${CClear}=Pause] [${CGreen}e${CClear}=Exit] [Selection? ${InvGreen} ${CClear}${CGreen}]\r${CClear}" "$barchars" "$barspaces"
     fi
   fi
 
   # Borrowed this wonderful keypress capturing mechanism from @Eibgrad... thank you! :)
   key_press=''; read -rsn1 -t 1 key_press < "$(tty 0>&2)"
 
-  if [ $key_press ]; then
+  if [ $key_press ]
+  then
       case $key_press in
           [Pp]) vpause;;
           [Ee]) logoNMexit; echo -e "${CClear}\n"; exit 0;;
@@ -310,7 +332,8 @@ progressbarpause()
 uninstallr2()
 {
 
-if [ -f /jffs/scripts/vpnmon-r2.sh ]; then
+if [ -f /jffs/scripts/vpnmon-r2.sh ]
+then
   clear
   echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R2 Uninstall Utility                                                           ${CClear}"
   echo -e "${InvGreen} ${CClear}"
@@ -327,10 +350,12 @@ if [ -f /jffs/scripts/vpnmon-r2.sh ]; then
     case $SelectR2 in
       [Uu])
         echo -e "\n${CClear}Please type 'Y' to validate you wish to proceed with the uninstall of VPNMON-R2.${CClear}"
-        if promptyn "(y/n): "; then
+        if promptyn "(y/n): "
+        then
           echo -e "\n${CClear}Uninstalling VPNMON-R2 components...${CClear}"
 
-          if [ $(cat /jffs/addons/vpnmon-r2.d/vpnmon-r2.cfg | grep "UpdateUnbound" | cut -d '=' -f 2-) == "1" ]; then
+          if [ "$(cat /jffs/addons/vpnmon-r2.d/vpnmon-r2.cfg | grep "UpdateUnbound" | cut -d '=' -f 2-)" = "1" ]
+          then
             # Delete all additions made to files to enable Unbound over VPN functionality
             echo ""
             echo -e "\n${CClear}Unbinding Unbound from VPN..."
@@ -367,19 +392,18 @@ if [ -f /jffs/scripts/vpnmon-r2.sh ]; then
           echo -e "\n${CClear}VPNMON-R2 has been uninstalled...${CClear}"
           echo ""
           read -rsp $'Press any key to continue...\n' -n1 key
-          timer=$timerloop
+          timer="$timerloop"
           echo -e "${CClear}\n"
           return
         else
-          timer=$timerloop
+          timer="$timerloop"
           echo -e "${CClear}\n"
           return
         fi
-
       ;;
 
       [Rr]) exec sh /jffs/scripts/vpnmon-r2.sh -setup; exit 0;;
-      [Ee]) timer=$timerloop; echo -e "${CClear}\n"; return;;
+      [Ee]) timer="$timerloop" ; echo -e "${CClear}\n"; return;;
 
     esac
 fi
@@ -393,9 +417,10 @@ fi
 vpause()
 {
 
-while true; do
-
-  if [ "$availableslots" == "1 2" ]; then
+while true
+do
+  if [ "$availableslots" = "1 2" ]
+  then
     clear
     displayopsmenu
     printf "${CClear}Please select? (${CGreen}n${CClear}=UNpause, ${CGreen}e${CClear}=Exit)"
@@ -419,7 +444,8 @@ while true; do
             [Nn]) exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             *) exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
         esac
-  elif [ "$availableslots" == "1 2 3 4 5" ]; then
+  elif [ "$availableslots" = "1 2 3 4 5" ]
+  then
     clear
     displayopsmenu
     printf "${CClear}Please select? (${CGreen}n${CClear}=UNpause, ${CGreen}e${CClear}=Exit)"
@@ -460,7 +486,8 @@ createconfigs()
 {
 
   # Fix older versions using incorrect client slots
-  if [ "$availableslots" == "1 2 3" ]; then
+  if [ "$availableslots" = "1 2 3" ]
+  then
     availableslots="1 2"
     rm -f /jffs/addons/vpnmon-r3.d/vr3clients.txt
     rm -f /jffs/addons/vpnmon-r3.d/vr3timers.txt
@@ -468,53 +495,87 @@ createconfigs()
   fi
 
   # Create initial vr3clients.txt & vr3timers.txt file
-  if [ ! -f /jffs/addons/vpnmon-r3.d/vr3clients.txt ]; then
-    if [ "$availableslots" == "1 2" ]; then
+  if [ ! -f /jffs/addons/vpnmon-r3.d/vr3clients.txt ]
+  then
+    if [ "$availableslots" = "1 2" ]
+    then
       { echo 'VPN1=0'
         echo 'VPN2=0'
       } > /jffs/addons/vpnmon-r3.d/vr3clients.txt
 
-    elif [ "$availableslots" == "1 2 3 4 5" ]; then
+    elif [ "$availableslots" = "1 2 3 4 5" ]
+    then
       { echo 'VPN1=0'
         echo 'VPN2=0'
         echo 'VPN3=0'
         echo 'VPN4=0'
         echo 'VPN5=0'
       } > /jffs/addons/vpnmon-r3.d/vr3clients.txt
-
     fi
   fi
 
-  if [ ! -f /jffs/addons/vpnmon-r3.d/vr3timers.txt ]; then
-    if [ "$availableslots" == "1 2" ]; then
+  if [ ! -f /jffs/addons/vpnmon-r3.d/vr3timers.txt ]
+  then
+    if [ "$availableslots" = "1 2" ]
+    then
       { echo 'VPNTIMER1=0'
         echo 'VPNTIMER2=0'
       } > /jffs/addons/vpnmon-r3.d/vr3timers.txt
 
-    elif [ "$availableslots" == "1 2 3 4 5" ]; then
+    elif [ "$availableslots" = "1 2 3 4 5" ]
+    then
       { echo 'VPNTIMER1=0'
         echo 'VPNTIMER2=0'
         echo 'VPNTIMER3=0'
         echo 'VPNTIMER4=0'
         echo 'VPNTIMER5=0'
       } > /jffs/addons/vpnmon-r3.d/vr3timers.txt
-
     fi
   fi
 
 }
 
+##-------------------------------------##
+## Added by Martinski W. [2024-Oct-05] ##
+##-------------------------------------##
+_SetUpTimeoutCmdVars_()
+{
+   # If the timeout utility is available then use it #
+   if [ -z "${timeoutcmd:+xSETx}" ] && [ -f "/opt/bin/timeout" ]
+   then
+       timeoutcmd="timeout "
+       timeoutsec="10"
+       timeoutlng="60"
+   fi
+}
+
+##-------------------------------------##
+## Added by Martinski W. [2024-Oct-05] ##
+##-------------------------------------##
+_SetLAN_HostName_()
+{
+   [ -z "${LAN_HostName:+xSETx}" ] && \
+   LAN_HostName="$($timeoutcmd$timeoutsec nvram get lan_hostname)"
+}
+
+_GetLAN_HostName_()
+{ _SetLAN_HostName_ ; echo "$LAN_HostName" ; }
+
 # -------------------------------------------------------------------------------------------------------------------------
 # vsetup provide a menu interface to allow for initial component installs, uninstall, etc.
 
+##----------------------------------------##
+## Modified by Martinski W. [2024-Oct-05] ##
+##----------------------------------------##
 vsetup()
 {
+   _SetUpTimeoutCmdVars_
 
-while true; do
-
+while true
+do
   clear # Initial Setup
-  if [ ! -f $config ]; then # Write /jffs/addons/vpnmon-r3.d/vpnmon-r3.cfg
-    saveconfig
+  if [ ! -f "$config" ]; then # Write /jffs/addons/vpnmon-r3.d/vpnmon-r3.cfg
+     saveconfig
   fi
 
   createconfigs
@@ -535,10 +596,11 @@ while true; do
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo ""
   read -p "Please select? (1-4, e=Exit): " SelectSlot
-    case $SelectSlot in
+  case $SelectSlot in
       1) # Check for existence of entware, and if so proceed and install the timeout package, then run vpnmon-r3 -config
         clear
-        if [ -f "/opt/bin/timeout" ] && [ -f "/opt/sbin/screen" ] && [ -f "/opt/bin/jq" ]; then
+        if [ -f "/opt/bin/timeout" ] && [ -f "/opt/sbin/screen" ] && [ -f "/opt/bin/jq" ]
+        then
           vconfig
         else
           clear
@@ -569,7 +631,7 @@ while true; do
           echo ""
           echo -e "Ready to install?"
           if promptyn " (y/n): "
-            then
+          then
               if [ -d "/opt" ]; then # Does entware exist? If yes proceed, if no error out.
                 echo ""
                 echo -e "\n${CClear}Updating Entware Packages..."
@@ -602,7 +664,7 @@ while true; do
                 echo ""
                 read -rsp $'Press any key to continue...\n' -n1 key
               fi
-            else
+          else
               echo ""
               echo -e "\nExecuting Configuration Utility..."
               sleep 2
@@ -641,7 +703,7 @@ while true; do
         echo ""
         echo -e "Force Re-install?"
         if promptyn "[y/n]: "
-          then
+        then
             if [ -d "/opt" ]; then # Does entware exist? If yes proceed, if no error out.
               echo ""
               echo -e "\nUpdating Entware Packages..."
@@ -676,7 +738,7 @@ while true; do
       4) vuninstall;;
       [Ee])
             echo ""
-            timer=$timerloop
+            timer="$timerloop"
             break;;
     esac
 done
@@ -686,57 +748,62 @@ done
 # -------------------------------------------------------------------------------------------------------------------------
 # vconfig is a function that provides a UI to choose various options for vpnmon-r3
 
+##----------------------------------------##
+## Modified by Martinski W. [2024-Oct-05] ##
+##----------------------------------------##
 vconfig()
 {
+   _SetUpTimeoutCmdVars_
 
 # Grab the VPNMON-R3 config file and read it in
-if [ -f $config ]; then
-  source $config
+if [ -f "$config" ]
+then
+  source "$config"
 else
   clear
   echo -e "${CRed}ERROR: VPNMON-R3 is not configured.  Please run 'vpnmon-r3.sh -setup' first."
   echo ""
-  echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - ERROR: VPNMON-R3 config file not found. Please run the setup/configuration utility" >> $logfile
+  echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: VPNMON-R3 config file not found. Please run the setup/configuration utility" >> $logfile
   echo -e "${CClear}"
   exit 1
 fi
 
-while true; do
-
-  if [ $unboundclient -eq 0 ]; then
-    unboundclientexp="Disabled"
+while true
+do
+  if [ "$unboundclient" -eq 0 ]; then
+     unboundclientexp="Disabled"
   else
-    unboundclientexp="Enabled, VPN$unboundclient"
+     unboundclientexp="Enabled, VPN$unboundclient"
   fi
 
-  if [ $refreshserverlists -eq 0 ]; then
-    refreshserverlistsdisp="Disabled"
+  if [ "$refreshserverlists" -eq 0 ]; then
+     refreshserverlistsdisp="Disabled"
   else
-    refreshserverlistsdisp="Enabled"
+     refreshserverlistsdisp="Enabled"
   fi
 
-  if [ $monitorwan -eq 0 ]; then
-    monitorwandisp="Disabled"
+  if [ "$monitorwan" -eq 0 ]; then
+     monitorwandisp="Disabled"
   else
-    monitorwandisp="Enabled"
+     monitorwandisp="Enabled"
   fi
 
-  if [ $updateskynet -eq 0 ]; then
-    updateskynetdisp="Disabled"
+  if [ "$updateskynet" -eq 0 ]; then
+     updateskynetdisp="Disabled"
   else
-    updateskynetdisp="Enabled"
+     updateskynetdisp="Enabled"
   fi
 
   if [ "$amtmemailsuccess" == "0" ] && [ "$amtmemailfailure" == "0" ]; then
-    amtmemailsuccfaildisp="Disabled"
+     amtmemailsuccfaildisp="Disabled"
   elif [ "$amtmemailsuccess" == "1" ] && [ "$amtmemailfailure" == "0" ]; then
-    amtmemailsuccfaildisp="Success"
+     amtmemailsuccfaildisp="Success"
   elif [ "$amtmemailsuccess" == "0" ] && [ "$amtmemailfailure" == "1" ]; then
-    amtmemailsuccfaildisp="Failure"
+     amtmemailsuccfaildisp="Failure"
   elif [ "$amtmemailsuccess" == "1" ] && [ "$amtmemailfailure" == "1" ]; then
-    amtmemailsuccfaildisp="Success, Failure"
+     amtmemailsuccfaildisp="Success, Failure"
   else
-    amtmemailsuccfaildisp="Disabled"
+     amtmemailsuccfaildisp="Disabled"
   fi
 
   clear
@@ -771,33 +838,38 @@ while true; do
         echo -e "${InvGreen} ${CClear}"
         echo -e "${InvGreen} ${CClear} (Default = 5 VPN client slots)${CClear}"
         echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-        echo ""
-        echo -e "${CClear}Current: ${CGreen}$availableslots${CClear}"
-        echo ""
-        read -p "Please enter value (2 or 5)? (e=Exit): " EnterAvailableSlots
-          if [ "$EnterAvailableSlots" == "2" ]; then
+        echo
+        echo -e "${CClear}Current: ${CGreen}$availableslots${CClear}" ; echo
+        read -p "Please enter value (2 or 5)? (e=Exit): " newAvailableSlots
+        if [ "$newAvailableSlots" = "2" ]
+        then
             availableslots="1 2"
-            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslots" >> $logfile
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslots" >> $logfile
             rm -f /jffs/addons/vpnmon-r3.d/vr3clients.txt
             rm -f /jffs/addons/vpnmon-r3.d/vr3timers.txt
             saveconfig
             createconfigs
-          elif [ "$EnterAvailableSlots" == "5" ]; then
+        elif [ "$newAvailableSlots" = "5" ]
+        then
             availableslots="1 2 3 4 5"
-            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslots" >> $logfile
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslots" >> $logfile
             rm -f /jffs/addons/vpnmon-r3.d/vr3clients.txt
             rm -f /jffs/addons/vpnmon-r3.d/vr3timers.txt
             saveconfig
             createconfigs
-          elif [ "$EnterAvailableSlots" == "e" ]; then
+        elif [ "$newAvailableSlots" = "e" ]
+        then
             echo -e "\n[Exiting]"; sleep 2
-          else availableslots="1 2 3 4 5"
-            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslots" >> $logfile
+        else
+            previousValue="$availableslots"
+            availableslots="${availableslots:=1 2 3 4 5}"
+            [ "$availableslots" != "$previousValue" ] && \
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslots" >> $logfile
             rm -f /jffs/addons/vpnmon-r3.d/vr3clients.txt
             rm -f /jffs/addons/vpnmon-r3.d/vr3timers.txt
             saveconfig
             createconfigs
-          fi
+        fi
       ;;
 
       2)
@@ -805,22 +877,30 @@ while true; do
         echo -e "${InvGreen} ${InvDkGray}${CWhite} Custom PING Host (to determine VPN health)                                            ${CClear}"
         echo -e "${InvGreen} ${CClear}"
         echo -e "${InvGreen} ${CClear} Please indicate which host you want to PING in order to determine VPN Client health.${CClear}"
-        echo -e "${InvGreen} ${CClear} By default, the script will ping 8.8.8.8 (Google DNS) as it's reliable, fairly${CClear}"
+        echo -e "${InvGreen} ${CClear} By default, the script will ping $PING_HOST_Deflt (Google DNS) as it's reliable, fairly${CClear}"
         echo -e "${InvGreen} ${CClear} standard, and typically available globally. You can change this depending on your"
         echo -e "${InvGreen} ${CClear} local access and connectivity situation."
         echo -e "${InvGreen} ${CClear}"
-        echo -e "${InvGreen} ${CClear} (Default = 8.8.8.8)${CClear}"
+        echo -e "${InvGreen} ${CClear} (Default = ${PING_HOST_Deflt})${CClear}"
         echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-        echo ""
-        echo -e "${CClear}Current: ${CGreen}$PINGHOST${CClear}"
-        echo ""
-        read -p "Please enter valid IP4 address? (e=Exit): " NEWPINGHOST
-          if [ "$NEWPINGHOST" == "e" ]; then
+        echo
+        echo -e "${CClear}Current: ${CGreen}${PINGHOST}${CClear}" ; echo
+        read -p "Please enter valid IPv4 address? (e=Exit): " newPingHost
+        if [ "$newPingHost" = "e" ]
+        then
             echo -e "\n[Exiting]"; sleep 2
-          else PINGHOST=$NEWPINGHOST
-            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: New custom PING host entered: $PINGHOST" >> $logfile
+        elif [ -n "$newPingHost" ] && echo "$newPingHost" | grep -qE "^${IPv4addrs_RegEx}$"
+        then
+            PINGHOST="$newPingHost"
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New custom PING host entered: $PINGHOST" >> $logfile
             saveconfig
-          fi
+        else
+            previousValue="$PINGHOST"
+            PINGHOST="${PINGHOST:=$PING_HOST_Deflt}"
+            [ "$PINGHOST" != "$previousValue" ] && \
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New custom PING host entered: $PINGHOST" >> $logfile
+            saveconfig
+        fi
       ;;
 
       3)
@@ -833,22 +913,25 @@ while true; do
         echo -e "${InvGreen} ${CClear}"
         echo -e "${InvGreen} ${CClear} Use 0 to Disable, max number of rows is 9999. (Default = 2000)"
         echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-        echo ""
-        echo -e "${CClear}Current: ${CGreen}$logsize${CClear}"
-        echo ""
-        read -p "Please enter Log Size (in rows)? (0-9999, e=Exit): " NEWLOGSIZE
-
-          if [ "$NEWLOGSIZE" == "e" ]; then
+        echo
+        echo -e "${CClear}Current: ${CGreen}$logsize${CClear}" ; echo
+        read -p "Please enter Log Size (in rows)? (0-9999, e=Exit): " newLogSize
+        if [ "$newLogSize" = "e" ]
+        then
             echo -e "\n[Exiting]"; sleep 2
-          elif [ $NEWLOGSIZE -ge 0 ] && [ $NEWLOGSIZE -le 9999 ]; then
-            logsize=$NEWLOGSIZE
-            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: New custom Event Log Size entered (in rows): $logsize" >> $logfile
+        elif echo "$newLogSize" | grep -qE "^(0|[1-9][0-9]{0,3})$" && \
+            [ "$newLogSize" -ge 0 ] && [ "$newLogSize" -le 9999 ]
+        then
+            logsize="$newLogSize"
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New custom Event Log Size entered (in rows): $logsize" >> $logfile
             saveconfig
-          else
-            logsize=2000
-            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: New custom Event Log Size entered (in rows): $logsize" >> $logfile
+        else
+            previousValue="$logsize"
+            logsize="${logsize:=2000}"
+            [ "$logsize" != "$previousValue" ] && \
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New custom Event Log Size entered (in rows): $logsize" >> $logfile
             saveconfig
-          fi
+        fi
       ;;
 
       4)
@@ -904,7 +987,7 @@ while true; do
           if [ ! -d "/jffs/addons/unbound" ]; then
             echo ""
             echo -e "${CRed}[Unbound was not detected on this system. Exiting...]${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - WARNING: Unbound was not detected on this system." >> $logfile
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: Unbound was not detected on this system." >> $logfile
             unboundclient=0
             saveconfig
             sleep 3
@@ -941,7 +1024,7 @@ while true; do
                 rm -f /jffs/addons/unbound/unbound_DNS_via_OVPN.sh
               fi
 
-              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Unbound-over-VPN was removed from VPNMON-R3" >> $logfile
+              echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Unbound-over-VPN was removed from VPNMON-R3" >> $logfile
               unboundclient=0
               saveconfig
               sleep 3
@@ -1023,7 +1106,7 @@ while true; do
                 # backup - curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/main/Unbound/unbound_DNS_via_OVPN.sh" -o "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh" && chmod 755 "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh"
               fi
 
-              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Unbound-over-VPN was enabled for VPNMON-R3" >> $logfile
+              echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Unbound-over-VPN was enabled for VPNMON-R3" >> $logfile
               echo -e "${CClear}"
               unboundclient=$unboundovervpn
               saveconfig
@@ -1052,22 +1135,32 @@ while true; do
         echo -e "${InvGreen} ${CClear}"
         echo -e "${InvGreen} ${CClear} Use 0 to Disable, 1 to Enable. (Default = 0)"
         echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-        echo ""
-        echo -e "${CClear}Current: ${CGreen}$refreshserverlistsdisp${CClear}"
-        echo ""
-        read -p "Please Choose? (Disable = 0, Enable = 1, e=Exit): " newrefreshserverlist
-
-          if [ "$newrefreshserverlist" == "e" ]; then
-            echo -e "\n[Exiting]"; sleep 2
-          elif [ $newrefreshserverlist -eq 0 ]; then
+        echo
+        echo -e "${CClear}Current: ${CGreen}$refreshserverlistsdisp${CClear}" ; echo
+        read -p "Please Choose? (Disable = 0, Enable = 1, e=Exit): " newRefreshServerList
+        if [ "$newRefreshServerList" = "0" ]
+        then
             refreshserverlists=0
-            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom Server Lists Disabled on -RESET Switch" >> $logfile
+            refreshserverlistsdisp="Disabled"
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom Server Lists Disabled on -RESET Switch" >> $logfile
             saveconfig
-          else
+        elif [ "$newRefreshServerList" = "1" ]
+        then
             refreshserverlists=1
-            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom Server Lists Enabled on -RESET Switch" >> $logfile
+            refreshserverlistsdisp="Enabled"
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom Server Lists Enabled on -RESET Switch" >> $logfile
             saveconfig
-          fi
+        elif [ "$newRefreshServerList" = "e" ]
+        then
+            echo -e "\n[Exiting]"; sleep 2
+        else
+            previousValue="$refreshserverlists"
+            refreshserverlists="${refreshserverlists:=0}"
+            refreshserverlistsdisp="$([ "$refreshserverlists" = "0" ] && echo "Disabled" || echo "Enabled")"
+            [ "$refreshserverlists" != "$previousValue" ] && \
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom Server Lists $refreshserverlistsdisp on -RESET Switch" >> $logfile
+            saveconfig
+        fi
       ;;
 
       6)
@@ -1082,22 +1175,32 @@ while true; do
         echo -e "${InvGreen} ${CClear}"
         echo -e "${InvGreen} ${CClear} Use 0 to Disable, 1 to Enable. (Default = 0)"
         echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-        echo ""
-        echo -e "${CClear}Current: ${CGreen}$monitorwandisp${CClear}"
-        echo ""
-        read -p "Please Choose? (Disable = 0, Enable = 1, e=Exit): " newmonitorwan
-
-          if [ "$newmonitorwan" == "e" ]; then
-            echo -e "\n[Exiting]"; sleep 2
-          elif [ $newmonitorwan -eq 0 ]; then
+        echo
+        echo -e "${CClear}Current: ${CGreen}$monitorwandisp${CClear}" ; echo
+        read -p "Please Choose? (Disable = 0, Enable = 1, e=Exit): " newMonitorWAN
+        if [ "$newMonitorWAN" = "0" ]
+        then
             monitorwan=0
-            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: WAN Monitoring Disabled" >> $logfile
+            monitorwandisp="Disabled"
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WAN Monitoring Disabled" >> $logfile
             saveconfig
-          else
+        elif [ "$newMonitorWAN" = "1" ]
+        then
             monitorwan=1
-            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: WAN Monitoring Enabled" >> $logfile
+            monitorwandisp="Enabled"
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WAN Monitoring Enabled" >> $logfile
             saveconfig
-          fi
+        elif [ "$newMonitorWAN" = "e" ]
+        then
+            echo -e "\n[Exiting]"; sleep 2
+        else
+            previousValue="$monitorwan"
+            monitorwan="${monitorwan:=0}"
+            monitorwandisp="$([ "$monitorwan" = "0" ] && echo "Disabled" || echo "Enabled")"
+            [ "$monitorwan" != "$previousValue" ] && \
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WAN Monitoring $monitorwandisp" >> $logfile
+            saveconfig
+        fi
       ;;
 
       7)
@@ -1113,29 +1216,39 @@ while true; do
         echo -e "${InvGreen} ${CClear}"
         echo -e "${InvGreen} ${CClear} Use 0 to Disable, 1 to Enable. (Default = 0)"
         echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-        echo ""
-        echo -e "${CClear}Current: ${CGreen}$updateskynetdisp${CClear}"
-        echo ""
-        read -p "Please Choose? (Disable = 0, Enable = 1, e=Exit): " newupdateskynet
-
-          if [ "$newupdateskynet" == "e" ]; then
-            echo -e "\n[Exiting]"; sleep 2
-          elif [ $newupdateskynet -eq 1 ]; then
+        echo
+        echo -e "${CClear}Current: ${CGreen}$updateskynetdisp${CClear}" ; echo
+        read -p "Please Choose? (Disable = 0, Enable = 1, e=Exit): " newUpdateSkyNet
+        if [ "$newUpdateSkyNet" = "1" ]
+        then
             updateskynet=1
-            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN Server IP Skynet Whitelisting Enabled" >> $logfile
+            updateskynetdisp="Enabled"
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN Server IP Skynet Whitelisting Enabled" >> $logfile
             saveconfig
-          else
+        elif [ "$newUpdateSkyNet" = "0" ]
+        then
             updateskynet=0
-            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN Server IP Skynet Whitelisting Disabled" >> $logfile
+            updateskynetdisp="Disabled"
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN Server IP Skynet Whitelisting Disabled" >> $logfile
             saveconfig
-          fi
+        elif [ "$newUpdateSkyNet" = "e" ]
+        then
+            echo -e "\n[Exiting]"; sleep 2
+        else
+            previousValue="$updateskynet"
+            updateskynet="${updateskynet:=0}"
+            updateskynetdisp="$([ "$updateskynet" = "0" ] && echo "Disabled" || echo "Enabled")"
+            [ "$updateskynet" != "$previousValue" ] && \
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN Server IP Skynet Whitelisting $updateskynetdisp" >> $logfile
+            saveconfig
+        fi
       ;;
 
       [Ee]) echo -e "${CClear}\n[Exiting]"; sleep 2; break ;;
 
       8)
         amtmevents
-        source $config
+        source "$config"
       ;;
 
     esac
@@ -1169,7 +1282,7 @@ while true; do
         curl --silent --retry 3 --connect-timeout 3 --max-time 5 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/ViktorJp/VPNMON-R3/main/vpnmon-r3.sh" -o "/jffs/scripts/vpnmon-r3.sh" && chmod 755 "/jffs/scripts/vpnmon-r3.sh"
         echo ""
         echo -e "Download successful!${CClear}"
-        echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Successfully downloaded and installed VPNMON-R3 v$DLversion" >> $logfile
+        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Successfully downloaded and installed VPNMON-R3 v$DLversion" >> $logfile
         echo ""
         read -rsp $'Press any key to restart VPNMON-R3...\n' -n1 key
         exec /jffs/scripts/vpnmon-r3.sh -setup
@@ -1188,7 +1301,7 @@ while true; do
         curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/ViktorJp/VPNMON-R3/main/vpnmon-r3.sh" -o "/jffs/scripts/vpnmon-r3.sh" && chmod 755 "/jffs/scripts/vpnmon-r3.sh"
         echo ""
         echo -e "Download successful!${CClear}"
-        echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Successfully downloaded and installed VPNMON-R3 v$DLversion" >> $logfile
+        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Successfully downloaded and installed VPNMON-R3 v$DLversion" >> $logfile
         echo ""
         read -rsp $'Press any key to restart VPNMON-R3...\n' -n1 key
         exec /jffs/scripts/vpnmon-r3.sh -setup
@@ -1225,7 +1338,7 @@ updatecheck()
         DLversionPF=$(printf "%-8s" $DLversion)
         versionPF=$(printf "%-8s" $version)
         UpdateNotify="${InvYellow} ${InvDkGray}${CWhite} Update available: v$versionPF -> v$DLversionPF                                                                     ${CClear}"
-        echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: A new update (v$DLversion) is available to download" >> $logfile
+        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: A new update (v$DLversion) is available to download" >> $logfile
       else
         UpdateNotify=0
       fi
@@ -1283,7 +1396,7 @@ vlogs()
 
 export TERM=linux
 nano +999999 --linenumbers $logfile
-timer=$timerloop
+timer="$timerloop"
 
 }
 
@@ -1293,7 +1406,8 @@ timer=$timerloop
 vpnslots()
 {
 
-while true; do
+while true
+do
   clear
   echo -e "${InvGreen} ${InvDkGray}${CWhite} VPN Client Slot Monitoring                                                            ${CClear}"
   echo -e "${InvGreen} ${CClear}"
@@ -1301,8 +1415,8 @@ while true; do
   echo -e "${InvGreen} ${CClear} Use the corresponding ${CGreen}()${CClear} key to enable/disable monitoring for each slot:${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
 
-    if [ "$availableslots" == "1 2" ]; then
-
+    if [ "$availableslots" = "1 2" ]
+    then
       if [ "$VPN1" == "1" ]; then VPN1Disp="${CGreen}Y${CCyan}"; else VPN1=0; VPN1Disp="${CRed}N${CCyan}"; fi
       if [ "$VPN2" == "1" ]; then VPN2Disp="${CGreen}Y${CCyan}"; else VPN2=0; VPN2Disp="${CRed}N${CCyan}"; fi
       echo -e "${InvGreen} ${CClear}"
@@ -1317,13 +1431,13 @@ while true; do
              { echo 'VPN1='$VPN1
                echo 'VPN2='$VPN2
              } > /jffs/addons/vpnmon-r3.d/vr3clients.txt
-             echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN Client Slot Monitoring configuration saved" >> $logfile
-             timer=$timerloop
+             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN Client Slot Monitoring configuration saved" >> $logfile
+             timer="$timerloop"
              break;;
         esac
 
-    elif [ "$availableslots" == "1 2 3 4 5" ]; then
-
+    elif [ "$availableslots" = "1 2 3 4 5" ]
+    then
       if [ "$VPN1" == "1" ]; then VPN1Disp="${CGreen}Y${CCyan}"; else VPN1=0; VPN1Disp="${CRed}N${CCyan}"; fi
       if [ "$VPN2" == "1" ]; then VPN2Disp="${CGreen}Y${CCyan}"; else VPN2=0; VPN2Disp="${CRed}N${CCyan}"; fi
       if [ "$VPN3" == "1" ]; then VPN3Disp="${CGreen}Y${CCyan}"; else VPN3=0; VPN3Disp="${CRed}N${CCyan}"; fi
@@ -1350,8 +1464,8 @@ while true; do
                echo 'VPN4='$VPN4
                echo 'VPN5='$VPN5
              } > /jffs/addons/vpnmon-r3.d/vr3clients.txt
-             echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN Client Slot Monitoring configuration saved" >> $logfile
-             timer=$timerloop
+             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN Client Slot Monitoring configuration saved" >> $logfile
+             timer="$timerloop"
              break;;
       esac
     fi
@@ -1365,7 +1479,8 @@ done
 amtmevents()
 {
 
-while true; do
+while true
+do
   clear
   echo -e "${InvGreen} ${InvDkGray}${CWhite} AMTM Email Notifications                                                              ${CClear}"
   echo -e "${InvGreen} ${CClear}"
@@ -1374,7 +1489,7 @@ while true; do
   echo -e "${InvGreen} ${CClear} This does require that AMTM email has been set up successfully under AMTM -> em${CClear}"
   echo -e "${InvGreen} ${CClear} (email settings). Once you are able to send and receive test emails from AMTM, you${CClear}"
   echo -e "${InvGreen} ${CClear} may use this functionality in VPNMON-R3. Additionally, this functionality will${CClear}"
-  echo -e "${InvGreen} ${CClear} download an AMTM email interface library courtesey of @Martinsky, and will be${CClear}"
+  echo -e "${InvGreen} ${CClear} download an AMTM email interface library courtesy of @Martinsky, and will be${CClear}"
   echo -e "${InvGreen} ${CClear} located under a new common shared library folder called: /jffs/addons/shared-libs.${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} Use the corresponding ${CGreen}()${CClear} key to enable/disable email event notifications:${CClear}"
@@ -1392,15 +1507,15 @@ while true; do
       2) if [ "$amtmemailfailure" == "0" ]; then amtmemailfailure=1; amtmemailfailuredisp="${CGreen}Y${CCyan}"; elif [ "$amtmemailfailure" == "1" ]; then amtmemailfailure=0; amtmemailfailuredisp="${CRed}N${CCyan}"; fi;;
       [Tt])
          if [ -f "$CUSTOM_EMAIL_LIBFile" ]
-           then
-           . "$CUSTOM_EMAIL_LIBFile"
+         then
+             . "$CUSTOM_EMAIL_LIBFile"
 
-           if [ -z "${CEM_LIB_VERSION:+xSETx}" ] || \
-             _CheckLibraryUpdates_CEM_ "$CUSTOM_EMAIL_LIBDir" quiet
+             if [ -z "${CEM_LIB_VERSION:+xSETx}" ] || \
+                _CheckLibraryUpdates_CEM_ "$CUSTOM_EMAIL_LIBDir" quiet
              then
-               _DownloadCEMLibraryFile_ "update"
-           fi
-           else
+                 _DownloadCEMLibraryFile_ "update"
+             fi
+         else
              _DownloadCEMLibraryFile_ "install"
          fi
 
@@ -1411,20 +1526,19 @@ while true; do
          tmpEMailBodyFile="/tmp/var/tmp/tmpEMailBody_${scriptFileNTag}.$$.TXT"
 
          {
-          printf "This is a <b>TEST</b> to check & verify if sending email notifications is working well from <b>VPNMON-R3</b>.\n"
+           printf "This is a <b>TEST</b> to check & verify if sending email notifications is working well from <b>VPNMON-R3</b>.\n"
          } > "$tmpEMailBodyFile"
 
          _SendEMailNotification_ "VPNMON-R3 v$version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
 
-         echo ""
-         echo ""
+         echo ; echo
          read -rsp $'Press any key to acknowledge...\n' -n1 key
          ;;
 
       [Ee])
          saveconfig
-         echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: AMTM Email notification configuration saved" >> $logfile
-         timer=$timerloop
+         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: AMTM Email notification configuration saved" >> $logfile
+         timer="$timerloop"
          break;;
     esac
 done
@@ -1437,7 +1551,8 @@ done
 vpnserverlistmaint()
 {
 
-while true; do
+while true
+do
   clear
   echo -e "${InvGreen} ${InvDkGray}${CWhite} VPN Client Slot Server List Maintenance                                               ${CClear}"
   echo -e "${InvGreen} ${CClear}"
@@ -1465,19 +1580,21 @@ while true; do
     fi
   echo -e "${InvGreen} ${CClear}"
 
-  if [ "$availableslots" == "1 2" ]; then
+  if [ "$availableslots" == "1 2" ]
+  then
     echo ""
     read -p "Please select? (1-2, e=Exit): " SelectSlot
     case $SelectSlot in
       1) export TERM=linux; nano +999999 --linenumbers /jffs/addons/vpnmon-r3.d/vr3svr1.txt;;
       2) export TERM=linux; nano +999999 --linenumbers /jffs/addons/vpnmon-r3.d/vr3svr2.txt;;
       [Ee])
-        timer=$timerloop
+        timer="$timerloop"
         break;;
     esac
   fi
 
-  if [ "$availableslots" == "1 2 3 4 5" ]; then
+  if [ "$availableslots" == "1 2 3 4 5" ]
+  then
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN3${CClear} ${CGreen}(3)${CClear}"
       if [ -f /jffs/addons/vpnmon-r3.d/vr3svr3.txt ]; then
         iplist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3svr3.txt | sed 's/,$/\n/')
@@ -1510,7 +1627,7 @@ while true; do
       4) export TERM=linux; nano +999999 --linenumbers /jffs/addons/vpnmon-r3.d/vr3svr4.txt;;
       5) export TERM=linux; nano +999999 --linenumbers /jffs/addons/vpnmon-r3.d/vr3svr5.txt;;
       [Ee])
-        timer=$timerloop
+        timer="$timerloop"
         break;;
     esac
   fi
@@ -1525,7 +1642,8 @@ done
 vpnserverlistautomation()
 {
 
-while true; do
+while true
+do
   clear
   echo -e "${InvGreen} ${InvDkGray}${CWhite} VPN Client Slot Server List Automation                                                ${CClear}"
   echo -e "${InvGreen} ${CClear}"
@@ -1576,7 +1694,7 @@ while true; do
            echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else
            automation1=`echo $automation1new | openssl enc -base64 -A`
-           echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 1" >> $logfile
+           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 1" >> $logfile
            saveconfig
          fi
       ;;
@@ -1605,7 +1723,7 @@ while true; do
          echo -e "${CGreen}[Saved to VPN Client Slot 1 Server List]${CClear}"
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 1" >> $logfile
+         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 1" >> $logfile
          echo ""
          skynetwhitelist 1
          echo ""
@@ -1620,7 +1738,7 @@ while true; do
          echo -e "${CGreen}[Contents of VPN Slot 1 Imported]${CClear}"
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for VPN Slot 1" >> $logfile
+         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for VPN Slot 1" >> $logfile
          echo ""
          read -rsp $'Press any key to acknowledge...\n' -n1 key
       ;;
@@ -1642,7 +1760,7 @@ while true; do
            echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else
            automation2=`echo $automation2new | openssl enc -base64 -A`
-           echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 2" >> $logfile
+           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 2" >> $logfile
            saveconfig
          fi
       ;;
@@ -1671,7 +1789,7 @@ while true; do
          echo -e "${CGreen}[Saved to VPN Client Slot 2 Server List]${CClear}"
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 2" >> $logfile
+         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 2" >> $logfile
          echo ""
          skynetwhitelist 2
          echo ""
@@ -1686,13 +1804,13 @@ while true; do
          echo -e "${CGreen}[Contents of VPN Slot 2 Imported]${CClear}"
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for VPN Slot 2" >> $logfile
+         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for VPN Slot 2" >> $logfile
          echo ""
          read -rsp $'Press any key to acknowledge...\n' -n1 key
       ;;
 
       [Ee])
-            timer=$timerloop
+            timer="$timerloop"
             break;;
     esac
   fi
@@ -1742,7 +1860,7 @@ while true; do
            echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else
            automation1=`echo $automation1new | openssl enc -base64 -A`
-           echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 1" >> $logfile
+           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 1" >> $logfile
            saveconfig
          fi
       ;;
@@ -1771,7 +1889,7 @@ while true; do
          echo -e "${CGreen}[Saved to VPN Client Slot 1 Server List]${CClear}"
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 1" >> $logfile
+         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 1" >> $logfile
          echo ""
          skynetwhitelist 1
          echo ""
@@ -1786,7 +1904,7 @@ while true; do
          echo -e "${CGreen}[Contents of VPN Slot 1 Imported]${CClear}"
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for VPN Slot 1" >> $logfile
+         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for VPN Slot 1" >> $logfile
          echo ""
          read -rsp $'Press any key to acknowledge...\n' -n1 key
       ;;
@@ -1808,7 +1926,7 @@ while true; do
            echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else
            automation2=`echo $automation2new | openssl enc -base64 -A`
-           echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 2" >> $logfile
+           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 2" >> $logfile
            saveconfig
          fi
       ;;
@@ -1837,7 +1955,7 @@ while true; do
          echo -e "${CGreen}[Saved to VPN Client Slot 2 Server List]${CClear}"
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 2" >> $logfile
+         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 2" >> $logfile
          echo ""
          skynetwhitelist 2
          echo ""
@@ -1852,7 +1970,7 @@ while true; do
          echo -e "${CGreen}[Contents of VPN Slot 2 Imported]${CClear}"
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for VPN Slot 2" >> $logfile
+         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for VPN Slot 2" >> $logfile
          echo ""
          read -rsp $'Press any key to acknowledge...\n' -n1 key
       ;;
@@ -1874,7 +1992,7 @@ while true; do
            echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else
            automation3=`echo $automation3new | openssl enc -base64 -A`
-           echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 3" >> $logfile
+           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 3" >> $logfile
            saveconfig
          fi
       ;;
@@ -1903,7 +2021,7 @@ while true; do
          echo -e "${CGreen}[Saved to VPN Client Slot 3 Server List]${CClear}"
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 3" >> $logfile
+         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 3" >> $logfile
          echo ""
          skynetwhitelist 3
          echo ""
@@ -1918,7 +2036,7 @@ while true; do
          echo -e "${CGreen}[Contents of VPN Slot 3 Imported]${CClear}"
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for VPN Slot 3" >> $logfile
+         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for VPN Slot 3" >> $logfile
          echo ""
          read -rsp $'Press any key to acknowledge...\n' -n1 key
       ;;
@@ -1940,7 +2058,7 @@ while true; do
            echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else
            automation4=`echo $automation4new | openssl enc -base64 -A`
-           echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 4" >> $logfile
+           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 4" >> $logfile
            saveconfig
          fi
       ;;
@@ -1969,7 +2087,7 @@ while true; do
          echo -e "${CGreen}[Saved to VPN Client Slot 4 Server List]${CClear}"
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 4" >> $logfile
+         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 4" >> $logfile
          echo ""
          skynetwhitelist 4
          echo ""
@@ -1984,7 +2102,7 @@ while true; do
          echo -e "${CGreen}[Contents of VPN Slot 4 Imported]${CClear}"
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for VPN Slot 4" >> $logfile
+         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for VPN Slot 4" >> $logfile
          echo ""
          read -rsp $'Press any key to acknowledge...\n' -n1 key
       ;;
@@ -2006,7 +2124,7 @@ while true; do
            echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else
            automation5=`echo $automation5new | openssl enc -base64 -A`
-           echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 5" >> $logfile
+           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for VPN Slot 5" >> $logfile
            saveconfig
          fi
       ;;
@@ -2035,7 +2153,7 @@ while true; do
          echo -e "${CGreen}[Saved to VPN Client Slot 5 Server List]${CClear}"
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 5" >> $logfile
+         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 5" >> $logfile
          echo ""
          skynetwhitelist 5
          echo ""
@@ -2050,13 +2168,13 @@ while true; do
          echo -e "${CGreen}[Contents of VPN Slot 5 Imported]${CClear}"
          echo ""
          echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for VPN Slot 5" >> $logfile
+         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for VPN Slot 5" >> $logfile
          echo ""
          read -rsp $'Press any key to acknowledge...\n' -n1 key
       ;;
 
       [Ee])
-           timer=$timerloop
+           timer="$timerloop"
            break;;
     esac
   fi
@@ -2068,10 +2186,14 @@ done
 # -------------------------------------------------------------------------------------------------------------------------
 # timerloopconfig lets you configure how long you want the timer cycle to last between vpn connection checks
 
+##----------------------------------------##
+## Modified by Martinski W. [2024-Oct-05] ##
+##----------------------------------------##
 timerloopconfig()
 {
 
-while true; do
+while true
+do
   clear
   echo -e "${InvGreen} ${InvDkGray}${CWhite} Timer Loop Configuration                                                              ${CClear}"
   echo -e "${InvGreen} ${CClear}"
@@ -2080,49 +2202,41 @@ while true; do
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} Current: ${CGreen}$timerloop sec${CClear}"
-  echo ""
-  read -p "Please enter value (1-999)? (e=Exit): " EnterTimerLoop
-  case $EnterTimerLoop in
-    [1-9])
-      timerloop=$EnterTimerLoop
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Timer Loop Configuration saved" >> $logfile
+  echo
+  read -p "Please enter value (1-999)? (e=Exit): " newTimerLoop
+  if echo "$newTimerLoop" | grep -qE "^([1-9][0-9]{0,2})$" && \
+     [ "$newTimerLoop" -gt 0 ] && [ "$newTimerLoop" -le 999 ]
+  then
+      timerloop="$newTimerLoop"
+      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Timer Loop Configuration saved" >> $logfile
       saveconfig
-      timer=$timerloop
-    ;;
-
-    [1-9][0-9])
-      timerloop=$EnterTimerLoop
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Timer Loop Configuration saved" >> $logfile
-      saveconfig
-      timer=$timerloop
-    ;;
-
-    [1-9][0-9][0-9])
-      timerloop=$EnterTimerLoop
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Timer Loop Configuration saved" >> $logfile
-      saveconfig
-      timer=$timerloop
-    ;;
-
-    *)
-      echo ""
-      echo -e "${CClear}[Exiting]"
-      timer=$timerloop
+      timer="$timerloop"
+  elif [ -z "$newTimerLoop" ] || echo "$newTimerLoop" | grep -qE "^(E|e)$"
+  then
+      echo ; echo -e "${CClear}[Exiting]"
+      timer="$timerloop"
+      sleep 2
       break
-    ;;
-  esac
-
+  else
+      echo
+      echo -e "${CClear}[Please enter value between 1 and 999, e=Exit]"
+      sleep 3
+  fi
 done
 
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-# maxping  lets you configure how high the vpn tunnel ping will get before it's reset
+# maxping lets you configure how high the vpn tunnel ping will get before it's reset
 
+##----------------------------------------##
+## Modified by Martinski W. [2024-Oct-05] ##
+##----------------------------------------##
 maxping()
 {
 
-while true; do
+while true
+do
   clear
   echo -e "${InvGreen} ${InvDkGray}${CWhite} Maximum Ping Before Reset                                                             ${CClear}"
   echo -e "${InvGreen} ${CClear}"
@@ -2133,57 +2247,58 @@ while true; do
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} Current: ${CGreen}$pingreset ms${CClear}"
-  echo ""
-  read -p "Please enter numeric value (1-999)? (0=Disabled, e=Exit): " EnterPingReset
-  case $EnterPingReset in
-    [0])
-      pingreset=$EnterPingReset
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: PING Reset Configuration saved" >> $logfile
+  echo
+  read -p "Please enter numeric value (0-999)? (0=Disabled, e=Exit): " newPingReset
+  if echo "$newPingReset" | grep -qE "^(0|[1-9][0-9]{0,2})$" && \
+     [ "$newPingReset" -ge 0 ] && [ "$newPingReset" -le 999 ]
+  then
+      pingreset="$newPingReset"
+      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: PING Reset Configuration saved" >> $logfile
       saveconfig
-    ;;
-
-    [1-9])
-      pingreset=$EnterPingReset
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: PING Reset Configuration saved" >> $logfile
-      saveconfig
-    ;;
-
-    [1-9][0-9])
-      pingreset=$EnterPingReset
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: PING Reset Configuration saved" >> $logfile
-      saveconfig
-    ;;
-
-    [1-9][0-9][0-9])
-      pingreset=$EnterPingReset
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: PING Reset Configuration saved" >> $logfile
-      saveconfig
-    ;;
-
-    [Ee])
-      echo ""
-      echo -e "${CClear}[Exiting]"
-      timer=$timerloop
+  elif [ -z "$newPingReset" ] || echo "$newPingReset" | grep -qE "^(E|e)$"
+  then
+      echo ; echo -e "${CClear}[Exiting]"
+      timer="$timerloop"
+      sleep 2
       break
-    ;;
-
-    *)
-      echo ""
+  else
+      echo
       echo -e "${CClear}[Please enter value between 0 and 999, e=Exit]"
       sleep 3
-    ;;
-  esac
-
+  fi
 done
+}
+
+##-------------------------------------##
+## Added by Martinski W. [2024-Oct-06] ##
+##-------------------------------------##
+_ValidateCronJobHour_()
+{
+   if [ $# -eq 0 ] || [ -z "$1" ] ; then return 1 ; fi
+   if echo "$1" | grep -qE "^(0|[1-9][0-9]?)$" && \
+      [ "$1" -ge 0 ] && [ "$1" -lt 24 ]
+   then return 0 ; else return 1 ; fi
+}
+
+_ValidateCronJobMinute_()
+{
+    if [ $# -eq 0 ] || [ -z "$1" ] ; then return 1 ; fi
+    if echo "$1" | grep -qE "^(0|[1-9][0-9]?)$" && \
+       [ "$1" -ge 0 ] && [ "$1" -lt 60 ]
+    then return 0 ; else return 1 ; fi
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
 # schedulevpnreset lets you enable and set a time for a scheduled daily vpn reset
 
+##----------------------------------------##
+## Modified by Martinski W. [2024-Oct-06] ##
+##----------------------------------------##
 schedulevpnreset()
 {
 
-while true; do
+while true
+do
   clear
   echo -e "${InvGreen} ${InvDkGray}${CWhite} VPN Reset Scheduler                                                                   ${CClear}"
   echo -e "${InvGreen} ${CClear}"
@@ -2191,24 +2306,27 @@ while true; do
   echo -e "${InvGreen} ${CClear} job. This will reset each monitored VPN connection. (Default = Disabled)"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo -e "${InvGreen} ${CClear}"
-  if [ "$schedule" == "0" ]; then
-    echo -e "${InvGreen} ${CClear} Current: ${CRed}Disabled${CClear}"
-  elif [ "$schedule" == "1" ]; then
-    schedhrs=$(awk "BEGIN {printf \"%02.f\",${schedulehrs}}")
-    schedmin=$(awk "BEGIN {printf \"%02.f\",${schedulemin}}")
-    schedtime="${CGreen}$schedhrs:$schedmin${CClear}"
-    echo -e "${InvGreen} ${CClear} Current: ${CGreen}Enabled, Daily @ $schedtime${CClear}"
+  if [ "$schedule" = "0" ]
+  then
+     echo -e "${InvGreen} ${CClear} Current: ${CRed}Disabled${CClear}"
+  elif [ "$schedule" = "1" ]
+  then
+     schedhrs="$(awk "BEGIN {printf \"%02.f\",${schedulehrs}}")"
+     schedmin="$(awk "BEGIN {printf \"%02.f\",${schedulemin}}")"
+     schedtime="${CGreen}$schedhrs:$schedmin${CClear}"
+     echo -e "${InvGreen} ${CClear} Current: ${CGreen}Enabled, Daily @ $schedtime${CClear}"
   fi
-  echo ""
-  read -p 'Schedule Daily Reset? (0=No, 1=Yes, e=Exit): ' schedule1
-  if [ "$schedule1" == "" ] || [ -z "$schedule1" ]; then schedule=0; else schedule="$schedule1"; fi # Using default value on enter keypress
+  echo
+  read -p 'Schedule Daily Reset? (0=No, 1=Yes, e=Exit): ' newSchedule
+  if [ -z "$newSchedule" ] ; then newSchedule="${schedule:=0}" ; fi
 
-  if [ "$schedule" == "0" ]; then
-
-    if [ -f /jffs/scripts/services-start ]; then
+  if [ "$newSchedule" = "0" ]
+  then
+    schedule=0
+    if [ -f /jffs/scripts/services-start ]
+    then
       sed -i -e '/vpnmon-r3.sh/d' /jffs/scripts/services-start
       cru d RunVPNMONR3reset
-      schedule=0
       schedulehrs=1
       schedulemin=0
       echo ""
@@ -2217,33 +2335,84 @@ while true; do
       echo ""
       echo -e "${CGreen}[Modifying CRON jobs]..."
       sleep 2
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN Reset Schedule Disabled" >> $logfile
+      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN Reset Schedule Disabled" >> $logfile
       saveconfig
-      timer=$timerloop
+      timer="$timerloop"
       break
     fi
 
-  elif [ "$schedule" == "1" ]; then
-
-    echo ""
+  elif [ "$newSchedule" = "1" ]
+  then
+    schedule=1
+    echo
     echo -e "${InvGreen} ${InvDkGray}${CWhite} VPN Reset Scheduler                                                                   ${CClear}"
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear} Please indicate below what time you would like to schedule a daily VPN Reset CRON"
-    echo -e "${InvGreen} ${CClear} job. (Default = 1 hrs / 0 min = 01:00 or 1:00am)"
+    echo -e "${InvGreen} ${CClear} job. (Default = 1 hr, 0 min = 01:00 = 1:00am)"
     echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-    echo ""
-    read -p 'Schedule HOURS?: ' schedulehrs1
-      if [ "$schedulehrs1" == "" ] || [ -z "$schedulehrs1" ]; then schedulehrs=1; else schedulehrs="$schedulehrs1"; fi # Using default value on enter keypress
-    read -p 'Schedule MINUTES?: ' schedulemin1
-      if [ "$schedulemin1" == "" ] || [ -z "$schedulemin1" ]; then schedulemin=0; else schedulemin="$schedulemin1"; fi # Using default value on enter keypress
-
-    echo ""
+    echo
+    read -p 'Schedule HOURS [0-23]?: ' newScheduleHrs
+    if [ -z "$newScheduleHrs" ]
+    then
+        if _ValidateCronJobHour_ "$schedulehrs"
+        then scheduleHrsOK=true
+        else scheduleHrsOK=false
+        fi
+    elif _ValidateCronJobHour_ "$newScheduleHrs"
+    then
+        scheduleHrsOK=true
+        schedulehrs="$newScheduleHrs"
+    else
+        scheduleHrsOK=false
+        schedulehrs="${schedulehrs:=1}"
+        printf "${CRed}*ERROR*: INVALID Entry.${CClear}\n\n"
+    fi
+    read -p 'Schedule MINUTES [0-59]?: ' newScheduleMins
+    if [ -z "$newScheduleMins" ]
+    then
+        if _ValidateCronJobMinute_ "$schedulemin"
+        then scheduleMinsOK=true
+        else scheduleMinsOK=false
+        fi
+    elif _ValidateCronJobMinute_ "$newScheduleMins"
+    then
+        scheduleMinsOK=true
+        schedulemin="$newScheduleMins"
+    else
+        scheduleMinsOK=false
+        schedulemin="${schedulemin:=0}"
+        printf "${CRed}*ERROR*: INVALID Entry.${CClear}\n"
+    fi
+    if ! "$scheduleHrsOK" || ! "$scheduleMinsOK"
+    then
+        doResetSave=false
+        if ! "$scheduleHrsOK" && ! _ValidateCronJobHour_ "$schedulehrs"
+        then schedulehrs=1 ; doResetSave=true
+        fi
+        if ! "$scheduleMinsOK" && ! _ValidateCronJobMinute_ "$schedulemin"
+        then schedulemin=0 ; doResetSave=true
+        fi
+        if "$doResetSave"
+        then
+            schedule=0
+            saveconfig
+            printf "\n${CRed}INVALID input found. Resetting values.${CClear}\n\n"
+        else
+            printf "\n${CRed}INVALID input found. No changes made.${CClear}\n\n"
+        fi
+        echo -e "${CClear}[Exiting]"
+        timer="$timerloop"
+        sleep 3
+        break
+    fi
+    echo
     echo -e "${CGreen}[Modifying SERVICES-START file]..."
     sleep 2
 
-    if [ -f /jffs/scripts/services-start ]; then
-
-      if ! grep -q -F "sh /jffs/scripts/vpnmon-r3.sh -reset" /jffs/scripts/services-start; then
+    if [ -f /jffs/scripts/services-start ]
+    then
+      if ! grep -q -F "sh /jffs/scripts/vpnmon-r3.sh -reset" /jffs/scripts/services-start
+      then
         echo 'cru a RunVPNMONR3reset "'"$schedulemin $schedulehrs * * * sh /jffs/scripts/vpnmon-r3.sh -reset"'"' >> /jffs/scripts/services-start
         cru a RunVPNMONR3reset "$schedulemin $schedulehrs * * * sh /jffs/scripts/vpnmon-r3.sh -reset"
       else
@@ -2253,32 +2422,31 @@ while true; do
         echo 'cru a RunVPNMONR3reset "'"$schedulemin $schedulehrs * * * sh /jffs/scripts/vpnmon-r3.sh -reset"'"' >> /jffs/scripts/services-start
         cru a RunVPNMONR3reset "$schedulemin $schedulehrs * * * sh /jffs/scripts/vpnmon-r3.sh -reset"
       fi
-
     else
       echo 'cru a RunVPNMONR3reset "'"$schedulemin $schedulehrs * * * sh /jffs/scripts/vpnmon-r3.sh -reset"'"' >> /jffs/scripts/services-start
       chmod 755 /jffs/scripts/services-start
       cru a RunVPNMONR3reset "$schedulemin $schedulehrs * * * sh /jffs/scripts/vpnmon-r3.sh -reset"
     fi
 
-    echo ""
+    echo
     echo -e "${CGreen}[Modifying CRON jobs]..."
     sleep 2
-    echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN Reset Schedule Enabled" >> $logfile
+    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN Reset Schedule Enabled" >> $logfile
     saveconfig
-    timer=$timerloop
+    timer="$timerloop"
     break
 
-  elif [ "$schedule" == "e" ]; then
-    timer=$timerloop
-    break
-
+  elif [ "$newSchedule" = "e" ]
+  then
+     echo ; echo -e "${CClear}[Exiting]"
+     timer="$timerloop"
+     sleep 2
+     break
   else
-
-    schedule=0
-    schedulehrs=1
-    schedulemin=0
-    saveconfig
-
+     schedule="${schedule:=0}"
+     schedulehrs="${schedulehrs:=1}"
+     schedulemin="${schedulemin:=0}"
+     saveconfig
   fi
 
 done
@@ -2299,46 +2467,49 @@ while true; do
   echo -e "${InvGreen} ${CClear} (Default = Disabled)"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo -e "${InvGreen} ${CClear}"
-  if [ "$autostart" == "0" ]; then
-    echo -e "${InvGreen} ${CClear} Current: ${CRed}Disabled${CClear}"
-  elif [ "$autostart" == "1" ]; then
-    echo -e "${InvGreen} ${CClear} Current: ${CGreen}Enabled${CClear}"
+  if [ "$autostart" = "0" ]
+  then
+     echo -e "${InvGreen} ${CClear} Current: ${CRed}Disabled${CClear}"
+  elif [ "$autostart" = "1" ]
+  then
+     echo -e "${InvGreen} ${CClear} Current: ${CGreen}Enabled${CClear}"
   fi
-  echo ""
-  read -p 'Enable Reboot Protection? (0=No, 1=Yes, e=Exit): ' autostart1
+  echo
+  read -p 'Enable Reboot Protection? (0=No, 1=Yes, e=Exit): ' newAutoStart
+  # Use default value on enter keypress or invalid input #
+  if [ -z "$newAutoStart" ] ; then newAutoStart="${autostart:=0}" ; fi
 
-  if [ "$autostart1" == "" ] || [ -z "$autostart1" ]; then autostart=0; else autostart="$autostart1"; fi # Using default value on enter keypress
-
-  if [ "$autostart" == "0" ]; then
-
-    if [ -f /jffs/scripts/post-mount ]; then
+  if [ "$newAutoStart" = "0" ]
+  then
+    autostart=0
+    if [ -f /jffs/scripts/post-mount ]
+    then
       sed -i -e '/vpnmon-r3.sh/d' /jffs/scripts/post-mount
-      autostart=0
       echo ""
       echo -e "${CGreen}[Modifying POST-MOUNT file]..."
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Reboot Protection Disabled" >> $logfile
+      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Reboot Protection Disabled" >> $logfile
       saveconfig
       sleep 2
-      timer=$timerloop
+      timer="$timerloop"
       break
     fi
 
-  elif [ "$autostart" == "1" ]; then
-
-    if [ -f /jffs/scripts/post-mount ]; then
-
-      if ! grep -q -F "(sleep 30 && /jffs/scripts/vpnmon-r3.sh -screen) & # Added by vpnmon-r3" /jffs/scripts/post-mount; then
+  elif [ "$newAutoStart" = "1" ]
+  then
+    autostart=1
+    if [ -f /jffs/scripts/post-mount ]
+    then
+      if ! grep -q -F "(sleep 30 && /jffs/scripts/vpnmon-r3.sh -screen) & # Added by vpnmon-r3" /jffs/scripts/post-mount
+      then
         echo "(sleep 30 && /jffs/scripts/vpnmon-r3.sh -screen) & # Added by vpnmon-r3" >> /jffs/scripts/post-mount
-        autostart=1
-        echo ""
+        echo
         echo -e "${CGreen}[Modifying POST-MOUNT file]..."
-        echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Reboot Protection Enabled" >> $logfile
+        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Reboot Protection Enabled" >> $logfile
         saveconfig
         sleep 2
-        timer=$timerloop
+        timer="$timerloop"
         break
       else
-        autostart=1
         saveconfig
         sleep 1
       fi
@@ -2348,23 +2519,24 @@ while true; do
       echo "" >> /jffs/scripts/post-mount
       echo "(sleep 30 && /jffs/scripts/vpnmon-r3.sh -screen) & # Added by vpnmon-r3" >> /jffs/scripts/post-mount
       chmod 755 /jffs/scripts/post-mount
-      autostart=1
-      echo ""
+      echo
       echo -e "${CGreen}[Modifying POST-MOUNT file]..."
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Reboot Protection Enabled" >> $logfile
+      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Reboot Protection Enabled" >> $logfile
       saveconfig
       sleep 2
-      timer=$timerloop
+      timer="$timerloop"
       break
     fi
 
-  elif [ "$autostart" == "e" ]; then
-  timer=$timerloop
-  break
-
+  elif [ "$newAutoStart" = "e" ]
+  then
+     echo ; echo -e "${CClear}[Exiting]"
+     timer="$timerloop"
+     sleep 2
+     break
   else
-    autostart=0
-    saveconfig
+     autostart="${autostart:=0}"
+     saveconfig
   fi
 
 done
@@ -2375,17 +2547,15 @@ done
 
 trimlogs()
 {
+  if [ "$logsize" -gt 0 ]
+  then
+      currlogsize="$(wc -l $logfile | awk '{ print $1 }')" # Determine the number of rows in the log
 
-  if [ $logsize -gt 0 ]; then
-
-      currlogsize=$(wc -l $logfile | awk '{ print $1 }' ) # Determine the number of rows in the log
-
-      if [ $currlogsize -gt $logsize ] # If it's bigger than the max allowed, tail/trim it!
-        then
+      if [ "$currlogsize" -gt "$logsize" ] # If it's bigger than the max allowed, tail/trim it!
+      then
           echo "$(tail -$logsize $logfile)" > $logfile
-          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Trimmed the log file down to $logsize lines" >> $logfile
+          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Trimmed the log file down to $logsize lines" >> $logfile
       fi
-
   fi
 }
 
@@ -2394,7 +2564,6 @@ trimlogs()
 
 saveconfig()
 {
-
    { echo 'availableslots="'"$availableslots"'"'
      echo 'PINGHOST="'"$PINGHOST"'"'
      echo 'logsize='$logsize
@@ -2415,10 +2584,9 @@ saveconfig()
      echo 'updateskynet='$updateskynet
      echo 'amtmemailsuccess='$amtmemailsuccess
      echo 'amtmemailfailure='$amtmemailfailure
-   } > $config
+   } > "$config"
 
-   echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: New vpnmon-r3.cfg File Saved" >> $logfile
-
+   echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New vpnmon-r3.cfg File Saved" >> $logfile
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -2458,7 +2626,7 @@ _DownloadCEMLibraryFile_()
 
    printf "\33[2K\r"
    printf "${CGreen}\r[INFO: ${msgStr} the shared AMTM email library script file to support email notifications...]${CClear}"
-   echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: ${msgStr} the shared AMTM email library script file to support email notifications..." >> $logfile
+   echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: ${msgStr} the shared AMTM email library script file to support email notifications..." >> $logfile
 
    mkdir -m 755 -p "$CUSTOM_EMAIL_LIBDir"
    curl -kLSs --retry 3 --retry-delay 5 --retry-connrefused \
@@ -2475,7 +2643,7 @@ _DownloadCEMLibraryFile_()
        retCode=1
        printf "\33[2K\r"
        printf "${CRed}\r[ERROR: Unable to download the shared library script file ($CUSTOM_EMAIL_LIBName).]${CClear}"
-       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - **ERROR**: Unable to download the shared AMTM email library script file [$CUSTOM_EMAIL_LIBName]." >> $logfile
+       echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - **ERROR**: Unable to download the shared AMTM email library script file [$CUSTOM_EMAIL_LIBName]." >> $logfile
    fi
    return "$retCode"
 }
@@ -2488,13 +2656,12 @@ _DownloadCEMLibraryFile_()
 #-----------------------------------------------------------#
 _SendEMailNotification_()
 {
-
    if [ -z "${amtmIsEMailConfigFileEnabled:+xSETx}" ]
    then
        printf "\33[2K\r"
        printf "${CRed}\r[ERROR: Email library script ($CUSTOM_EMAIL_LIBFile) *NOT* FOUND.]${CClear}"
        sleep 5
-       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - **ERROR**: Email library script [$CUSTOM_EMAIL_LIBFile] *NOT* FOUND." >> $logfile
+       echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - **ERROR**: Email library script [$CUSTOM_EMAIL_LIBFile] *NOT* FOUND." >> $logfile
        return 1
    fi
 
@@ -2503,7 +2670,7 @@ _SendEMailNotification_()
        printf "\33[2K\r"
        printf "${CRed}\r[ERROR: INSUFFICIENT email parameters]${CClear}"
        sleep 5
-       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - **ERROR**: INSUFFICIENT email parameters." >> $logfile
+       echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - **ERROR**: INSUFFICIENT email parameters." >> $logfile
        return 1
    fi
    local retCode  emailBodyTitleStr=""
@@ -2516,15 +2683,15 @@ _SendEMailNotification_()
 
    if [ "$retCode" -eq 0 ]
    then
-     printf "\33[2K\r"
-     printf "${CGreen}\r[Email notification was sent successfully ($2)]${CClear}"
-     echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - INFO: Email notification was sent successfully [$2]" >> $logfile
-     sleep 5
+      printf "\33[2K\r"
+      printf "${CGreen}\r[Email notification was sent successfully ($2)]${CClear}"
+      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Email notification was sent successfully [$2]" >> $logfile
+      sleep 5
    else
-     printf "\33[2K\r"
-     printf "${CRed}\r[ERROR: Failure to send email notification (Error Code: $retCode - $2).]${CClear}"
-     echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) VPNMON-R3[$$] - **ERROR**: Failure to send email notification [$2]" >> $logfile
-     sleep 5
+      printf "\33[2K\r"
+      printf "${CRed}\r[ERROR: Failure to send email notification (Error Code: $retCode - $2).]${CClear}"
+      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - **ERROR**: Failure to send email notification [$2]" >> $logfile
+      sleep 5
    fi
 
    return "$retCode"
@@ -2549,9 +2716,9 @@ fi
     . "$CUSTOM_EMAIL_LIBFile"
 
     if [ -z "${CEM_LIB_VERSION:+xSETx}" ] || \
-      _CheckLibraryUpdates_CEM_ "$CUSTOM_EMAIL_LIBDir" quiet
+       _CheckLibraryUpdates_CEM_ "$CUSTOM_EMAIL_LIBDir" quiet
     then
-      _DownloadCEMLibraryFile_ "update"
+       _DownloadCEMLibraryFile_ "update"
     fi
   else
       _DownloadCEMLibraryFile_ "install"
@@ -2719,7 +2886,7 @@ restartvpn()
   #Check the current connection state of vpn slot
   currvpnstate="$(_VPN_GetClientState_ $1)"
 
-  if [ $currvpnstate -ne 0 ]; then
+  if [ "$currvpnstate" -ne 0 ]; then
     printf "${CGreen}\r[Stopping VPN Client $1]"
     service stop_vpnclient$1 >/dev/null 2>&1
     sleep 20
@@ -2730,15 +2897,17 @@ restartvpn()
   fi
 
   #Determine how many server entries are in the assigned vpn slot alternate servers file
-  if [ -f /jffs/addons/vpnmon-r3.d/vr3svr$1.txt ]; then
-    servers=$(cat /jffs/addons/vpnmon-r3.d/vr3svr$1.txt | wc -l) >/dev/null 2>&1
-    if [ -z $servers ] || [ $servers -eq 0 ]; then
+  if [ -f "/jffs/addons/vpnmon-r3.d/vr3svr$1.txt" ]
+  then
+    servers=$(cat "/jffs/addons/vpnmon-r3.d/vr3svr$1.txt" | wc -l) >/dev/null 2>&1
+    if [ -z "$servers" ] || [ "$servers" -eq 0 ]
+    then
       #Restart the same server currently allocated to that vpn slot
       currvpnhost=$($timeoutcmd$timeoutsec nvram get vpn_client$1_addr)
       printf "\33[2K\r"
       printf "${CGreen}\r[Starting VPN Client $1]"
       service start_vpnclient$1 >/dev/null 2>&1
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN$1 Connection Restarted - Current Server: $currvpnhost" >> $logfile
+      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN$1 Connection Restarted - Current Server: $currvpnhost" >> $logfile
       resettimer $1
       sleep 10
       printf "\33[2K\r"
@@ -2758,7 +2927,7 @@ restartvpn()
       printf "\33[2K\r"
       printf "${CGreen}\r[Starting VPN Client $1]"
       service start_vpnclient$1 >/dev/null 2>&1
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN$1 Connection Restarted - New Server: $RNDVPNIP" >> $logfile
+      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN$1 Connection Restarted - New Server: $RNDVPNIP" >> $logfile
       resettimer $1
       sleep 10
       printf "\33[2K\r"
@@ -2769,9 +2938,9 @@ restartvpn()
     #Restart the same server currently allocated to that vpn slot
     printf "\33[2K\r"
     printf "${CGreen}\r[Starting VPN Client $1]"
-    currvpnhost=$($timeoutcmd$timeoutsec nvram get vpn_client$1_addr)
+    currvpnhost="$($timeoutcmd$timeoutsec nvram get vpn_client$1_addr)"
     service start_vpnclient$1 >/dev/null 2>&1
-    echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN$1 Connection Restarted - Current Server: $currvpnhost" >> $logfile
+    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN$1 Connection Restarted - Current Server: $currvpnhost" >> $logfile
     resettimer $1
     sleep 10
     printf "\33[2K\r"
@@ -2790,7 +2959,7 @@ restartrouting()
   printf "\33[2K\r"
   printf "${CGreen}\r[Restarting VPN Routing]"
   service restart_vpnrouting0 >/dev/null 2>&1
-  echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN Director Routing Service Restarted" >> $logfile
+  echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN Director Routing Service Restarted" >> $logfile
   sleep 5
   printf "\33[2K\r"
   trimlogs
@@ -2808,7 +2977,7 @@ killunmonvpn()
   echo ""
   printf "${CGreen}\r[Stopping VPN Client $1]"
   service stop_vpnclient$1 >/dev/null 2>&1
-  echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN$1 has been stopped and no longer being monitored" >> $logfile
+  echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN$1 has been stopped and no longer being monitored" >> $logfile
   sleep 15
   printf "\33[2K\r"
   printf "${CGreen}\r[Unmonitoring VPN Client $1]"
@@ -2827,14 +2996,13 @@ killunmonvpn()
 
 skynetwhitelist()
 {
-
-  if [ "$updateskynet" == "1" ]; then
+  if [ "$updateskynet" == "1" ]
+  then
     printf "${CGreen}\r[Whitelisting VPN Server Slot $1 List in the Skynet Firewall]${CClear}\n"
     firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr$1.txt "VPNMON-R3 - VPN Server Slot $1 Whitelist" >/dev/null 2>&1
-    echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN Server Slot $1 List has been whitelisted in Skynet" >> $logfile
+    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN Server Slot $1 List has been whitelisted in Skynet" >> $logfile
     sleep 5
   fi
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -2873,27 +3041,28 @@ resettimer()
 
 vreset()
 {
-
   # Grab the VPNMON-R3 config file and read it in
-  if [ -f $config ]; then
-    source $config
+  if [ -f "$config" ]
+  then
+    source "$config"
   else
     clear
     echo -e "${CRed}ERROR: VPNMON-R3 is not configured.  Please run 'vpnmon-r3.sh -setup' first."
     echo ""
-    echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - ERROR: VPNMON-R3 config file not found. Please run the setup/configuration utility" >> $logfile
+    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: VPNMON-R3 config file not found. Please run the setup/configuration utility" >> $logfile
     echo -e "${CClear}"
     exit 1
   fi
 
   # Grab the monitored slots file and read it in
-  if [ -f /jffs/addons/vpnmon-r3.d/vr3clients.txt ]; then
+  if [ -f /jffs/addons/vpnmon-r3.d/vr3clients.txt ]
+  then
     source /jffs/addons/vpnmon-r3.d/vr3clients.txt
   else
     clear
     echo -e "${CRed}ERROR: VPNMON-R3 is not configured.  Please run 'vpnmon-r3.sh -setup' first."
     echo ""
-    echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - ERROR: VPNMON-R3 VPN Client Monitoring file not found. Please run the setup/configuration utility" >> $logfile
+    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: VPNMON-R3 VPN Client Monitoring file not found. Please run the setup/configuration utility" >> $logfile
     echo -e "${CClear}"
     exit 1
   fi
@@ -2903,8 +3072,7 @@ vreset()
 
   slot=0
   for slot in $availableslots #loop through the 3/5 vpn slots
-    do
-
+  do
       clear
       echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 - v$version | $(date)                                         ${CClear}\n"
       echo -e "${CGreen}[VPN Connection Reset Commencing]"
@@ -2914,33 +3082,35 @@ vreset()
       sleep 2
 
       #determine if the slot is monitored and reset it
-      if [ "$((VPN$slot))" == "1" ]; then
-        if [ $refreshserverlists -eq 1 ]; then
-          if [ -f /jffs/addons/vpnmon-r3.d/vr3svr$slot.txt ]; then
+      if [ "$((VPN$slot))" == "1" ]
+      then
+        if [ "$refreshserverlists" -eq 1 ]
+        then
+          if [ -f "/jffs/addons/vpnmon-r3.d/vr3svr$slot.txt" ]
+          then
             echo -e "${CGreen}[Executing Custom Server List Script for VPN Slot $slot]${CClear}"
             slottmp="automation${slot}"
             eval slottmp="\$${slottmp}"
-            if [ -z $slottmp ] || [ $slottmp == "" ]; then
+            if [ -z "$slottmp" ]
+            then
               echo ""
               echo -e "${CGreen}[Custom VPN Client Server Query not found for VPN Slot $slot]${CClear}"
             else
-              automationunenc=$(echo "$slottmp" | openssl enc -d -base64 -A)
+              automationunenc="$(echo "$slottmp" | openssl enc -d -base64 -A)"
               echo ""
               echo -e "${CClear}Running: $automationunenc"
               echo ""
-              eval "$automationunenc" > /jffs/addons/vpnmon-r3.d/vr3svr$slot.txt
-              if [ -f /jffs/addons/vpnmon-r3.d/vr3svr$slot.txt ]; then
-                dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svr$slot.txt | wc -l) >/dev/null 2>&1
-                if [ $dlcnt -lt 1 ]; then
-                  dlcnt=0
-                elif [ -z $dlcnt ]; then
-                  dlcnt=0
-                fi
+              eval "$automationunenc" > "/jffs/addons/vpnmon-r3.d/vr3svr$slot.txt"
+              if [ -f "/jffs/addons/vpnmon-r3.d/vr3svr$slot.txt" ]
+              then
+                dlcnt=$(cat "/jffs/addons/vpnmon-r3.d/vr3svr$slot.txt" | wc -l) >/dev/null 2>&1
+                if [ -z "$dlcnt" ] || [ "$dlcnt" -lt 1 ]
+                then dlcnt=0 ; fi
               else
                 dlcnt=0
               fi
               echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: Custom VPN Client Server List Query Executed for VPN Slot $slot ($dlcnt rows)" >> $logfile
+              echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Client Server List Query Executed for VPN Slot $slot ($dlcnt rows)" >> $logfile
               sleep 3
               echo ""
               skynetwhitelist $slot
@@ -2949,7 +3119,7 @@ vreset()
           else
             echo ""
             echo -e "${CRed}[Custom VPN Client Server List File not found for VPN Slot $slot]${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List File not found for VPN Slot $slot" >> $logfile
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List File not found for VPN Slot $slot" >> $logfile
             sleep 3
           fi
         fi
@@ -2958,7 +3128,6 @@ vreset()
         sendmessage 0 "VPN Connection Scheduled Reset" $slot
 
       fi
-
   done
 
   restartrouting
@@ -2968,7 +3137,6 @@ vreset()
 
   echo -e "\n${CClear}"
   exit 0
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -2977,23 +3145,26 @@ vreset()
 getvpnip()
 {
   ubsync=""
-  TUN="tun1"$1
-  icanhazvpnip=$($timeoutcmd$timeoutsec nvram get vpn_client$1_rip)
-  if [ -z $icanhazvpnip ] || [ "$icanhazvpnip" == "unknown" ]; then
-    icanhazvpnip="curl --silent --fail --interface $TUN --request GET --url https://ipv4.icanhazip.com" # Grab the public IP of the VPN Connection
-    icanhazvpnip="$(eval $icanhazvpnip)"; if echo $icanhazvpnip | grep -qoE 'Internet|traffic|Error|error'; then icanhazvpnip="0.0.0.0"; fi
+  TUN="tun1$1"
+
+  icanhazvpnip="$($timeoutcmd$timeoutsec nvram get vpn_client$1_rip)"
+  if [ -z "$icanhazvpnip" ] || [ "$icanhazvpnip" = "unknown" ]
+  then
+     icanhazvpnip="curl --silent --fail --interface $TUN --request GET --url https://ipv4.icanhazip.com" # Grab the public IP of the VPN Connection
+     icanhazvpnip="$(eval $icanhazvpnip)"; if echo "$icanhazvpnip" | grep -qoE 'Internet|traffic|Error|error'; then icanhazvpnip="0.0.0.0"; fi
   fi
 
-  if [ -z $icanhazvpnip ] || [ "$icanhazvpnip" == "" ]; then
-    vpnip="000.000.000.000"
-    return
+  if [ -z "$icanhazvpnip" ]
+  then
+     vpnip="000.000.000.000"
+     return
   else
-    vpnip=$(printf '%03d.%03d.%03d.%03d'  ${icanhazvpnip//./ })
+     vpnip="$(printf '%15s' "$icanhazvpnip")"
   fi
 
-  if [ $unboundclient -ne 0 ] && [ $unboundclient -eq $1 ]; then
-
-    if [ $ResolverTimer -eq 1 ]; then
+  if [ "$unboundclient" -ne 0 ] && [ "$unboundclient" -eq "$1" ]
+  then
+    if [ "$ResolverTimer" -eq 1 ]; then
       ResolverTimer=0
       ubsync="${CYellow}-?[UB]${CClear}"
     else
@@ -3021,10 +3192,9 @@ getvpnip()
   fi
 
   # Insert bogus IP if screenshotmode is on
-  if [ "$screenshotmode" == "1" ]; then
-    vpnip="123.456.789.012"
+  if [ "$screenshotmode" = "1" ]; then
+     vpnip="$(printf '%15s' "12.34.56.78")"
   fi
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -3032,7 +3202,6 @@ getvpnip()
 
 getvpncity()
 {
-
   if [ "$icanhazvpnip" == "0.0.0.0" ]; then
     vpncity="Undetermined"
     return
@@ -3091,7 +3260,7 @@ getvpncity()
   fi
 
   # Insert bogus City if screenshotmode is on
-  if [ "$screenshotmode" == "1" ]; then
+  if [ "$screenshotmode" = "1" ]; then
     vpncity="Gotham City"
   fi
 
@@ -3102,12 +3271,11 @@ getvpncity()
 
 checkvpn()
 {
-
   CNT=0
   TRIES=3
-  TUN="tun1"$1
+  TUN="tun1$1"
 
-  while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+  while [ "$CNT" -lt "$TRIES" ]; do # Loop through number of tries
     ping -I $TUN -q -c 1 -W 2 $PINGHOST > /dev/null 2>&1 # First try pings
     RC=$?
     ICANHAZIP=$(curl --silent --retry 3 --connect-timeout 6 --max-time 6 --retry-delay 1 --retry-all-errors --fail --interface $TUN --request GET --url https://ipv4.icanhazip.com) # Grab the public IP of the VPN Connection
@@ -3126,24 +3294,23 @@ checkvpn()
       printf "\33[2K\r"
       break
     else
-      CNT=$((CNT+1))
+      CNT="$((CNT+1))"
       printf "\33[2K\r"
       printf "\r${InvDkGray} ${CWhite} VPN$1${CClear} [Attempt $CNT]"
       sleep 1 # Giving the VPN a chance to recover a certain number of times
 
-      if [ $CNT -eq $TRIES ];then # But if it fails, report back that we have an issue requiring a VPN reset
+      if [ "$CNT" -eq "$TRIES" ];then # But if it fails, report back that we have an issue requiring a VPN reset
         printf "\33[2K\r"
         vpnping=0
         vpnhealth="${CRed}[FAIL]${CClear}"
         vpnindicator="${InvRed} ${CClear}"
-        echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - WARNING: VPN$1 failed to respond" >> $logfile
+        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$1 failed to respond" >> $logfile
         if [ "$((VPN$1))" == "1" ]; then
           resetvpn=$1
         fi
       fi
     fi
   done
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -3151,49 +3318,49 @@ checkvpn()
 # Checkwan is a function that checks the viability of the current WAN connection and will loop until the WAN connection is restored.
 checkwan()
 {
-
-  # Using Google's 8.8.8.8 server to test for WAN connectivity over verified SSL Handshake
+  # Using Google's DNS server as default to test for WAN connectivity over verified SSL Handshake
   wandownbreakertrip=0
-  testssl="8.8.8.8"
+  testssl="$PING_HOST_Deflt"
 
   printf "\33[2K\r"
   printf "\r${InvYellow} ${CClear} [Checking WAN Connectivity]..."
 
   #Run main checkwan loop
-  while true; do
-
+  while true
+  do
     # Check the actual WAN State from NVRAM before running connectivity test, or insert itself into loop after failing an SSL handshake test
     if [ "$($timeoutcmd$timeoutsec nvram get wan0_state_t)" -eq 2 ] || [ "$($timeoutcmd$timeoutsec nvram get wan1_state_t)" -eq 2 ]
-      then
-
+    then
         # Test the active WAN connection using 443 and verifying a handshake... if this fails, then the WAN connection is most likely down... or Google is down ;)
         if ($timeoutcmd$timeoutlng nc -w3 $testssl 443 >/dev/null 2>&1 && echo | $timeoutcmd$timeoutlng openssl s_client -connect $testssl:443 >/dev/null 2>&1 | awk 'handshake && $1 == "Verification" { if ($2=="OK") exit; exit 1 } $1 $2 == "SSLhandshake" { handshake = 1 }' >/dev/null 2>&1)
-        #if ($timeoutcmd$timeoutlng nc -w1 $testssl 443 >/dev/null 2>&1 && echo | $timeoutcmd$timeoutlng openssl s_client -connect $testssl:443 >/dev/null 2>&1 | awk '$1 == "SSL" && $2 == "handshake" { handshake = 1 } handshake && $1 == "Verification:" { ok = $2; exit } END { exit ok != "OK" }' >/dev/null 2>&1); then
-          then
+        ##OFF##if ($timeoutcmd$timeoutlng nc -w1 $testssl 443 >/dev/null 2>&1 && echo | $timeoutcmd$timeoutlng openssl s_client -connect $testssl:443 >/dev/null 2>&1 | awk '$1 == "SSL" && $2 == "handshake" { handshake = 1 } handshake && $1 == "Verification:" { ok = $2; exit } END { exit ok != "OK" }' >/dev/null 2>&1)
+        then
             printf "\r${InvGreen} ${CClear} [Checking WAN Connectivity]...ACTIVE"
             sleep 1
             printf "\33[2K\r"
             return
-          else
+        else
             wandownbreakertrip=1
-            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - ERROR: WAN Connectivity Issue Detected" >> $logfile
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: WAN Connectivity Issue Detected" >> $logfile
         fi
-      else
+    else
         wandownbreakertrip=1
-        echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - ERROR: WAN Connectivity Issue Detected" >> $logfile
+        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: WAN Connectivity Issue Detected" >> $logfile
     fi
 
     if [ "$wandownbreakertrip" == "1" ]
-      then
+    then
         # The WAN is most likely down, and keep looping through until NVRAM reports that it's back up
-        while [ "$wandownbreakertrip" == "1" ]; do
-
-          if [ "$availableslots" == "1 2" ]; then
+        while [ "$wandownbreakertrip" == "1" ]
+        do
+          if [ "$availableslots" == "1 2" ]
+          then
             state1="$(_VPN_GetClientState_ 1)"
             state2="$(_VPN_GetClientState_ 2)"
             printf "\r${InvGreen} ${CClear} [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2                                   "
             sleep 3
-          elif [ "$availableslots" == "1 2 3 4 5" ]; then
+          elif [ "$availableslots" == "1 2 3 4 5" ]
+          then
             state1="$(_VPN_GetClientState_ 1)"
             state2="$(_VPN_GetClientState_ 2)"
             state3="$(_VPN_GetClientState_ 3)"
@@ -3205,7 +3372,7 @@ checkwan()
 
           # Preemptively kill all the VPN Clients incase they're trying to reconnect on their own
           for slot in $availableslots
-            do
+          do
               if [ $((state$slot)) -ne 0 ]; then
                 printf "\r${InvGreen} ${CClear} [Retrying Kill Command on VPN$slot Client Connection]...              "
                 service stop_vpnclient$slot >/dev/null 2>&1
@@ -3215,9 +3382,9 @@ checkwan()
 
           # Continue to test for WAN connectivity while in this loop. If it comes back up, break out of the loop and reset VPN
           if [ "$($timeoutcmd$timeoutsec nvram get wan0_state_t)" -ne 2 ] && [ "$($timeoutcmd$timeoutsec nvram get wan1_state_t)" -ne 2 ]
-            then
+          then
               # Continue to loop and retest the WAN every 15 seconds
-              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - ERROR: WAN DOWN" >> $logfile
+              echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: WAN DOWN" >> $logfile
               clear
               echo -e "${InvGreen} ${InvDkGray}${CWhite} Router is Currently Experiencing a WAN Down Situation                                 ${CClear}"
               echo -e "${InvGreen} ${CClear}"
@@ -3230,17 +3397,17 @@ checkwan()
               echo ""
               spinner 60
               wandownbreakertrip=1
-            else
+          else
               wandownbreakertrip=2
               break
           fi
         done
-      fi
+    fi
 
       # If the WAN was down, and now it has just reset, then run a VPN Reset, and try to establish a new VPN connection
       if [ "$wandownbreakertrip" == "2" ]
-        then
-          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - WARNING:  WAN Link Detected -- Trying to reconnect/Reset VPN" >> $logfile
+      then
+          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING:  WAN Link Detected -- Trying to reconnect/Reset VPN" >> $logfile
           wandownbreakertrip=0
           clear
           echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 is currently recovering from a WAN Down Situation                           ${CClear}"
@@ -3255,102 +3422,115 @@ checkwan()
           #sendmessage 1 "Recovering from WAN Down" - this doesn't work when the internet is down
           exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
       fi
-
   done
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
 
+##----------------------------------------##
+## Modified by Martinski W. [2024-Oct-05] ##
+##----------------------------------------##
 # wancheck is a function that checks each wan connection to see if its active, and performs a ping and a city lookup...
-wancheck() {
-
-  WANIF=$1
-  WANIFNAME=$(get_wan_setting ifname)
-  DUALWANMODE=$($timeoutcmd$timeoutsec nvram get wans_mode)
+wancheck()
+{
+  WANIF="$1"
+  WANIFNAME="$(get_wan_setting ifname)"
+  DUALWANMODE="$($timeoutcmd$timeoutsec nvram get wans_mode)"
 
   # If WAN 0 or 1 is connected, then proceed, else display that it's inactive
-  if [ "$WANIF" == "0" ]; then
-    if [ "$($timeoutcmd$timeoutsec nvram get wan0_state_t)" -eq 2 ]
-      then
+  if [ "$WANIF" = "0" ]
+  then
+     if [ "$($timeoutcmd$timeoutsec nvram get wan0_state_t)" -eq 2 ]
+     then
         # Call the get_wan_setting function courtesy of @dave14305 and using this interface name to ping and get a city name from
-        WAN0IFNAME=$(get_wan_setting0 ifname)
+        WAN0IFNAME="$(get_wan_setting0 ifname)"
 
-        # Ping through the WAN interface
-        if [ "$WANIFNAME" == "$WAN0IFNAME" ] || [ "$DUALWANMODE" == "lb" ]; then
-          WAN0PING=$(ping -I $WAN0IFNAME -c 1 $PINGHOST | awk -F'[/=]' 'END{print $5}') > /dev/null 2>&1
-          WAN0PING=$(awk "BEGIN {printf \"[%08.3f]\", ${WAN0PING}}")
+        # Ping through the WAN interface #
+        if [ "$WANIFNAME" = "$WAN0IFNAME" ] || [ "$DUALWANMODE" = "lb" ]
+        then
+            WAN0PING="$(ping -I "$WAN0IFNAME" -c 1 "$PINGHOST" 2>/dev/null | awk -F'[/=]' 'END{print $5}')"
+            ## No need to do left-padding with zeros for alignment ##
+            [ -n "${WAN0PING:+xSETx}" ] && WAN0PING="$(printf "[%8.3f]" "$WAN0PING")"
         else
-          WAN0PING="FAILOVER"
+            WAN0PING="FAILOVER"
         fi
 
-        if [ -z "$WAN0PING" ]; then WAN0PING=1; fi # On that rare occasion where it's unable to get the Ping time, assign 1
+        # On the rare occasion where it's unable to get the Ping time, show ERROR #
+        if [ -z "$WAN0PING" ] ; then WAN0PING="${CRed}[PING ERR]${CClear}" ; fi
 
-        # Get the public IP of the WAN, determine the city from it, and display it on screen
-        if [ "$WAN0IP" == "" ] || [ -z "$WAN0IP" ]; then
-          WAN0IP=$(curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail --interface $WAN0IFNAME --request GET --url https://ipv4.icanhazip.com)
-          WAN0CITY="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$WAN0IP | jq --raw-output .city"
-          WAN0CITY="$(eval $WAN0CITY)"; if echo $WAN0CITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then WAN0CITY="$WAN0IP"; fi
-          WAN0IP=$(printf '%03d.%03d.%03d.%03d'  ${WAN0IP//./ })
+        # Get the public IP of the WAN, determine the city from it, and display it on screen #
+        if [ -z "${WAN0IP:+xSETx}" ]
+        then
+           WAN0IP="$(curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail --interface "$WAN0IFNAME" --request GET --url https://ipv4.icanhazip.com)"
+           WAN0CITY="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$WAN0IP | jq --raw-output .city"
+           WAN0CITY="$(eval $WAN0CITY)"; if echo "$WAN0CITY" | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then WAN0CITY="$WAN0IP"; fi
+           WAN0IP="$(printf '%15s' "$WAN0IP")"
         fi
 
         # Insert bogus IP and City if screenshotmode is on
-        if [ "$screenshotmode" == "1" ]; then
-          WAN0CITY="Metropolis"
-          WAN0IP="101.202.303.404"
+        if [ "$screenshotmode" = "1" ]
+        then
+           WAN0CITY="Metropolis"
+           WAN0IP="$(printf '%15s' "11.22.33.44")"
         fi
 
-        if [ "$WAN0PING" == "FAILOVER" ]; then
-          echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN0${CClear} | ${CGreen}[X]${CClear} | "
-          printf "%-6s" $WAN0IFNAME
-          echo -e " | ${CGreen}[ OK ]${CClear} | Failover     | $WAN0IP | $WAN0PING | $WAN0CITY"
+        if [ "$WAN0PING" = "FAILOVER" ]
+        then
+           echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN0${CClear} | ${CGreen}[X]${CClear} | "
+           printf "%-6s" "$WAN0IFNAME"
+           echo -e " | ${CGreen}[ OK ]${CClear} | Failover     | $WAN0IP | $WAN0PING | $WAN0CITY"
         else
-          echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN0${CClear} | ${CGreen}[X]${CClear} | "
-          printf "%-6s" $WAN0IFNAME
-          echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN0IP | $WAN0PING | $WAN0CITY"
+           echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN0${CClear} | ${CGreen}[X]${CClear} | "
+           printf "%-6s" "$WAN0IFNAME"
+           echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN0IP | $WAN0PING | $WAN0CITY"
         fi
-
-      else
+     else
         echo -e "${InvDkGray}${CWhite}  WAN0${CClear} | ${CGreen}[X]${CClear} | ${CDkGray}[n/a]${CClear}  | ${CDkGray}[n/a ]${CClear} | Inactive     | ${CDkGray}[n/a]${CClear}           | ${CDkGray}[n/a]${CClear}      | ${CDkGray}[n/a]${CClear}"
-    fi
+     fi
   fi
 
-  if [ "$WANIF" == "1" ]; then
-    if [ "$($timeoutcmd$timeoutsec nvram get wan1_state_t)" -eq 2 ]
-      then
+  if [ "$WANIF" = "1" ]
+  then
+     if [ "$($timeoutcmd$timeoutsec nvram get wan1_state_t)" -eq 2 ]
+     then
         # Call the get_wan_setting function courtesy of @dave14305 and using this interface name to ping and get a city name from
-        WAN1IFNAME=$(get_wan_setting1 ifname)
+        WAN1IFNAME="$(get_wan_setting1 ifname)"
 
-        # Ping through the WAN interface
-        if [ "$WANIFNAME" == "$WAN1IFNAME" ] || [ "$DUALWANMODE" == "lb" ]; then
-          WAN1PING=$(ping -I $WAN1IFNAME -c 1 $PINGHOST | awk -F'[/=]' 'END{print $5}') > /dev/null 2>&1
-          WAN1PING=$(awk "BEGIN {printf \"[%08.3f]\", ${WAN1PING}}")
+        # Ping through the WAN interface #
+        if [ "$WANIFNAME" = "$WAN1IFNAME" ] || [ "$DUALWANMODE" = "lb" ]
+        then
+            WAN1PING="$(ping -I "$WAN1IFNAME" -c 1 "$PINGHOST" 2>/dev/null | awk -F'[/=]' 'END{print $5}')"
+            ## No need to do left-padding with zeros for alignment ##
+            [ -n "${WAN1PING:+xSETx}" ] && WAN1PING="$(printf "[%8.3f]" "$WAN1PING")"
         else
-          WAN1PING="FAILOVER"
+            WAN1PING="FAILOVER"
         fi
 
-        if [ -z "$WAN1PING" ]; then WAN1PING=1; fi # On that rare occasion where it's unable to get the Ping time, assign 1
+        # On the rare occasion where it's unable to get the Ping time, show ERROR #
+        if [ -z "$WAN1PING" ] ; then WAN1PING="${CRed}[PING ERR]${CClear}" ; fi
 
-        # Get the public IP of the WAN, determine the city from it, and display it on screen
-        if [ "$WAN1IP" == "" ] || [ -z "$WAN1IP" ]; then
-          WAN1IP=$(curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail --interface $WAN1IFNAME --request GET --url https://ipv4.icanhazip.com)
-          WAN1CITY="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$WAN1IP | jq --raw-output .city"
-          WAN1CITY="$(eval $WAN1CITY)"; if echo $WAN1CITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then WAN1CITY="$WAN1IP"; fi
-          WAN1IP=$(printf '%03d.%03d.%03d.%03d'  ${WAN1IP//./ })
+        # Get the public IP of the WAN, determine the city from it, and display it on screen #
+        if [ -z "${WAN1IP:+xSETx}" ]
+        then
+           WAN1IP="$(curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail --interface "$WAN1IFNAME" --request GET --url https://ipv4.icanhazip.com)"
+           WAN1CITY="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$WAN1IP | jq --raw-output .city"
+           WAN1CITY="$(eval $WAN1CITY)"; if echo "$WAN1CITY" | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then WAN1CITY="$WAN1IP"; fi
+           WAN1IP="$(printf '%15s' "$WAN1IP")"
         fi
 
-        if [ "$WAN1PING" == "FAILOVER" ]; then
-          echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN1${CClear} | ${CGreen}[X]${CClear} | "
-          printf "%-6s" $WAN1IFNAME
-          echo -e " | ${CGreen}[ OK ]${CClear} | Failover     | $WAN1IP | $WAN1PING | $WAN1CITY"
+        if [ "$WAN1PING" = "FAILOVER" ]
+        then
+           echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN1${CClear} | ${CGreen}[X]${CClear} | "
+           printf "%-6s" "$WAN1IFNAME"
+           echo -e " | ${CGreen}[ OK ]${CClear} | Failover     | $WAN1IP | $WAN1PING | $WAN1CITY"
         else
-          echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN1${CClear} | ${CGreen}[X]${CClear} | "
-          printf "%-6s" $WAN1IFNAME
-          echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN1IP | $WAN1PING | $WAN1CITY"
+           echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN1${CClear} | ${CGreen}[X]${CClear} | "
+           printf "%-6s" "$WAN1IFNAME"
+           echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN1IP | $WAN1PING | $WAN1CITY"
         fi
-
-      else
+     else
         echo -e "${InvDkGray}${CWhite}  WAN1${CClear} | ${CGreen}[X]${CClear} | ${CDkGray}[n/a]${CClear}  | ${CDkGray}[n/a ]${CClear} | Inactive     | ${CDkGray}[n/a]${CClear}           | ${CDkGray}[n/a]${CClear}      | ${CDkGray}[n/a]${CClear}"
-    fi
+     fi
   fi
 }
 
@@ -3487,72 +3667,83 @@ get_wan_setting1()
 # -------------------------------------------------------------------------------------------------------------------------
 # This function displays the operations menu
 
+##----------------------------------------##
+## Modified by Martinski W. [2024-Oct-05] ##
+##----------------------------------------##
 displayopsmenu()
 {
-
     #scheduler colors and indicators
-    if [ "$schedule" == "0" ]; then
-      schedtime="${CDkGray}01:00${CClear}"
-    elif [ "$schedule" == "1" ]; then
-      schedhrs=$(awk "BEGIN {printf \"%02.f\",${schedulehrs}}")
-      schedmin=$(awk "BEGIN {printf \"%02.f\",${schedulemin}}")
-      schedtime="${CGreen}$schedhrs:$schedmin${CClear}"
+    if [ "$schedule" = "0" ]
+    then
+       schedtime="${CDkGray}01:00${CClear}"
+    elif [ "$schedule" = "1" ]
+    then
+       schedhrs="$(printf "%02d" "$schedulehrs")"
+       schedmin="$(printf "%02d" "$schedulemin")"
+       schedtime="${CGreen}$schedhrs:$schedmin${CClear}"
     fi
 
     #autostart colors and indicators
-    if [ "$autostart" == "0" ]; then
-      rebootprot="${CDkGray}Disabled${CClear}"
-    elif [ "$autostart" == "1" ]; then
-      rebootprot="${CGreen}Enabled${CClear}"
+    if [ "$autostart" = "0" ]; then
+       rebootprot="${CDkGray}Disabled${CClear}"
+    elif [ "$autostart" = "1" ]; then
+       rebootprot="${CGreen}Enabled${CClear}"
     fi
 
-    if [ $logsize -gt 0 ]; then
-      logsizefmt=$(awk "BEGIN {printf \"%04.f\",${logsize}}")
+    if [ "$logsize" -eq 0 ]; then
+       logSizeStr="${CDkGray}n/a${CClear}"
     else
-      logsizefmt="${CDkGray}n/a ${CClear}"
+       logSizeStr="${CGreen}${logsize}${CClear}"
     fi
 
-    if [ $pingreset -eq 0 ]; then
-      pingresetdisp="${CDkGray}Disabled${CClear}"
+    if [ -z "$timerloop" ]; then
+       timerLoopStr="${CDkGray}n/a${CClear}"
     else
-      pingresetdisp="${CGreen}${pingreset}ms${CClear}"
+       timerLoopStr="${CGreen}$timerloop sec${CClear}"
+    fi
+
+    if [ "$pingreset" -eq 0 ]; then
+       pingResetStr="${CDkGray}Disabled${CClear}"
+    else
+       pingResetStr="${CGreen}$pingreset ms${CClear}"
     fi
 
     if [ "$amtmemailsuccess" == "0" ] && [ "$amtmemailfailure" == "0" ]; then
-      amtmdisp="${CDkGray}Disabled        "
+       amtmdisp="${CDkGray}Disabled        "
     elif [ "$amtmemailsuccess" == "1" ] && [ "$amtmemailfailure" == "0" ]; then
-      amtmdisp="${CGreen}Success         "
+       amtmdisp="${CGreen}Success         "
     elif [ "$amtmemailsuccess" == "0" ] && [ "$amtmemailfailure" == "1" ]; then
-      amtmdisp="${CGreen}Failure         "
+       amtmdisp="${CGreen}Failure         "
     elif [ "$amtmemailsuccess" == "1" ] && [ "$amtmemailfailure" == "1" ]; then
-      amtmdisp="${CGreen}Success, Failure"
+       amtmdisp="${CGreen}Success, Failure"
     else
-      amtmdisp="${CDkGray}Disabled        "
+       amtmdisp="${CDkGray}Disabled        "
     fi
 
     #display operations menu
-    if [ "$availableslots" == "1 2" ]; then
+    if [ "$availableslots" = "1 2" ]
+    then
       echo -e "${InvGreen} ${InvDkGray}${CWhite} Operations Menu                                                                                              ${CClear}"
       echo -e "${InvGreen} ${CClear} Reset/Reconnect VPN 1:${CGreen}(1)${CClear} 2:${CGreen}(2)${CClear}                      ${InvGreen} ${CClear} ${CGreen}(C)${CClear}onfiguration Menu / Main Setup Menu${CClear}"
-      echo -e "${InvGreen} ${CClear} Stop/Unmonitor  VPN 1:${CGreen}(!)${CClear} 2:${CGreen}(@)${CClear}                      ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN CRON Time Scheduler: $schedtime${CClear}"
-      echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN Slots                 ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim Log Size (rows): ${CGreen}$logsizefmt${CClear}"
-      echo -e "${InvGreen} ${CClear} Update/Maintain ${CGreen}(V)${CClear}PN Server Lists                   ${InvGreen} ${CClear} ${CGreen}(A)${CClear}utostart VPNMON-R3 on Reboot: $rebootprot${CClear}"
-      echo -e "${InvGreen} ${CClear} Edit/R${CGreen}(U)${CClear}n Server List Automation                    ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer VPN Check Loop Interval: ${CGreen}${timerloop}sec${CClear}"
-      echo -e "${InvGreen} ${CClear} AMTM Email Not${CGreen}(I)${CClear}fications: $amtmdisp         ${InvGreen} ${CClear} ${CGreen}(P)${CClear}ing Maximum Before Reset in ms: ${pingresetdisp}${CClear}"
+      echo -e "${InvGreen} ${CClear} Stop/Unmonitor  VPN 1:${CGreen}(!)${CClear} 2:${CGreen}(@)${CClear}                      ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN CRON Time Scheduler: $schedtime"
+      echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN Slots                 ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim Log Size (rows): $logSizeStr"
+      echo -e "${InvGreen} ${CClear} Update/Maintain ${CGreen}(V)${CClear}PN Server Lists                   ${InvGreen} ${CClear} ${CGreen}(A)${CClear}utostart VPNMON-R3 on Reboot: $rebootprot"
+      echo -e "${InvGreen} ${CClear} Edit/R${CGreen}(U)${CClear}n Server List Automation                    ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer VPN Check Loop Interval: $timerLoopStr"
+      echo -e "${InvGreen} ${CClear} AMTM Email Not${CGreen}(I)${CClear}fications: $amtmdisp         ${InvGreen} ${CClear} ${CGreen}(P)${CClear}ing Maximum Before Reset in ms: $pingResetStr"
       echo -e "${InvGreen} ${CClear}${CDkGray}--------------------------------------------------------------------------------------------------------------${CClear}"
       echo ""
-    elif [ "$availableslots" == "1 2 3 4 5" ]; then
+    elif [ "$availableslots" = "1 2 3 4 5" ]
+    then
       echo -e "${InvGreen} ${InvDkGray}${CWhite} Operations Menu                                                                                              ${CClear}"
       echo -e "${InvGreen} ${CClear} Reset/Reconnect VPN 1:${CGreen}(1)${CClear} 2:${CGreen}(2)${CClear} 3:${CGreen}(3)${CClear} 4:${CGreen}(4)${CClear} 5:${CGreen}(5)${CClear}    ${InvGreen} ${CClear} ${CGreen}(C)${CClear}onfiguration Menu / Main Setup Menu${CClear}"
-      echo -e "${InvGreen} ${CClear} Stop/Unmonitor  VPN 1:${CGreen}(!)${CClear} 2:${CGreen}(@)${CClear} 3:${CGreen}(#)${CClear} 4:${CGreen}($)${CClear} 5:${CGreen}(%)${CClear}    ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN CRON Time Scheduler: $schedtime${CClear}"
-      echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN Slots                 ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim Log Size (rows): ${CGreen}$logsizefmt${CClear}"
-      echo -e "${InvGreen} ${CClear} Update/Maintain ${CGreen}(V)${CClear}PN Server Lists                   ${InvGreen} ${CClear} ${CGreen}(A)${CClear}utostart VPNMON-R3 on Reboot: $rebootprot${CClear}"
-      echo -e "${InvGreen} ${CClear} Edit/R${CGreen}(U)${CClear}n Server List Automation                    ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer VPN Check Loop Interval: ${CGreen}${timerloop}sec${CClear}"
-      echo -e "${InvGreen} ${CClear} AMTM Email Not${CGreen}(I)${CClear}fications: $amtmdisp         ${InvGreen} ${CClear} ${CGreen}(P)${CClear}ing Maximum Before Reset in ms: ${pingresetdisp}${CClear}"
+      echo -e "${InvGreen} ${CClear} Stop/Unmonitor  VPN 1:${CGreen}(!)${CClear} 2:${CGreen}(@)${CClear} 3:${CGreen}(#)${CClear} 4:${CGreen}($)${CClear} 5:${CGreen}(%)${CClear}    ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN CRON Time Scheduler: $schedtime"
+      echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN Slots                 ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim Log Size (rows): $logSizeStr"
+      echo -e "${InvGreen} ${CClear} Update/Maintain ${CGreen}(V)${CClear}PN Server Lists                   ${InvGreen} ${CClear} ${CGreen}(A)${CClear}utostart VPNMON-R3 on Reboot: $rebootprot"
+      echo -e "${InvGreen} ${CClear} Edit/R${CGreen}(U)${CClear}n Server List Automation                    ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer VPN Check Loop Interval: $timerLoopStr"
+      echo -e "${InvGreen} ${CClear} AMTM Email Not${CGreen}(I)${CClear}fications: $amtmdisp         ${InvGreen} ${CClear} ${CGreen}(P)${CClear}ing Maximum Before Reset in ms: $pingResetStr"
       echo -e "${InvGreen} ${CClear}${CDkGray}--------------------------------------------------------------------------------------------------------------${CClear}"
       echo ""
     fi
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -3572,12 +3763,18 @@ if ! grep -F "sh /jffs/scripts/vpnmon-r3.sh" /jffs/configs/profile.add >/dev/nul
   echo "alias vpnmon-r3=\"sh /jffs/scripts/vpnmon-r3.sh\" # added by vpnmon-r3" >> /jffs/configs/profile.add
 fi
 
+##-------------------------------------##
+## Added by Martinski W. [2024-Oct-05] ##
+##-------------------------------------##
+_SetUpTimeoutCmdVars_
+_SetLAN_HostName_
+
 # Check for updates
 updatecheck
 
 # Check and see if any commandline option is being used
 if [ $# -eq 0 ]
-  then
+then
     clear
     exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
     exit 0
@@ -3585,9 +3782,9 @@ fi
 
 # Check and see if an invalid commandline option is being used
 if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-setup" ] || [ "$1" == "-reset" ] || [ "$1" == "-bw" ] || [ "$1" == "-noswitch" ] || [ "$1" == "-screen" ] || [ "$1" == "-now" ]
-  then
+then
     clear
-  else
+else
     clear
     echo ""
     echo "VPNMON-R3 v$version"
@@ -3601,7 +3798,7 @@ fi
 
 # Check to see if the help option is being called
 if [ "$1" == "-h" ] || [ "$1" == "-help" ]
-  then
+then
   clear
   echo ""
   echo "VPNMON-R3 v$version Commandline Option Usage:"
@@ -3625,20 +3822,20 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ]
 fi
 
 # Check to see if a second command is being passed to remove color
-if [ "$1" == "-bw" ] || [ "$2" == "-bw" ]
-  then
+if [ "$1" = "-bw" ] || { [ $# -gt 1 ] && [ "$2" = "-bw" ] ; }
+then
     blackwhite
 fi
 
 # Check to see if the -now parameter is being called to bypass the screen timer
-if [ "$2" == "-now" ]
-  then
+if [ $# -gt 1 ] && [ "$2" = "-now" ]
+then
     bypassscreentimer=1
 fi
 
 # Check to see if the setup option is being called
 if [ "$1" == "-setup" ]
-  then
+then
     logoNM
     vsetup
     exit 0
@@ -3646,14 +3843,14 @@ fi
 
 # Check to see if the reset option is being called
 if [ "$1" == "-reset" ]
-  then
-    echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - INFO: VPN Reset initiated through -RESET switch" >> $logfile
+then
+    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN Reset initiated through -RESET switch" >> $logfile
     vreset
 fi
 
 # Check to see if the screen option is being called and run operations normally using the screen utility
 if [ "$1" == "-screen" ]
-  then
+then
     screen -wipe >/dev/null 2>&1 # Kill any dead screen sessions
     sleep 1
     ScreenSess=$(screen -ls | grep "vpnmon-r3" | awk '{print $1}' | cut -d . -f 1)
@@ -3695,45 +3892,56 @@ if [ "$1" == "-screen" ]
     exit 0
 fi
 
-# Check to see if the noswitch  option is being called
-if [ "$1" == "-noswitch" ]
-  then
+# Check to see if the noswitch option is being called
+if [ "$1" = "-noswitch" ]
+then
     clear #last switch before the main program starts
     firstrun=1
 
     # Clean up lockfile
     rm -f $lockfile >/dev/null 2>&1
 
-    if [ ! -f $cfgpath ] && [ ! -f "/opt/bin/timeout" ] && [ ! -f "/opt/sbin/screen" ] && [ ! -f "/opt/bin/jq" ]; then
+    if [ ! -f "$config" ] && [ ! -f "/opt/bin/timeout" ] && [ ! -f "/opt/sbin/screen" ] && [ ! -f "/opt/bin/jq" ]
+    then
       echo -e "${CRed}ERROR: VPNMON-R3 is not configured.  Please run 'vpnmon-r3 -setup' first.${CClear}"
       echo ""
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - ERROR: VPNMON-R3 is not configured. Please run the setup/configuration utility" >> $logfile
+      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: VPNMON-R3 is not configured. Please run the setup/configuration utility" >> $logfile
       exit 0
     fi
 fi
 
-while true; do
+ubsync=""
+
+##----------------------------------------##
+## Modified by Martinski W. [2024-Oct-05] ##
+##----------------------------------------##
+while true
+do
+  _SetUpTimeoutCmdVars_
+  _SetLAN_HostName_
 
   # Grab the VPNMON-R3 config file and read it in
-  if [ -f $config ]; then
-    source $config
+  if [ -f "$config" ]
+  then
+    source "$config"
   else
     clear
     echo -e "${CRed}ERROR: VPNMON-R3 is not configured.  Please run 'vpnmon-r3.sh -setup' first."
     echo ""
-    echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - ERROR: VPNMON-R3 config file not found. Please run the setup/configuration utility" >> $logfile
+    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: VPNMON-R3 config file not found. Please run the setup/configuration utility" >> $logfile
     echo -e "${CClear}"
     exit 1
   fi
 
   # Grab the monitored slots file and read it in
-  if [ -f /jffs/addons/vpnmon-r3.d/vr3clients.txt ]; then
+  if [ -f /jffs/addons/vpnmon-r3.d/vr3clients.txt ]
+  then
     source /jffs/addons/vpnmon-r3.d/vr3clients.txt
   else
     clear
     echo -e "${CRed}ERROR: VPNMON-R3 is not configured.  Please run 'vpnmon-r3.sh -setup' first."
     echo ""
-    echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - ERROR: VPNMON-R3 VPN Client Monitoring file not found. Please run the setup/configuration utility" >> $logfile
+    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: VPNMON-R3 VPN Client Monitoring file not found. Please run the setup/configuration utility" >> $logfile
     echo -e "${CClear}"
     exit 1
   fi
@@ -3741,26 +3949,16 @@ while true; do
   createconfigs
 
   # Grab the monitored slots file and read it in
-  if [ -f /jffs/addons/vpnmon-r3.d/vr3timers.txt ]; then
+  if [ -f /jffs/addons/vpnmon-r3.d/vr3timers.txt ]
+  then
     source /jffs/addons/vpnmon-r3.d/vr3timers.txt
   else
     clear
     echo -e "${CRed}ERROR: VPNMON-R3 is not configured.  Please run 'vpnmon-r3.sh -setup' first."
     echo ""
-    echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - ERROR: VPNMON-R3 VPN Timer Monitoring file not found. Please run the setup/configuration utility" >> $logfile
+    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: VPNMON-R3 VPN Timer Monitoring file not found. Please run the setup/configuration utility" >> $logfile
     echo -e "${CClear}"
     exit 1
-  fi
-
-  if [ -f "/opt/bin/timeout" ] # If the timeout utility is available then use it and assign variables
-    then
-      timeoutcmd="timeout "
-      timeoutsec="10"
-      timeoutlng="60"
-    else
-      timeoutcmd=""
-      timeoutsec=""
-      timeoutlng=""
   fi
 
   #Set variables
@@ -3781,7 +3979,7 @@ while true; do
   tzone=$(date +%Z)
   tzonechars=$(echo ${#tzone})
 
-  if [ $tzonechars = 1 ]; then tzspaces="        ";
+  if   [ $tzonechars = 1 ]; then tzspaces="        ";
   elif [ $tzonechars = 2 ]; then tzspaces="       ";
   elif [ $tzonechars = 3 ]; then tzspaces="      ";
   elif [ $tzonechars = 4 ]; then tzspaces="     ";
@@ -3801,13 +3999,15 @@ while true; do
   if [ "$UpdateNotify" != "0" ]; then echo -e "$UpdateNotify\n"; else echo -e "${CClear}"; fi
 
   #If WAN Monitoring is enabled, test WAN connection and show the following grid
-  if [ "$monitorwan" == "1" ] && [ "$firstrun" == "1" ]; then
-    #Check to see if the WAN is up
-    checkwan
-    firstrun=0
+  if [ "$monitorwan" == "1" ] && [ "$firstrun" == "1" ]
+  then
+     #Check to see if the WAN is up
+     checkwan
+     firstrun=0
   fi
 
-  if [ "$monitorwan" == "1" ] && [ "$firstrun" = "0" ]; then
+  if [ "$monitorwan" == "1" ] && [ "$firstrun" = "0" ]
+  then
     #Display WAN ports grid
     echo -e "${CClear}  Port | Mon | IFace  | Health | WAN State    | Public WAN IP   | Ping-->WAN | City Exit"
     echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
@@ -3815,8 +4015,8 @@ while true; do
     #Cycle through the WANCheck connection function to display ping/city info
     wans=0
     for wans in 0 1
-      do
-        wancheck $wans
+    do
+        wancheck "$wans"
     done
     echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
     echo ""
@@ -3826,86 +4026,94 @@ while true; do
 
   #Display VPN client slot grid
   if [ "$unboundclient" != "0" ]; then
-    echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | City Exit / Time / UB"
+     echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | City Exit / Time / UB"
   else
-    echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | City Exit / Time"
+     echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | City Exit / Time"
   fi
   echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
 
   i=0
-  for i in $availableslots #loop through the 3/5 vpn slots
-    do
+  for i in $availableslots #loop through the VPN slots
+  do
       #Set variables
       citychange=""
 
-      #determine if the slot is monitored
-      if [ "$((VPN$i))" == "0" ]; then
-        monitored="[ ]"
-      elif [ "$((VPN$i))" == "1" ]; then
-        monitored="${CGreen}[X]${CClear}"
+      #determine if the slot is monitored#
+      if [ "$((VPN$i))" = "1" ]; then
+         monitored="${CGreen}[X]${CClear}"
+      else
+         monitored="[ ]"
       fi
 
       #determine the vpn state, and if connected, get vpn IP and city
-      vpnstate="$(_VPN_GetClientState_ $i)"
+      vpnstate="$(_VPN_GetClientState_ "$i")"
 
-      if [ "$vpnstate" == "0" ]; then
-        vpnstate="Disconnected"
-        vpnhealth="${CDkGray}[n/a ]${CClear}"
-        vpnindicator="${InvDkGray} ${CClear}"
-        vpnip="${CDkGray}[n/a]          ${CClear}"
-        vpncity="${CDkGray}[n/a]${CClear}"
-        svrping="${CDkGray}[n/a]     ${CClear}"
-      elif [ "$vpnstate" == "-1" ]; then
-        vpnstate="Error State "
-        vpnhealth="${CDkGray}[n/a ]${CClear}"
-        vpnindicator="${InvDkGray} ${CClear}"
-        vpnip="${CDkGray}[n/a]          ${CClear}"
-        vpncity="${CDkGray}[n/a]${CClear}"
-        svrping="${CDkGray}[n/a]     ${CClear}"
-      elif [ "$vpnstate" == "1" ]; then
-        vpnstate="Connecting  "
-        vpnhealth="${CDkGray}[n/a ]${CClear}"
-        vpnindicator="${InvYellow} ${CClear}"
-        vpnip="${CDkGray}[n/a]          ${CClear}"
-        vpncity="${CDkGray}[n/a]${CClear}"
-        svrping="${CDkGray}[n/a]     ${CClear}"
-      elif [ "$vpnstate" == "2" ]; then
-        vpnstate="Connected   "
-        checkvpn $i
-        getvpnip $i
-        getvpncity $i
-        if [ -z $vpnping ] || [ "$vpnping" == "" ]; then
-          svrping="${CRed}[PING ERR]${CClear}"
-          vpnhealth="${CYellow}[UNKN]${CClear}"
-          vpnindicator="${InvYellow} ${CClear}"
-        else
-          svrping=$(awk "BEGIN {printf \"[%08.3f]\", ${vpnping}}")
-        fi
+      if [ "$vpnstate" = "0" ]
+      then
+         vpnstate="Disconnected"
+         vpnhealth="${CDkGray}[n/a ]${CClear}"
+         vpnindicator="${InvDkGray} ${CClear}"
+         vpnip="${CDkGray}[n/a]          ${CClear}"
+         vpncity="${CDkGray}[n/a]${CClear}"
+         svrping="${CDkGray}[n/a]     ${CClear}"
+      elif [ "$vpnstate" = "-1" ]
+      then
+         vpnstate="Error State "
+         vpnhealth="${CDkGray}[n/a ]${CClear}"
+         vpnindicator="${InvDkGray} ${CClear}"
+         vpnip="${CDkGray}[n/a]          ${CClear}"
+         vpncity="${CDkGray}[n/a]${CClear}"
+         svrping="${CDkGray}[n/a]     ${CClear}"
+      elif [ "$vpnstate" = "1" ]
+      then
+         vpnstate="Connecting  "
+         vpnhealth="${CDkGray}[n/a ]${CClear}"
+         vpnindicator="${InvYellow} ${CClear}"
+         vpnip="${CDkGray}[n/a]          ${CClear}"
+         vpncity="${CDkGray}[n/a]${CClear}"
+         svrping="${CDkGray}[n/a]     ${CClear}"
+      elif [ "$vpnstate" = "2" ]
+      then
+         vpnstate="Connected   "
+         checkvpn "$i"
+         getvpnip "$i"
+         getvpncity "$i"
+         if [ -z "$vpnping" ]
+         then
+             svrping="${CRed}[PING ERR]${CClear}"
+             vpnhealth="${CYellow}[UNKN]${CClear}"
+             vpnindicator="${InvYellow} ${CClear}"
+         else
+             ## No need to do left-padding with zeros for alignment ##
+             svrping="$(printf "[%8.3f]" "$vpnping")"
+         fi
       else
-        vpnstate="Unknown     "
-        vpnhealth="${CDkGray}[n/a ]${CClear}"
-        vpnindicator="${InvDkGray} ${CClear}"
-        vpnip="${CDkGray}[n/a]          ${CClear}"
-        vpncity="${CDkGray}[n/a]${CClear}"
-        svrping="${CDkGray}[n/a]     ${CClear}"
+         vpnstate="Unknown     "
+         vpnhealth="${CDkGray}[n/a ]${CClear}"
+         vpnindicator="${InvDkGray} ${CClear}"
+         vpnip="${CDkGray}[n/a]          ${CClear}"
+         vpncity="${CDkGray}[n/a]${CClear}"
+         svrping="${CDkGray}[n/a]     ${CClear}"
       fi
 
-      #Determine how many server entries are in each of the vpn slot alternate server files
-      if [ -f /jffs/addons/vpnmon-r3.d/vr3svr$i.txt ]; then
-        servercnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svr$i.txt | wc -l) >/dev/null 2>&1
-          if [ $servercnt -lt 1 ]; then
-            servercnt="${CRed}[0000]${CClear}"
-          elif [ -z $servercnt ]; then
-            servercnt="${CRed}[0000]${CClear}"
+      #Determine how many server entries are in each of the vpn slot alternate server files#
+      if [ -s "/jffs/addons/vpnmon-r3.d/vr3svr$i.txt" ]
+      then
+          servercnt="$(cat "/jffs/addons/vpnmon-r3.d/vr3svr$i.txt" | wc -l)"
+          if [ -z "$servercnt" ] || [ "$servercnt" -lt 1 ]
+          then
+              servercnt="${CRed}[0000]${CClear}"
           else
-            servercnt=$(awk "BEGIN {printf \"[%04.f]\",${servercnt}}")
+              ## No need to do left-padding with zeros for alignment ##
+              servercnt="$(printf "[%4d]" "$servercnt")"
           fi
       else
-        servercnt="${CRed}[0000]${CClear}"
+          servercnt="${CRed}[0000]${CClear}"
       fi
 
       #Calculate connected time for current VPN slot
-      if [ $((VPNTIMER$i)) == "0" ] || [ "$((VPN$i))" == "0" ]; then
+      if [ $((VPNTIMER$i)) == "0" ] || [ "$((VPN$i))" == "0" ]
+      then
         sincelastreset=""
       else
         currtime=$(date +%s)
@@ -3917,8 +4125,9 @@ while true; do
       echo -e "$vpnindicator${InvDkGray}${CWhite} VPN$i${CClear} | $monitored | $servercnt | $vpnhealth | $vpnstate | $vpnip | $svrping | $vpncity$sincelastreset $citychange$ubsync"
 
       #if a vpn is monitored and disconnected, try to restart it
-      if [ "$((VPN$i))" == "1" ] && [ "$vpnstate" == "Disconnected" ]; then #reconnect
-        echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - WARNING: VPN$i has disconnected" >> $logfile
+      if [ "$((VPN$i))" == "1" ] && [ "$vpnstate" == "Disconnected" ]
+      then #reconnect
+        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$i has disconnected" >> $logfile
         echo ""
         printf "\33[2K\r"
 
@@ -3939,8 +4148,9 @@ while true; do
       fi
 
       #if a vpn is monitored and in error state, try to restart it
-      if [ "$((VPN$i))" == "1" ] && [ "$vpnstate" == "Error State " ]; then #reconnect
-        echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - WARNING: VPN$i is in an error state and being reconnected" >> $logfile
+      if [ "$((VPN$i))" == "1" ] && [ "$vpnstate" == "Error State " ]
+      then #reconnect
+        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$i is in an error state and being reconnected" >> $logfile
         echo ""
         printf "\33[2K\r"
 
@@ -3962,8 +4172,9 @@ while true; do
       fi
 
       #if a vpn is monitored and not responsive, try to restart it
-      if [ "$((VPN$i))" == "1" ] && [ "$resetvpn" != "0" ]; then #reconnect
-        echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - WARNING: VPN$i is non-reponsive and being reconnected" >> $logfile
+      if [ "$((VPN$i))" == "1" ] && [ "$resetvpn" != "0" ]
+      then #reconnect
+        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$i is non-reponsive and being reconnected" >> $logfile
         echo ""
         printf "\33[2K\r"
 
@@ -3989,14 +4200,16 @@ while true; do
       MP=$?
       if [ $MP -ne 0 ]; then
         maxsvrping=0
-        echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - WARNING: Invalid PING information received." >> $logfile
+        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: Invalid PING information received." >> $logfile
       fi
 
-      if [ $pingreset -gt 0 ]; then
-        if [ $maxsvrping -ge $pingreset ]; then
+      if [ "$pingreset" -gt 0 ]
+      then
+        if [ "$maxsvrping" -ge "$pingreset" ]
+        then
           echo ""
           printf "\33[2K\r"
-          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - WARNING: VPN$i PING exceeds max allowed ($pingreset ms)" >> $logfile
+          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$i PING exceeds max allowed ($pingreset ms)" >> $logfile
           printf "${CGreen}\r[Maximum PING Exceeded]"
           sleep 3
           printf "\33[2K\r"
@@ -4030,22 +4243,23 @@ while true; do
 
   #display a standard timer
   timer=0
-  while [ $timer -ne $timerloop ]
-    do
-      timer=$(($timer+1))
+  while [ "$timer" -ne "$timerloop" ]
+  do
+      timer="$(($timer+1))"
       preparebar 46 "|"
-      progressbaroverride $timer $timerloop "" "s" "Standard"
+      progressbaroverride "$timer" "$timerloop" "" "s" "Standard"
       lockcheck #Check to see if a reset is currently underway
-      if [ "$timerreset" == "1" ]; then timer=$timerloop; fi
+      if [ "$timerreset" == "1" ]; then timer="$timerloop" ; fi
   done
 
   #Check to see if a reset is currently underway
   lockcheck
 
   #if Unbound is active and out of sync, try to restart it
-  if [ "$unboundclient" != "0" ] && [ "$ResolverTimer" == "1" ]; then
+  if [ "$unboundclient" != "0" ] && [ "$ResolverTimer" == "1" ]
+  then
     printf "\33[2K\r"
-    echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) VPNMON-R3[$$] - WARNING: VPN$unboundreset is out of sync with Unbound DNS Resolver" >> $logfile
+    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$unboundreset is out of sync with Unbound DNS Resolver" >> $logfile
     printf "${CGreen}\r[Unbound is out of sync]"
     sleep 3
     printf "\33[2K\r"
@@ -4067,8 +4281,8 @@ while true; do
   fi
 
   #Check to see if the WAN is up
-  if [ "$monitorwan" == "1" ] && [ "$bypasswancheck" == "0" ]; then
-    checkwan
+  if [ "$monitorwan" = "1" ] && [ "$bypasswancheck" = "0" ]; then
+     checkwan
   fi
 
   firstrun=0
