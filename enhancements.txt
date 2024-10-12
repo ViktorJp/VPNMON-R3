@@ -1,7 +1,9 @@
 To-Do:
+- Custom IP to do WAN check against (to remove need for 8.8.8.8 for those who block google)
 - automatically unmonitor slot after X failed connections?
 - Possibility: Integrate KILLMON functionality if there is any interest in having better killswitch capabilities
 - Wireguard compatibility
+- Failover capability from slot 1, to 2 etc.
 
 Done:
 - AMTM Email notifications on: WAN Restore, VPN Reconnections
