@@ -7,13 +7,13 @@
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2024-Oct-08
+# Last Modified: 2024-Oct-18
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.3.6"                                                 # Version tracker
+version="1.3.7"                                                 # Version tracker
 beta=0                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -221,10 +221,15 @@ preparebar()
   barchars="$(printf "%*s" "$1" | tr ' ' "$2")"
 }
 
+##----------------------------------------##
+## Modified by Martinski W. [2024-Oct-17] ##
+##----------------------------------------##
 progressbaroverride()
 {
   insertspc=" "
   bypasswancheck=0
+
+  _GetPercent_() { printf "%.1f" "$(echo "$1" | awk "{print $1}")" ; }
 
   if [ "$1" -eq -1 ]
   then
@@ -234,27 +239,27 @@ progressbaroverride()
      then
         barch="$(($7*barlen/$2))"
         barsp="$((barlen-barch))"
-        progr="$((100*$1/$2))"
+        percnt="$(_GetPercent_ "(100*$1/$2)")"
      else
         barch="$(($1*barlen/$2))"
         barsp="$((barlen-barch))"
-        progr="$((100*$1/$2))"
+        percnt="$(_GetPercent_ "(100*$1/$2)")"
      fi
 
      if [ $# -gt 5 ] && [ -n "$6" ]; then AltNum="$6" ; else AltNum="$1" ; fi
 
      if [ "$5" = "Standard" ]
      then
-        printf "  ${CWhite}${InvDkGray}$AltNum${4} / ${progr}%%${CClear} [${CGreen}e${CClear}=Exit] [Selection? ${InvGreen} ${CClear}${CGreen}]\r${CClear}" "$barchars" "$barspaces"
+        printf "  ${CWhite}${InvDkGray}%3d${4} /%5.1f%%${CClear} [${CGreen}e${CClear}=Exit] [Selection? ${InvGreen} ${CClear}${CGreen}]\r${CClear}" "$AltNum" "$percnt"
      fi
   fi
 
   # Borrowed this wonderful keypress capturing mechanism from @Eibgrad... thank you! :)
   key_press=''; read -rsn1 -t 1 key_press < "$(tty 0>&2)"
 
-  if [ $key_press ]
+  if [ "$key_press" ]
   then
-      case $key_press in
+      case "$key_press" in
           [1]) echo ""; restartvpn 1; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
           [2]) echo ""; restartvpn 2; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
           [3]) echo ""; restartvpn 3; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
@@ -279,7 +284,7 @@ progressbaroverride()
           [Uu]) vpnserverlistautomation;;
           [Vv]) vpnserverlistmaint;;
           [Xx]) uninstallr2;;
-          *) timer="$timerloop" ;;
+             *) ;; ##IGNORE INVALID key presses ##
       esac
       bypasswancheck=1
   fi
@@ -1080,7 +1085,7 @@ do
                fi
 
               else
-                curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/main/Unbound/nat-start" -o "/jffs/scripts/nat-start" && chmod 755 "/jffs/scripts/nat-start"
+                curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 2 --retry-all-errors "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/main/Unbound/nat-start" -o "/jffs/scripts/nat-start" && chmod 755 "/jffs/scripts/nat-start"
               fi
 
               # Modify or create openvpn-event
@@ -1097,12 +1102,12 @@ do
                 echo "[ "'"${dev:0:4}"'" = 'tun1' ] && vpn_id=$unboundovervpn &&  [ "'"$script_type"'" = 'route-up' ] && /jffs/addons/unbound/unbound_DNS_via_OVPN.sh \$vpn_id start &" >> /jffs/scripts/openvpn-event
                 echo "[ "'"${dev:0:4}"'" = 'tun1' ] && vpn_id=$unboundovervpn &&  [ "'"$script_type"'" = 'route-pre-down' ] && /jffs/addons/unbound/unbound_DNS_via_OVPN.sh \$vpn_id stop &" >> /jffs/scripts/openvpn-event
                 chmod 755 /jffs/scripts/openvpn-event
-                # backup - curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/main/Unbound/openvpn-event" -o "/jffs/scripts/openvpn-event" && chmod 755 "/jffs/scripts/openvpn-event"
+                # backup - curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 2 --retry-all-errors "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/main/Unbound/openvpn-event" -o "/jffs/scripts/openvpn-event" && chmod 755 "/jffs/scripts/openvpn-event"
               fi
 
               # Download and create the unbound_DNS_via_OVPN.sh file - many thanks to @Martineau and @Swinson
               if [ ! -f /jffs/addons/unbound/unbound_DNS_via_OVPN.sh ]; then
-                curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors "https://raw.githubusercontent.com/MartineauUK/Unbound-Asuswrt-Merlin/dev/unbound_DNS_via_OVPN.sh" -o "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh" && chmod 755 "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh"
+                curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 2 --retry-all-errors "https://raw.githubusercontent.com/MartineauUK/Unbound-Asuswrt-Merlin/dev/unbound_DNS_via_OVPN.sh" -o "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh" && chmod 755 "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh"
                 # backup - curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/main/Unbound/unbound_DNS_via_OVPN.sh" -o "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh" && chmod 755 "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh"
               fi
 
@@ -1279,7 +1284,7 @@ while true; do
       if promptyn "[y/n]: "; then
         echo ""
         echo -e "\nDownloading VPNMON-R3 ${CGreen}v$DLversion${CClear}"
-        curl --silent --retry 3 --connect-timeout 3 --max-time 5 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/ViktorJp/VPNMON-R3/main/vpnmon-r3.sh" -o "/jffs/scripts/vpnmon-r3.sh" && chmod 755 "/jffs/scripts/vpnmon-r3.sh"
+        curl --silent --retry 3 --connect-timeout 3 --max-time 5 --retry-delay 2 --retry-all-errors --fail "https://raw.githubusercontent.com/ViktorJp/VPNMON-R3/main/vpnmon-r3.sh" -o "/jffs/scripts/vpnmon-r3.sh" && chmod 755 "/jffs/scripts/vpnmon-r3.sh"
         echo ""
         echo -e "Download successful!${CClear}"
         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Successfully downloaded and installed VPNMON-R3 v$DLversion" >> $logfile
@@ -1298,7 +1303,7 @@ while true; do
       if promptyn "[y/n]: "; then
         echo ""
         echo -e "\nDownloading VPNMON-R3 ${CGreen}v$DLversion${CClear}"
-        curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/ViktorJp/VPNMON-R3/main/vpnmon-r3.sh" -o "/jffs/scripts/vpnmon-r3.sh" && chmod 755 "/jffs/scripts/vpnmon-r3.sh"
+        curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 2 --retry-all-errors --fail "https://raw.githubusercontent.com/ViktorJp/VPNMON-R3/main/vpnmon-r3.sh" -o "/jffs/scripts/vpnmon-r3.sh" && chmod 755 "/jffs/scripts/vpnmon-r3.sh"
         echo ""
         echo -e "Download successful!${CClear}"
         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Successfully downloaded and installed VPNMON-R3 v$DLversion" >> $logfile
@@ -1324,7 +1329,7 @@ updatecheck()
 {
 
   # Download the latest version file from the source repository
-  curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/ViktorJp/VPNMON-R3/main/version.txt" -o "/jffs/addons/vpnmon-r3.d/version.txt"
+  curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 2 --retry-all-errors --fail "https://raw.githubusercontent.com/ViktorJp/VPNMON-R3/main/version.txt" -o "/jffs/addons/vpnmon-r3.d/version.txt"
 
   if [ -f $dlverpath ]
     then
@@ -2866,7 +2871,7 @@ lockcheck()
     lockactive=1
   done
 
-  if [ "$lockactive" == "1" ]; then
+  if [ "$lockactive" = "1" ]; then
     timerreset=1
     lockactive=0
   fi
@@ -3140,8 +3145,10 @@ vreset()
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
+##----------------------------------------##
+## Modified by Martinski W. [2024-Oct-18] ##
+##----------------------------------------##
 # Find the VPN city
-
 getvpnip()
 {
   ubsync=""
@@ -3150,16 +3157,18 @@ getvpnip()
   icanhazvpnip="$($timeoutcmd$timeoutsec nvram get vpn_client$1_rip)"
   if [ -z "$icanhazvpnip" ] || [ "$icanhazvpnip" = "unknown" ]
   then
-     icanhazvpnip="curl --silent --fail --interface $TUN --request GET --url https://ipv4.icanhazip.com" # Grab the public IP of the VPN Connection
-     icanhazvpnip="$(eval $icanhazvpnip)"; if echo "$icanhazvpnip" | grep -qoE 'Internet|traffic|Error|error'; then icanhazvpnip="0.0.0.0"; fi
+     # Grab the public IP of the VPN Connection #
+     icanhazvpnip="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --fail --interface "$TUN" --request GET --url https://ipv4.icanhazip.com"
+     icanhazvpnip="$(eval $icanhazvpnip)"
+     if [ -z "$icanhazvpnip" ] || echo "$icanhazvpnip" | grep -qoE 'Internet|traffic|Error|error' ; then icanhazvpnip="0.0.0.0" ; fi
   fi
 
   if [ -z "$icanhazvpnip" ]
   then
-     vpnip="000.000.000.000"
-     return
+      vpnip="000.000.000.000"
+      return
   else
-     vpnip="$(printf '%15s' "$icanhazvpnip")"
+      vpnip="$(printf '%15s' "$icanhazvpnip")"
   fi
 
   if [ "$unboundclient" -ne 0 ] && [ "$unboundclient" -eq "$1" ]
@@ -3171,12 +3180,15 @@ getvpnip()
       # Huge thanks to @SomewhereOverTheRainbow for his expertise in troublshooting and coming up with this DNS Resolver methodology!
       DNSResolver="$({ unbound-control flush whoami.akamai.net >/dev/null 2>&1; } && dig whoami.akamai.net +short @"$(netstat -nlp 2>/dev/null | awk '/.*(unbound){1}.*/{split($4, ip_addr, ":");if(substr($4,11) !~ /.*953.*/)print ip_addr[1];if(substr($4,11) !~ /.*953.*/)exit}')" -p "$(netstat -nlp 2>/dev/null | awk '/.*(unbound){1}.*/{if(substr($4,11) !~ /.*953.*/)print substr($4,11);if(substr($4,11) !~ /.*953.*/)exit}')" 2>/dev/null)"
 
-      if [ -z "$DNSResolver" ]; then
+      if [ -z "$DNSResolver" ]
+      then
         ubsync="${CRed}-X[UB]${CClear}"
       # rudimentary check to make sure value coming back is in the format of an IP address... Don't care if it's more than 255.
-      elif expr "$DNSResolver" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
+      elif expr "$DNSResolver" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null
+      then
         # If the DNS resolver and public VPN IP address don't match in our Unbound scenario, reset!
-        if [ "$DNSResolver" != "$icanhazvpnip" ]; then
+        if [ "$DNSResolver" != "$icanhazvpnip" ]
+        then
           ubsync="${CRed}-X[UB]${CClear}"
           ResolverTimer=1
           unboundreset=$1
@@ -3191,79 +3203,95 @@ getvpnip()
     ubsync=""
   fi
 
-  # Insert bogus IP if screenshotmode is on
+  # Insert bogus IP if screenshotmode is on #
   if [ "$screenshotmode" = "1" ]; then
      vpnip="$(printf '%15s' "12.34.56.78")"
   fi
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
+##----------------------------------------##
+## Modified by Martinski W. [2024-Oct-18] ##
+##----------------------------------------##
 # Find and remember the VPN city so it doesn't have to make successive API lookups
-
 getvpncity()
 {
-  if [ "$icanhazvpnip" == "0.0.0.0" ]; then
-    vpncity="Undetermined"
-    return
+  if [ "$icanhazvpnip" = "0.0.0.0" ]; then
+     vpncity="Undetermined"
+     return
   fi
 
-  if [ "$1" == "1" ]; then
+  if [ "$1" = "1" ]
+  then
     lastvpnip1="$icanhazvpnip"
-    if [ "$lastvpnip1" != "$oldvpnip1" ]; then
-      vpncity="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$icanhazvpnip | jq --raw-output .city"
-      vpncity="$(eval $vpncity)"; if echo $vpncity | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then vpncity="Undetermined"; fi
+    if [ "$lastvpnip1" != "$oldvpnip1" ]
+    then
+      vpncity="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazvpnip | jq --raw-output .city"
+      vpncity="$(eval $vpncity)"
+      if [ -z "$vpncity" ] || echo "$vpncity" | grep -qoE '\b(error.*:.*True.*|Undefined)\b' ; then vpncity="Undetermined" ; fi
       citychange="${CGreen}- NEW ${CClear}"
-      vpncity1=$vpncity
+      vpncity1="$vpncity"
     fi
-    vpncity=$vpncity1
-    oldvpnip1=$lastvpnip1
-  elif [ "$1" == "2" ]; then
+    vpncity="$vpncity1"
+    oldvpnip1="$lastvpnip1"
+  elif [ "$1" = "2" ]
+  then
     lastvpnip2="$icanhazvpnip"
-    if [ "$lastvpnip2" != "$oldvpnip2" ]; then
-      vpncity="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$icanhazvpnip | jq --raw-output .city"
-      vpncity="$(eval $vpncity)"; if echo $vpncity | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then vpncity="Undetermined"; fi
+    if [ "$lastvpnip2" != "$oldvpnip2" ]
+    then
+      vpncity="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazvpnip | jq --raw-output .city"
+      vpncity="$(eval $vpncity)"
+      if [ -z "$vpncity" ] || echo "$vpncity" | grep -qoE '\b(error.*:.*True.*|Undefined)\b' ; then vpncity="Undetermined" ; fi
       citychange="${CGreen}- NEW ${CClear}"
-      vpncity2=$vpncity
+      vpncity2="$vpncity"
     fi
-    vpncity=$vpncity2
-    oldvpnip2=$lastvpnip2
-  elif [ "$1" == "3" ]; then
+    vpncity="$vpncity2"
+    oldvpnip2="$lastvpnip2"
+  elif [ "$1" = "3" ]
+  then
     lastvpnip3="$icanhazvpnip"
-    if [ "$lastvpnip3" != "$oldvpnip3" ]; then
-      vpncity="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$icanhazvpnip | jq --raw-output .city"
-      vpncity="$(eval $vpncity)"; if echo $vpncity | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then vpncity="Undetermined"; fi
+    if [ "$lastvpnip3" != "$oldvpnip3" ]
+    then
+      vpncity="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazvpnip | jq --raw-output .city"
+      vpncity="$(eval $vpncity)"
+      if [ -z "$vpncity" ] || echo "$vpncity" | grep -qoE '\b(error.*:.*True.*|Undefined)\b' ; then vpncity="Undetermined" ; fi
       citychange="${CGreen}- NEW ${CClear}"
-      vpncity3=$vpncity
+      vpncity3="$vpncity"
     fi
-    vpncity=$vpncity3
-    oldvpnip3=$lastvpnip3
-  elif [ "$1" == "4" ]; then
+    vpncity="$vpncity3"
+    oldvpnip3="$lastvpnip3"
+  elif [ "$1" = "4" ]
+  then
     lastvpnip4="$icanhazvpnip"
-    if [ "$lastvpnip4" != "$oldvpnip4" ]; then
-      vpncity="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$icanhazvpnip | jq --raw-output .city"
-      vpncity="$(eval $vpncity)"; if echo $vpncity | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then vpncity="Undetermined"; fi
+    if [ "$lastvpnip4" != "$oldvpnip4" ]
+    then
+      vpncity="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazvpnip | jq --raw-output .city"
+      vpncity="$(eval $vpncity)"
+      if [ -z "$vpncity" ] || echo "$vpncity" | grep -qoE '\b(error.*:.*True.*|Undefined)\b' ; then vpncity="Undetermined" ; fi
       citychange="${CGreen}- NEW ${CClear}"
-      vpncity4=$vpncity
+      vpncity4="$vpncity"
     fi
-    vpncity=$vpncity4
-    oldvpnip4=$lastvpnip4
-  elif [ "$1" == "5" ]; then
+    vpncity="$vpncity4"
+    oldvpnip4="$lastvpnip4"
+  elif [ "$1" = "5" ]
+  then
     lastvpnip5="$icanhazvpnip"
-    if [ "$lastvpnip5" != "$oldvpnip5" ]; then
-      vpncity="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$icanhazvpnip | jq --raw-output .city"
-      vpncity="$(eval $vpncity)"; if echo $vpncity | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then vpncity="Undetermined"; fi
+    if [ "$lastvpnip5" != "$oldvpnip5" ]
+    then
+      vpncity="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazvpnip | jq --raw-output .city"
+      vpncity="$(eval $vpncity)"
+      if [ -z "$vpncity" ] || echo "$vpncity" | grep -qoE '\b(error.*:.*True.*|Undefined)\b' ; then vpncity="Undetermined" ; fi
       citychange="${CGreen}- NEW ${CClear}"
-      vpncity5=$vpncity
+      vpncity5="$vpncity"
     fi
-    vpncity=$vpncity5
-    oldvpnip5=$lastvpnip5
+    vpncity="$vpncity5"
+    oldvpnip5="$lastvpnip5"
   fi
 
   # Insert bogus City if screenshotmode is on
   if [ "$screenshotmode" = "1" ]; then
-    vpncity="Gotham City"
+     vpncity="Gotham City"
   fi
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -3278,12 +3306,13 @@ checkvpn()
   while [ "$CNT" -lt "$TRIES" ]; do # Loop through number of tries
     ping -I $TUN -q -c 1 -W 2 $PINGHOST > /dev/null 2>&1 # First try pings
     RC=$?
-    ICANHAZIP=$(curl --silent --retry 3 --connect-timeout 6 --max-time 6 --retry-delay 1 --retry-all-errors --fail --interface $TUN --request GET --url https://ipv4.icanhazip.com) # Grab the public IP of the VPN Connection
+    # Grab the public IP of the VPN Connection #
+    ICANHAZIP="$(curl --silent --retry 3 --retry-delay 2 --retry-all-errors --fail --interface "$TUN" --request GET --url https://ipv4.icanhazip.com)"
     IC=$?
-    if [ $RC -eq 0 ] && [ $IC -eq 0 ]; then  # If both ping/curl come back successful, then proceed
+    if [ "$RC" -eq 0 ] && [ "$IC" -eq 0 ]; then  # If both ping/curl come back successful, then proceed
       vpnping=$(ping -I $TUN -c 1 -W 2 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1
       VP=$?
-      if [ $VP -eq 0 ]; then
+      if [ "$VP" -eq 0 ]; then
         vpnhealth="${CGreen}[ OK ]${CClear}"
         vpnindicator="${InvGreen} ${CClear}"
       else
@@ -3305,7 +3334,7 @@ checkvpn()
         vpnhealth="${CRed}[FAIL]${CClear}"
         vpnindicator="${InvRed} ${CClear}"
         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$1 failed to respond" >> $logfile
-        if [ "$((VPN$1))" == "1" ]; then
+        if [ "$((VPN$1))" = "1" ]; then
           resetvpn=$1
         fi
       fi
@@ -3353,13 +3382,13 @@ checkwan()
         # The WAN is most likely down, and keep looping through until NVRAM reports that it's back up
         while [ "$wandownbreakertrip" == "1" ]
         do
-          if [ "$availableslots" == "1 2" ]
+          if [ "$availableslots" = "1 2" ]
           then
             state1="$(_VPN_GetClientState_ 1)"
             state2="$(_VPN_GetClientState_ 2)"
             printf "\r${InvGreen} ${CClear} [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2                                   "
             sleep 3
-          elif [ "$availableslots" == "1 2 3 4 5" ]
+          elif [ "$availableslots" = "1 2 3 4 5" ]
           then
             state1="$(_VPN_GetClientState_ 1)"
             state2="$(_VPN_GetClientState_ 2)"
@@ -3405,7 +3434,7 @@ checkwan()
     fi
 
       # If the WAN was down, and now it has just reset, then run a VPN Reset, and try to establish a new VPN connection
-      if [ "$wandownbreakertrip" == "2" ]
+      if [ "$wandownbreakertrip" = "2" ]
       then
           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING:  WAN Link Detected -- Trying to reconnect/Reset VPN" >> $logfile
           wandownbreakertrip=0
@@ -3426,9 +3455,8 @@ checkwan()
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 ##----------------------------------------##
-## Modified by Martinski W. [2024-Oct-05] ##
+## Modified by Martinski W. [2024-Oct-18] ##
 ##----------------------------------------##
 # wancheck is a function that checks each wan connection to see if its active, and performs a ping and a city lookup...
 wancheck()
@@ -3461,9 +3489,10 @@ wancheck()
         # Get the public IP of the WAN, determine the city from it, and display it on screen #
         if [ -z "${WAN0IP:+xSETx}" ]
         then
-           WAN0IP="$(curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail --interface "$WAN0IFNAME" --request GET --url https://ipv4.icanhazip.com)"
-           WAN0CITY="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$WAN0IP | jq --raw-output .city"
-           WAN0CITY="$(eval $WAN0CITY)"; if echo "$WAN0CITY" | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then WAN0CITY="$WAN0IP"; fi
+           WAN0IP="$(curl --silent --retry 3 --retry-delay 2 --retry-all-errors --fail --interface "$WAN0IFNAME" --request GET --url https://ipv4.icanhazip.com)"
+           WAN0CITY="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$WAN0IP | jq --raw-output .city"
+           WAN0CITY="$(eval $WAN0CITY)"
+           if [ -z "$WAN0CITY" ] || echo "$WAN0CITY" | grep -qoE '\b(error.*:.*True.*|Undefined)\b' ; then WAN0CITY="$WAN0IP" ; fi
            WAN0IP="$(printf '%15s' "$WAN0IP")"
         fi
 
@@ -3512,9 +3541,10 @@ wancheck()
         # Get the public IP of the WAN, determine the city from it, and display it on screen #
         if [ -z "${WAN1IP:+xSETx}" ]
         then
-           WAN1IP="$(curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail --interface "$WAN1IFNAME" --request GET --url https://ipv4.icanhazip.com)"
-           WAN1CITY="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$WAN1IP | jq --raw-output .city"
-           WAN1CITY="$(eval $WAN1CITY)"; if echo "$WAN1CITY" | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then WAN1CITY="$WAN1IP"; fi
+           WAN1IP="$(curl --silent --retry 3 --retry-delay 2 --retry-all-errors --fail --interface "$WAN1IFNAME" --request GET --url https://ipv4.icanhazip.com)"
+           WAN1CITY="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$WAN1IP | jq --raw-output .city"
+           WAN1CITY="$(eval $WAN1CITY)"
+           if [ -z "$WAN1CITY" ] || echo "$WAN1CITY" | grep -qoE '\b(error.*:.*True.*|Undefined)\b' ; then WAN1CITY="$WAN1IP" ; fi
            WAN1IP="$(printf '%15s' "$WAN1IP")"
         fi
 
@@ -3773,7 +3803,7 @@ _SetLAN_HostName_
 updatecheck
 
 # Check and see if any commandline option is being used
-if [ $# -eq 0 ]
+if [ $# -eq 0 ] || [ -z "$1" ]
 then
     clear
     exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
@@ -3911,9 +3941,10 @@ then
 fi
 
 ubsync=""
+firstDataCollection=true
 
 ##----------------------------------------##
-## Modified by Martinski W. [2024-Oct-05] ##
+## Modified by Martinski W. [2024-Oct-17] ##
 ##----------------------------------------##
 while true
 do
@@ -3969,7 +4000,7 @@ do
 
   clear #display the header
 
-  if [ "$hideoptions" == "0" ]; then
+  if [ "$hideoptions" = "0" ]; then
     timerreset=0
     displayopsmenu
   else
@@ -3999,14 +4030,14 @@ do
   if [ "$UpdateNotify" != "0" ]; then echo -e "$UpdateNotify\n"; else echo -e "${CClear}"; fi
 
   #If WAN Monitoring is enabled, test WAN connection and show the following grid
-  if [ "$monitorwan" == "1" ] && [ "$firstrun" == "1" ]
+  if [ "$monitorwan" = "1" ] && [ "$firstrun" = "1" ]
   then
      #Check to see if the WAN is up
      checkwan
      firstrun=0
   fi
 
-  if [ "$monitorwan" == "1" ] && [ "$firstrun" = "0" ]
+  if [ "$monitorwan" = "1" ] && [ "$firstrun" = "0" ]
   then
     #Display WAN ports grid
     echo -e "${CClear}  Port | Mon | IFace  | Health | WAN State    | Public WAN IP   | Ping-->WAN | City Exit"
@@ -4031,6 +4062,8 @@ do
      echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | City Exit / Time"
   fi
   echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
+
+  if "$firstDataCollection" ; then printf "\r\033[0K${InvYellow} ${CClear} Please wait..." ; sleep 1 ; fi
 
   i=0
   for i in $availableslots #loop through the VPN slots
@@ -4121,7 +4154,9 @@ do
         sincelastreset=$(printf ': %dd %02dh:%02dm\n' $(($timediff/86400)) $(($timediff%86400/3600)) $(($timediff%3600/60)))
       fi
 
-      #print the results of all data gathered sofar
+      if "$firstDataCollection" ; then printf "\r\033[0K" ; firstDataCollection=false ; fi
+
+      # Print the results of all data gathered sofar #
       echo -e "$vpnindicator${InvDkGray}${CWhite} VPN$i${CClear} | $monitored | $servercnt | $vpnhealth | $vpnstate | $vpnip | $svrping | $vpncity$sincelastreset $citychange$ubsync"
 
       #if a vpn is monitored and disconnected, try to restart it
@@ -4131,11 +4166,11 @@ do
         echo ""
         printf "\33[2K\r"
 
-        #display a standard timer
+        #Display a standard timer#
         timer=0
         while [ $timer -ne 5 ]
         do
-          timer=$(($timer+1))
+          timer="$((timer+1))"
           preparebar 46 "|"
           progressbarpause $timer 5 "" "s" "Standard"
         done
@@ -4154,11 +4189,11 @@ do
         echo ""
         printf "\33[2K\r"
 
-        #display a standard timer
+        #display a standard timer#
         timer=0
         while [ $timer -ne 5 ]
         do
-          timer=$(($timer+1))
+          timer="$((timer+1))"
           preparebar 46 "|"
           progressbarpause $timer 5 "" "s" "Standard"
           #sleep 1
@@ -4174,15 +4209,15 @@ do
       #if a vpn is monitored and not responsive, try to restart it
       if [ "$((VPN$i))" == "1" ] && [ "$resetvpn" != "0" ]
       then #reconnect
-        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$i is non-reponsive and being reconnected" >> $logfile
+        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$i is non-responsive and being reconnected" >> $logfile
         echo ""
         printf "\33[2K\r"
 
-        #display a standard timer
+        #display a standard timer#
         timer=0
         while [ $timer -ne 5 ]
         do
-          timer=$(($timer+1))
+          timer="$((timer+1))"
           preparebar 46 "|"
           progressbarpause $timer 5 "" "s" "Standard"
           #sleep 1
@@ -4214,11 +4249,11 @@ do
           sleep 3
           printf "\33[2K\r"
 
-          #display a standard timer
+          #display a standard timer#
           timer=0
           while [ $timer -ne 5 ]
           do
-            timer=$(($timer+1))
+            timer="$((timer+1))"
             preparebar 46 "|"
             progressbarpause $timer 5 "" "s" "Standard"
             #sleep 1
@@ -4241,22 +4276,29 @@ do
   echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
   echo ""
 
-  #display a standard timer
+  #display a standard timer#
   timer=0
-  while [ "$timer" -ne "$timerloop" ]
+  updateTimer=true
+
+  while [ "$timer" -lt "$timerloop" ]
   do
-      timer="$(($timer+1))"
+      "$updateTimer" && timer="$((timer+1))"
+      prevTimeSec="$(date +%s)" ; updateTimer=false
+
       preparebar 46 "|"
       progressbaroverride "$timer" "$timerloop" "" "s" "Standard"
       lockcheck #Check to see if a reset is currently underway
-      if [ "$timerreset" == "1" ]; then timer="$timerloop" ; fi
+      if [ "$timerreset" = "1" ]; then timer="$timerloop" ; fi
+
+      ## Prevent repeatedly fast key presses from updating the timer ##
+      [ "$(date +%s)" -gt "$prevTimeSec" ] && updateTimer=true
   done
 
   #Check to see if a reset is currently underway
   lockcheck
 
   #if Unbound is active and out of sync, try to restart it
-  if [ "$unboundclient" != "0" ] && [ "$ResolverTimer" == "1" ]
+  if [ "$unboundclient" != "0" ] && [ "$ResolverTimer" = "1" ]
   then
     printf "\33[2K\r"
     echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$unboundreset is out of sync with Unbound DNS Resolver" >> $logfile
@@ -4268,7 +4310,7 @@ do
     timer=0
     while [ $timer -ne 5 ]
     do
-      timer=$(($timer+1))
+      timer="$((timer+1))"
       preparebar 46 "|"
       progressbarpause $timer 5 "" "s" "Standard"
     done
