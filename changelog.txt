@@ -1,3 +1,15 @@
+v1.3.7   - (October 20, 2024)
+         - PATCH: Modified code to handle scenarios where getting the "city exit" value returns an empty/NULL string.
+         - PATCH: Modified code to ignore invalid key presses within the main loop.
+         - PATCH: Added code to prevent updating the timer prematurely within the main loop due to repeatedly fast
+           key presses.
+         - PATCH: Modified code to get elapsed time percentage values with 1 decimal place (e.g. 0.5%). This allows
+           displaying non-integer values for percentages of the elapsed time.
+         - More minor coding improvements & fine-tuning.
+         - PATCH: Fixed the Y/N prompts so they now require you to hit <enter> after typing either y or n. This
+           changes its behavior from automatically moving on and possibly causing issues from people also using the
+           enter key accidentally.
+
 v1.3.6   - (October 12, 2024)
          - PATCH: After selecting menu option 1 ("Number of VPN Client Slots available"), if the user simply pressed
            the <Enter> key without entering any new value, the currently selected value was reset to "1 2 3 4 5"
