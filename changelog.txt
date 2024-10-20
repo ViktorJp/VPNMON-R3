@@ -5,7 +5,7 @@ v1.3.7   - (October 20, 2024)
            key presses.
          - PATCH: Modified code to get elapsed time percentage values with 1 decimal place (e.g. 0.5%). This allows
            displaying non-integer values for percentages of the elapsed time.
-         - More minor coding improvements & fine-tuning.
+         - PATCH: More minor coding improvements & fine-tuning.
          - PATCH: Fixed the Y/N prompts so they now require you to hit <enter> after typing either y or n. This
            changes its behavior from automatically moving on and possibly causing issues from people also using the
            enter key accidentally.
