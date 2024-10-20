@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.3.6 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.3.7 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
@@ -179,11 +179,10 @@ logoNMexit () {
 # -------------------------------------------------------------------------------------------------------------------------
 # Promptyn is a simple function that accepts y/n input
 
-promptyn()
-{   # No defaults, just y or n
+promptyn () {   # No defaults, just y or n
   while true; do
-    read -p "$1" -n 1 -r yn
-      case "${yn}" in
+    read -p '[y/n]? ' YESNO
+      case "$YESNO" in
         [Yy]* ) return 0 ;;
         [Nn]* ) return 1 ;;
         * ) echo -e "\nPlease answer y or n.";;
