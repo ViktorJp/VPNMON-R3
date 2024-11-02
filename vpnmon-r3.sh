@@ -1,19 +1,20 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.3.7 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.3.8 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2024-Oct-18
+# Last Modified: 2024-Nov-01
+##########################################################################################
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.3.7"                                                 # Version tracker
+version="1.3.8"                                                 # Version tracker
 beta=0                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -212,12 +213,14 @@ spinner()
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Preparebar and Progressbar is a script that provides a nice progressbar to show script activity
-
+##----------------------------------------##
+## Modified by Martinski W. [2024-Nov-01] ##
+##----------------------------------------##
 preparebar()
 {
   barlen="$1"
-  barspaces="$(printf "%*s" "$1")"
-  barchars="$(printf "%*s" "$1" | tr ' ' "$2")"
+  barspaces="$(printf "%*s" "$1" ' ')"
+  barchars="$(printf "%*s" "$1" ' ' | tr ' ' "$2")"
 }
 
 ##----------------------------------------##
@@ -3943,7 +3946,7 @@ ubsync=""
 firstDataCollection=true
 
 ##----------------------------------------##
-## Modified by Martinski W. [2024-Oct-17] ##
+## Modified by Martinski W. [2024-Nov-01] ##
 ##----------------------------------------##
 while true
 do
@@ -4000,20 +4003,20 @@ do
   clear #display the header
 
   if [ "$hideoptions" = "0" ]; then
-    timerreset=0
-    displayopsmenu
+     timerreset=0
+     displayopsmenu
   else
-    timerreset=0
+     timerreset=0
   fi
 
-  tzone=$(date +%Z)
-  tzonechars=$(echo ${#tzone})
+  tzone="$(date +%Z)"
+  tzonechars="${#tzone}"
 
-  if   [ $tzonechars = 1 ]; then tzspaces="        ";
-  elif [ $tzonechars = 2 ]; then tzspaces="       ";
-  elif [ $tzonechars = 3 ]; then tzspaces="      ";
-  elif [ $tzonechars = 4 ]; then tzspaces="     ";
-  elif [ $tzonechars = 5 ]; then tzspaces="    "; fi
+  if   [ "$tzonechars" = "1" ]; then tzspaces="        ";
+  elif [ "$tzonechars" = "2" ]; then tzspaces="       ";
+  elif [ "$tzonechars" = "3" ]; then tzspaces="      ";
+  elif [ "$tzonechars" = "4" ]; then tzspaces="     ";
+  elif [ "$tzonechars" = "5" ]; then tzspaces="    "; fi
 
   #Display VPNMON-R3 client header
   echo -en "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 - v"
@@ -4281,16 +4284,19 @@ do
 
   while [ "$timer" -lt "$timerloop" ]
   do
-      "$updateTimer" && timer="$((timer+1))"
-      prevTimeSec="$(date +%s)" ; updateTimer=false
-
+      if "$updateTimer"
+      then
+          updateTimer=false
+          timer="$((timer+1))"
+          lastTimerSec="$(date +%s)"
+      fi
       preparebar 46 "|"
       progressbaroverride "$timer" "$timerloop" "" "s" "Standard"
       lockcheck #Check to see if a reset is currently underway
       if [ "$timerreset" = "1" ]; then timer="$timerloop" ; fi
 
       ## Prevent repeatedly fast key presses from updating the timer ##
-      [ "$(date +%s)" -gt "$prevTimeSec" ] && updateTimer=true
+      [ "$(date +%s)" -gt "$lastTimerSec" ] && updateTimer=true
   done
 
   #Check to see if a reset is currently underway
