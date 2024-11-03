@@ -1,5 +1,5 @@
 # VPNMON-R3 v1.3.8
-## Updated on 2024-Nov-01
+## Updated on 2024-Nov-02
 ## Asus-Merlin VPN Monitor R3
 
 ![image](https://github.com/user-attachments/assets/476d3d78-bcc4-482d-ad3f-8b7d75501e58)

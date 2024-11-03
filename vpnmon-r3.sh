@@ -7,7 +7,7 @@
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2024-Nov-01
+# Last Modified: 2024-Nov-02
 ##########################################################################################
 
 #Preferred standard router binaries path
@@ -52,6 +52,7 @@ readonly PING_HOST_Deflt="8.8.8.8"
 readonly IPv4octet_RegEx="([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])"
 readonly IPv4addrs_RegEx="(${IPv4octet_RegEx}\.){3}${IPv4octet_RegEx}"
 LAN_HostName=""
+prevHideOpts=X  # Avoid redisplaying the menu options unnecessarily too often #
 
 PINGHOST="$PING_HOST_Deflt"                                     # Ping host
 
@@ -224,7 +225,7 @@ preparebar()
 }
 
 ##----------------------------------------##
-## Modified by Martinski W. [2024-Oct-17] ##
+## Modified by Martinski W. [2024-Nov-02] ##
 ##----------------------------------------##
 progressbaroverride()
 {
@@ -275,13 +276,13 @@ progressbaroverride()
           [Aa]) autostart;;
           [Cc]) vsetup;;
           [Ee]) logoNMexit; echo -e "${CClear}\n"; exit 0;;
-          [Hh]) timerreset=1; hideoptions=1;;
+          [Hh]) hideoptions=1 ; [ "$hideoptions" != "$prevHideOpts" ] && timerreset=1 ;;
           [Ii]) amtmevents;;
           [Ll]) vlogs;;
           [Mm]) vpnslots;;
           [Pp]) maxping;;
           [Rr]) schedulevpnreset;;
-          [Ss]) timerreset=1; hideoptions=0;;
+          [Ss]) hideoptions=0 ; [ "$hideoptions" != "$prevHideOpts" ] && timerreset=1 ;;
           [Tt]) timerloopconfig;;
           [Uu]) vpnserverlistautomation;;
           [Vv]) vpnserverlistmaint;;
@@ -2194,7 +2195,7 @@ done
 # timerloopconfig lets you configure how long you want the timer cycle to last between vpn connection checks
 
 ##----------------------------------------##
-## Modified by Martinski W. [2024-Oct-05] ##
+## Modified by Martinski W. [2024-Nov-02] ##
 ##----------------------------------------##
 timerloopconfig()
 {
@@ -2210,23 +2211,30 @@ do
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} Current: ${CGreen}$timerloop sec${CClear}"
   echo
-  read -p "Please enter value (1-999)? (e=Exit): " newTimerLoop
-  if echo "$newTimerLoop" | grep -qE "^([1-9][0-9]{0,2})$" && \
-     [ "$newTimerLoop" -gt 0 ] && [ "$newTimerLoop" -le 999 ]
+  read -p "Please enter value in seconds [5-999] (e=Exit): " newTimerLoop
+  if [ -z "$newTimerLoop" ] || echo "$newTimerLoop" | grep -qE "^(e|E)$"
+  then
+      if echo "$timerloop" | grep -qE "^([1-9][0-9]{0,2})$" && \
+         [ "$timerloop" -ge 5 ] && [ "$timerloop" -le 999 ]
+      then
+          timer="$timerloop"
+          printf "\n${CClear}[Exiting]\n"
+          sleep 1 ; break
+      else
+          printf "\n${CRed}*ERROR*: Please enter a valid number between 5 and 999.${CClear}\n"
+          sleep 3
+      fi
+  elif echo "$newTimerLoop" | grep -qE "^([1-9][0-9]{0,2})$" && \
+       [ "$newTimerLoop" -ge 5 ] && [ "$newTimerLoop" -le 999 ]
   then
       timerloop="$newTimerLoop"
       echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Timer Loop Configuration saved" >> $logfile
       saveconfig
       timer="$timerloop"
-  elif [ -z "$newTimerLoop" ] || echo "$newTimerLoop" | grep -qE "^(E|e)$"
-  then
-      echo ; echo -e "${CClear}[Exiting]"
-      timer="$timerloop"
-      sleep 2
-      break
+      printf "\n${CClear}[OK]\n"
+      sleep 1 ; break
   else
-      echo
-      echo -e "${CClear}[Please enter value between 1 and 999, e=Exit]"
+      printf "\n${CRed}*ERROR*: Please enter a valid number between 5 and 999.${CClear}\n"
       sleep 3
   fi
 done
@@ -3946,7 +3954,7 @@ ubsync=""
 firstDataCollection=true
 
 ##----------------------------------------##
-## Modified by Martinski W. [2024-Nov-01] ##
+## Modified by Martinski W. [2024-Nov-02] ##
 ##----------------------------------------##
 while true
 do
@@ -4002,12 +4010,14 @@ do
 
   clear #display the header
 
-  if [ "$hideoptions" = "0" ]; then
+  if [ "$hideoptions" = "0" ] && [ "$hideoptions" != "$prevHideOpts" ]
+  then
      timerreset=0
      displayopsmenu
   else
      timerreset=0
   fi
+  prevHideOpts="$hideoptions"
 
   tzone="$(date +%Z)"
   tzonechars="${#tzone}"
@@ -4301,6 +4311,7 @@ do
 
   #Check to see if a reset is currently underway
   lockcheck
+  prevHideOpts=X
 
   #if Unbound is active and out of sync, try to restart it
   if [ "$unboundclient" != "0" ] && [ "$ResolverTimer" = "1" ]
