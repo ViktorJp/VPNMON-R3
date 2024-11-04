@@ -7,7 +7,7 @@
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2024-Nov-03
+# Last Modified: 2024-Nov-04
 ##########################################################################################
 
 #Preferred standard router binaries path
@@ -634,8 +634,7 @@ do
           echo -e "attached SSH client. This can provide greater stability due to it running on the router"
           echo -e "itself."
           echo ""
-          [ -z "$($timeoutcmd$timeoutsec nvram get odmpid)" ] && RouterModel="$($timeoutcmd$timeoutsec nvram get productid)" || RouterModel="$($timeoutcmd$timeoutsec nvram get odmpid)" # Thanks @thelonelycoder for this logic
-          echo -e "Your router model is: ${CGreen}$RouterModel${CClear}"
+          echo -e "Your router model is: ${CGreen}$ROUTERMODEL${CClear}"
           echo ""
           echo -e "Ready to install?"
           if promptyn " (y/n): "
@@ -706,8 +705,7 @@ do
         echo -e "network-attached SSH client. This can provide greater stability due to it running on"
         echo -e "the router itself."
         echo ""
-        [ -z "$($timeoutcmd$timeoutsec nvram get odmpid)" ] && RouterModel="$($timeoutcmd$timeoutsec nvram get productid)" || RouterModel="$($timeoutcmd$timeoutsec nvram get odmpid)" # Thanks @thelonelycoder for this logic
-        echo -e "Your router model is: ${CGreen}$RouterModel${CClear}"
+        echo -e "Your router model is: ${CGreen}$ROUTERMODEL${CClear}"
         echo ""
         echo -e "Force Re-install?"
         if promptyn "[y/n]: "
@@ -2718,12 +2716,12 @@ _SendEMailNotification_()
 # $2 = Component
 # $3 = VPN Slot
 
-sendmessage () {
-
-#If AMTM email functionality is disabled, return back to the function call
-if [ "$amtmemailsuccess" == "0" ] && [ "$amtmemailfailure" == "0" ]; then
-  return
-fi
+sendmessage()
+{
+  #If AMTM email functionality is disabled, return back to the function call
+  if [ "$amtmemailsuccess" == "0" ] && [ "$amtmemailfailure" == "0" ]; then
+     return
+  fi
 
   #Load, install or update the shared AMTM Email integration library
   if [ -f "$CUSTOM_EMAIL_LIBFile" ]
@@ -3808,6 +3806,17 @@ fi
 ##-------------------------------------##
 _SetUpTimeoutCmdVars_
 _SetLAN_HostName_
+
+##-------------------------------------##
+## Added by Martinski W. [2024-Nov-04] ##
+##-------------------------------------##
+ROUTERMODEL="$($timeoutcmd$timeoutsec nvram get odmpid)"
+[ -z "$ROUTERMODEL" ] && ROUTERMODEL="$($timeoutcmd$timeoutsec nvram get productid)"
+FWVER="$($timeoutcmd$timeoutsec nvram get firmver | tr -d '.')"
+BUILDNO="$($timeoutcmd$timeoutsec nvram get buildno)"
+EXTENDNO="$($timeoutcmd$timeoutsec nvram get extendno)"
+if [ -z "$EXTENDNO" ]; then EXTENDNO=0; fi
+FWBUILD="${FWVER}.${BUILDNO}_${EXTENDNO}"
 
 # Check for updates
 updatecheck
