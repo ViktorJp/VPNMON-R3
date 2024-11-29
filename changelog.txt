@@ -1,3 +1,10 @@
+v1.3.8   - (November 28, 2024)
+         - PATCH: Fixed printf() call statement syntax. (Thank you @Martinski!)
+         - PATCH: Modified minimum value allowed for timer loop to 5 seconds. (Thank you @Martinski!)
+         - PATCH: Modified code to avoid redisplaying the top "Options Menu" unnecessarily too often and resetting
+           the timer loop due to repeatedly fast key presses. (Thank you @Martinski!)
+         - PATCH: Minor code improvements.  (Thank you @Martinski!)
+
 v1.3.7   - (October 20, 2024)
          - PATCH: Modified code to handle scenarios where getting the "city exit" value returns an empty/NULL string.
          - PATCH: Modified code to ignore invalid key presses within the main loop.
@@ -5,7 +12,7 @@ v1.3.7   - (October 20, 2024)
            key presses.
          - PATCH: Modified code to get elapsed time percentage values with 1 decimal place (e.g. 0.5%). This allows
            displaying non-integer values for percentages of the elapsed time.
-         - More minor coding improvements & fine-tuning.
+         - PATCH: More minor coding improvements & fine-tuning.
          - PATCH: Fixed the Y/N prompts so they now require you to hit <enter> after typing either y or n. This
            changes its behavior from automatically moving on and possibly causing issues from people also using the
            enter key accidentally.
