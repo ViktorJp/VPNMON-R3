@@ -1,3 +1,6 @@
+v1.3.9   - (TBA)
+         - PATCH: Changed around some of the spacing of the [n/a] fields, and made them right-justified. For looks!
+
 v1.3.8   - (November 28, 2024)
          - PATCH: Fixed printf() call statement syntax. (Thank you @Martinski!)
          - PATCH: Modified minimum value allowed for timer loop to 5 seconds. (Thank you @Martinski!)
