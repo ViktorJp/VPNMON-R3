@@ -1,7 +1,6 @@
 To-Do:
 - Custom IP to do WAN check against (to remove need for 8.8.8.8 for those who block google)
 - automatically unmonitor slot after X failed connections?
-- Possibility: Integrate KILLMON functionality if there is any interest in having better killswitch capabilities
 - Wireguard compatibility
 - Failover capability from slot 1, to 2 etc.
 - If the WAN doesn't respond after X minutes, issue a router reboot?
@@ -18,3 +17,6 @@ Done:
 - Add ping values to main UI
 - Build a VPN Server List builder that exports IPs into a certain Client Slot txt file
 - Consider building Unbound tie-in
+
+Nixed:
+- Possibility: Integrate KILLMON functionality if there is any interest in having better killswitch capabilities (Nixed in favor of Router UI killswitch implementation)
