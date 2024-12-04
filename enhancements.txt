@@ -4,6 +4,7 @@ To-Do:
 - Possibility: Integrate KILLMON functionality if there is any interest in having better killswitch capabilities
 - Wireguard compatibility
 - Failover capability from slot 1, to 2 etc.
+- If the WAN doesn't respond after X minutes, issue a router reboot?
 
 Done:
 - AMTM Email notifications on: WAN Restore, VPN Reconnections
