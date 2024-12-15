@@ -1845,8 +1845,8 @@ do
       automation5unenc=$(echo "$automation5" | openssl enc -d -base64 -A)
       echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$automation5unenc"
     fi
+    echo -e "${InvGreen} ${CClear}"
     echo ""
-
     read -p "Please select? (e1-e5, x1-x5, s1-s5, e=Exit): " SelectSlot5
     case $SelectSlot5 in
       e1)
