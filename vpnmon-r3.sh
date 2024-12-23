@@ -4123,7 +4123,7 @@ do
          vpnstate="Connecting  "
          vpnhealth="${CDkGray}[n/a ]${CClear}"
          vpnindicator="${InvYellow} ${CClear}"
-         vpnip="         ${CDkGray}[n/a] ${CClear}"
+         vpnip="          ${CDkGray}[n/a]${CClear}"
          vpncity="${CDkGray}[n/a]${CClear}"
          svrping="     ${CDkGray}[n/a]${CClear}"
       elif [ "$vpnstate" = "2" ]
