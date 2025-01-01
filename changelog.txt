@@ -1,4 +1,4 @@
-v1.3.9   - (TBA)
+v1.3.10  - (January 10, 2024)
          - PATCH: Changed around some of the spacing of the [n/a] fields, and made them right-justified. For looks!
          - PATCH: Fixed some of the UI inconsistencies on the VPN Client Slot Server Automation screen.
 
@@ -11,48 +11,50 @@ v1.3.8   - (November 28, 2024)
 
 v1.3.7   - (October 20, 2024)
          - PATCH: Modified code to handle scenarios where getting the "city exit" value returns an empty/NULL string.
-         - PATCH: Modified code to ignore invalid key presses within the main loop.
+           (Thank you @Martinski!)
+         - PATCH: Modified code to ignore invalid key presses within the main loop. (Thank you @Martinski!)
          - PATCH: Added code to prevent updating the timer prematurely within the main loop due to repeatedly fast
-           key presses.
+           key presses. (Thank you @Martinski!)
          - PATCH: Modified code to get elapsed time percentage values with 1 decimal place (e.g. 0.5%). This allows
-           displaying non-integer values for percentages of the elapsed time.
-         - PATCH: More minor coding improvements & fine-tuning.
+           displaying non-integer values for percentages of the elapsed time. (Thank you @Martinski!)
+         - PATCH: More minor coding improvements & fine-tuning. (Thank you @Martinski!)
          - PATCH: Fixed the Y/N prompts so they now require you to hit <enter> after typing either y or n. This
            changes its behavior from automatically moving on and possibly causing issues from people also using the
-           enter key accidentally.
+           enter key accidentally. (Thank you @Martinski!)
 
 v1.3.6   - (October 12, 2024)
          - PATCH: After selecting menu option 1 ("Number of VPN Client Slots available"), if the user simply pressed
            the <Enter> key without entering any new value, the currently selected value was reset to "1 2 3 4 5"
-           regardless of the current setting.
+           regardless of the current setting. (Thank you @Martinski!)
          - PATCH: After selecting menu option 2 ("Custom PING host to determine VPN health"), if the user simply
            pressed the <Enter> key without entering any new value, the currently selected value was set to empty/NULL
-           regardless of the current setting.
+           regardless of the current setting. (Thank you @Martinski!)
          - PATCH: When selecting menu option 2 ("Custom PING host to determine VPN health"), any user input was
-           accepted for the IP address because there was no IPv4 address format validation.
+           accepted for the IP address because there was no IPv4 address format validation. (Thank you @Martinski!)
          - PATCH: After selecting menu option 3 ("Custom Event Log size (rows)"), if the user simply pressed the
            <Enter> key without entering any new value, the currently selected value was reset to "2000" regardless of
-           the current setting. In addition, the error message "[: 0: unknown operand" was generated.
+           the current setting. In addition, the error message "[: 0: unknown operand" was generated. (Thank you
+           @Martinski!)
          - PATCH: After selecting menu option 5 ("Refresh Custom Server Lists on -RESET Switch"), if the user simply
            pressed the <Enter> key without entering any new value, the currently selected value was reset to
            "Enabled" regardless of the current setting. In addition, the error message "[: 0: unknown operand" was
-           generated.
+           generated. (Thank you @Martinski!)
          - PATCH: After selecting menu option 6 ("Provide additional WAN/Dual WAN monitoring"), if the user simply
            pressed the <Enter> key without entering any new value, the currently selected value was reset to
            "Enabled" regardless of the current setting. In addition, the error message "[: 0: unknown operand" was
-           generated.
+           generated. (Thank you @Martinski!)
          - PATCH: After selecting menu option 7 ("Whitelist VPN Server IP Lists in Skynet"), if the user simply
            pressed the <Enter> key without entering any new value, the currently selected value was reset to
            "Disabled" regardless of the current setting. In addition, the error message "[: 0: unknown operand" was
-           generated.
-         - PATCH: Added user input validation for Cron Job hours & minutes
+           generated. (Thank you @Martinski!)
+         - PATCH: Added user input validation for Cron Job hours & minutes (Thank you @Martinski!)
          - PATCH: Adjusted display format of the number of servers to avoid left-padding with zeros while still
-           maintaining table alignment.
+           maintaining table alignment. (Thank you @Martinski!)
          - PATCH: Adjusted display format of ping values to avoid left-padding with zeros while still maintaining
-           table alignment.
+           table alignment. (Thank you @Martinski!)
          - PATCH: Adjusted display format of IPv4 addresses to avoid left-padding with zeros while still maintaining
-           table alignment.
-         - PATCH: Various other coding improvements & fine-tuning.
+           table alignment. (Thank you @Martinski!)
+         - PATCH: Various other coding improvements & fine-tuning. (Thank you @Martinski!)
 
 v1.3.5   - (May 11, 2024)
          - PATCH: Small bugfix after looking into issues with the vr3timers.txt file. Seems that there was a variable
