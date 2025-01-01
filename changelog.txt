@@ -1,4 +1,4 @@
-v1.3.10  - (January 10, 2024)
+v1.3.10  - (January 1, 2024)
          - PATCH: Changed around some of the spacing of the [n/a] fields, and made them right-justified. For looks!
          - PATCH: Fixed some of the UI inconsistencies on the VPN Client Slot Server Automation screen.
 
