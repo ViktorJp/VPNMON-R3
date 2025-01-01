@@ -1,20 +1,20 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.3.8 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.3.9 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2024-Nov-28
+# Last Modified: 2025-Jan-01
 ##########################################################################################
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.3.8"                                                 # Version tracker
+version="1.3.10"                                                # Version tracker
 beta=0                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -1845,8 +1845,8 @@ do
       automation5unenc=$(echo "$automation5" | openssl enc -d -base64 -A)
       echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$automation5unenc"
     fi
+    echo -e "${InvGreen} ${CClear}"
     echo ""
-
     read -p "Please select? (e1-e5, x1-x5, s1-s5, e=Exit): " SelectSlot5
     case $SelectSlot5 in
       e1)
@@ -3522,7 +3522,7 @@ wancheck()
            echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN0IP | $WAN0PING | $WAN0CITY"
         fi
      else
-        echo -e "${InvDkGray}${CWhite}  WAN0${CClear} | ${CGreen}[X]${CClear} | ${CDkGray}[n/a]${CClear}  | ${CDkGray}[n/a ]${CClear} | Inactive     | ${CDkGray}[n/a]${CClear}           | ${CDkGray}[n/a]${CClear}      | ${CDkGray}[n/a]${CClear}"
+        echo -e "${InvDkGray}${CWhite}  WAN0${CClear} | ${CGreen}[X]${CClear} | ${CDkGray}[n/a]${CClear}  | ${CDkGray}[n/a ]${CClear} | Inactive     |           ${CDkGray}[n/a]${CClear} |      ${CDkGray}[n/a]${CClear} | ${CDkGray}[n/a]${CClear}"
      fi
   fi
 
@@ -3567,7 +3567,7 @@ wancheck()
            echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN1IP | $WAN1PING | $WAN1CITY"
         fi
      else
-        echo -e "${InvDkGray}${CWhite}  WAN1${CClear} | ${CGreen}[X]${CClear} | ${CDkGray}[n/a]${CClear}  | ${CDkGray}[n/a ]${CClear} | Inactive     | ${CDkGray}[n/a]${CClear}           | ${CDkGray}[n/a]${CClear}      | ${CDkGray}[n/a]${CClear}"
+        echo -e "${InvDkGray}${CWhite}  WAN1${CClear} | ${CGreen}[X]${CClear} | ${CDkGray}[n/a]${CClear}  | ${CDkGray}[n/a ]${CClear} | Inactive     |           ${CDkGray}[n/a]${CClear} |      ${CDkGray}[n/a]${CClear} | ${CDkGray}[n/a]${CClear}"
      fi
   fi
 }
@@ -4107,25 +4107,25 @@ do
          vpnstate="Disconnected"
          vpnhealth="${CDkGray}[n/a ]${CClear}"
          vpnindicator="${InvDkGray} ${CClear}"
-         vpnip="${CDkGray}[n/a]          ${CClear}"
+         vpnip="          ${CDkGray}[n/a]${CClear}"
          vpncity="${CDkGray}[n/a]${CClear}"
-         svrping="${CDkGray}[n/a]     ${CClear}"
+         svrping="     ${CDkGray}[n/a]${CClear}"
       elif [ "$vpnstate" = "-1" ]
       then
          vpnstate="Error State "
          vpnhealth="${CDkGray}[n/a ]${CClear}"
          vpnindicator="${InvDkGray} ${CClear}"
-         vpnip="${CDkGray}[n/a]          ${CClear}"
+         vpnip="${CDkGray}          [n/a]${CClear}"
          vpncity="${CDkGray}[n/a]${CClear}"
-         svrping="${CDkGray}[n/a]     ${CClear}"
+         svrping="     ${CDkGray}[n/a]${CClear}"
       elif [ "$vpnstate" = "1" ]
       then
          vpnstate="Connecting  "
          vpnhealth="${CDkGray}[n/a ]${CClear}"
          vpnindicator="${InvYellow} ${CClear}"
-         vpnip="${CDkGray}[n/a]          ${CClear}"
+         vpnip="          ${CDkGray}[n/a]${CClear}"
          vpncity="${CDkGray}[n/a]${CClear}"
-         svrping="${CDkGray}[n/a]     ${CClear}"
+         svrping="     ${CDkGray}[n/a]${CClear}"
       elif [ "$vpnstate" = "2" ]
       then
          vpnstate="Connected   "
@@ -4145,9 +4145,9 @@ do
          vpnstate="Unknown     "
          vpnhealth="${CDkGray}[n/a ]${CClear}"
          vpnindicator="${InvDkGray} ${CClear}"
-         vpnip="${CDkGray}[n/a]          ${CClear}"
+         vpnip="          ${CDkGray}[n/a]${CClear}"
          vpncity="${CDkGray}[n/a]${CClear}"
-         svrping="${CDkGray}[n/a]     ${CClear}"
+         svrping="     ${CDkGray}[n/a]${CClear}"
       fi
 
       #Determine how many server entries are in each of the vpn slot alternate server files#
