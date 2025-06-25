@@ -3,6 +3,7 @@ To-Do:
 - Failover capability from slot 1, to 2 etc.
 - Wireguard compatibility
 - If the WAN doesn't respond after X minutes, issue a router reboot?
+- Run "sh /jffs/scripts/spdMerlin.sh reset_interfaces force" whenever vpnmon-r3 resets - needs menu item. (iTyPsIDg)
 
 Done:
 - Custom IP to do WAN check against (to remove need for 8.8.8.8 for those who block google)
