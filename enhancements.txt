@@ -4,6 +4,8 @@ To-Do:
 - Wireguard compatibility
 - If the WAN doesn't respond after X minutes, issue a router reboot?
 - Run "sh /jffs/scripts/spdMerlin.sh reset_interfaces force" whenever vpnmon-r3 resets - needs menu item. (iTyPsIDg)
+- *** fix router model/build in email -- VPNMON-R3!
+- *** if downloaded list = 0, then dont save list and preserve, and email
 
 Done:
 - Custom IP to do WAN check against (to remove need for 8.8.8.8 for those who block google)
