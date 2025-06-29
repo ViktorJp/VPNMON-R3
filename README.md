@@ -3,7 +3,7 @@ Asus-Merlin VPN Monitor R3
 
 Updated on 2025-Jun-29
 
-![image](https://github.com/user-attachments/assets/476d3d78-bcc4-482d-ad3f-8b7d75501e58)
+![1735747221021](https://github.com/user-attachments/assets/df4d2632-3751-401d-9677-92feabf9e029)
 
 **EXECUTIVE SUMMARY:** VPNMON-R3 (vpnmon-r3.sh) is an all-in-one script that is optimized to maintain multiple VPN connections and is able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to. This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN connections are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of your specified servers to reconnect to for each VPN client. It also monitors your WAN/Dual-WAN connection and drops back until your WAN connection comes back up to reconnect your VPN tunnels.
 
