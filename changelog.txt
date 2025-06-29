@@ -12,7 +12,7 @@ v1.4.1   - (June 29, 2025)
            filled with still perfectly fine VPN server IPs. This will now also generate log entries and will send
            you warning emails indicating which slot is causing the issue.
 
-v1.3.10  - (January 1, 2024)
+v1.3.10  - (January 1, 2025)
          - PATCH: Changed around some of the spacing of the [n/a] fields, and made them right-justified. For looks!
          - PATCH: Fixed some of the UI inconsistencies on the VPN Client Slot Server Automation screen.
 
