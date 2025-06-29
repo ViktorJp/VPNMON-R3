@@ -1,3 +1,17 @@
+v1.4.1   - (June 29, 2025)
+         - MINOR: Added the capability of optionally integrating with spdMerlin, and having it refresh it's list
+           of interfaces whenever VPNMON-R3 resets. This will allow spdMerlin to know which VPN interfaces are
+           active for the purposes of running manual or automated speed tests. This option is available under the
+           config as option #9 to enable/disable. Thanks to @iTyPsIDg for the suggestion!
+         - PATCH: Fixed the behavior of custom server lists that get updated through curl/API queries on a daily
+           basis. There have been several times when either the VPN service API goes down, or the VPN service itself
+           makes a major change on their end and stops supporting API calls altogether. (Yes, I'm looking at you
+           Proton VPN!) <grr> When this happens, VPNMON-R3 runs its normal query, getting 0 results, and happily
+           saves this 0 results file as your current list of available VPN servers to choose from, causing all kinds
+           of mayhem. VPNMON-R3 will now recognize that the list is pooched, and will preserve the old good list
+           filled with still perfectly fine VPN server IPs. This will now also generate log entries and will send
+           you warning emails indicating which slot is causing the issue.
+
 v1.3.10  - (January 1, 2024)
          - PATCH: Changed around some of the spacing of the [n/a] fields, and made them right-justified. For looks!
          - PATCH: Fixed some of the UI inconsistencies on the VPN Client Slot Server Automation screen.
