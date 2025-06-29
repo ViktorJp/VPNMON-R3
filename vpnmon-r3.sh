@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.3.9 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.4.1 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
@@ -14,8 +14,8 @@
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.3.10"                                                # Version tracker
-beta=0                                                          # Beta switch
+version="1.4.1b"                                                # Version tracker
+beta=1                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
 logfile="/jffs/addons/vpnmon-r3.d/vpnmon-r3.log"                # Static path to the log
@@ -40,6 +40,7 @@ pingreset=500                                                   # Maximum ping i
 updateskynet=0                                                  # Check for VPN IP whitelisting in Skynet
 amtmemailsuccess=0                                              # AMTM Email Success Message Option
 amtmemailfailure=0                                              # AMTM Email Failure Message Option
+rstspdmerlin=0                                                  # Reset spdMerlin Interfaces Option
 timeoutcmd=""                                                   # For "timeout" cmd for "nvram" calls
 timeoutsec=""                                                   # For "timeout" cmd for "nvram" calls
 timeoutlng=""                                                   # For "timeout" cmd for "nvram" calls
@@ -263,11 +264,11 @@ progressbaroverride()
   if [ "$key_press" ]
   then
       case "$key_press" in
-          [1]) echo ""; restartvpn 1; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [2]) echo ""; restartvpn 2; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [3]) echo ""; restartvpn 3; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [4]) echo ""; restartvpn 4; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [5]) echo ""; restartvpn 5; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [1]) echo ""; restartvpn 1; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [2]) echo ""; restartvpn 2; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [3]) echo ""; restartvpn 3; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [4]) echo ""; restartvpn 4; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [5]) echo ""; restartvpn 5; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
           [\!]) echo ""; killunmonvpn 1; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
           [\@]) echo ""; killunmonvpn 2; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
           [\#]) echo ""; killunmonvpn 3; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
@@ -434,8 +435,8 @@ do
     printf "${CClear}Please select? (${CGreen}n${CClear}=UNpause, ${CGreen}e${CClear}=Exit)"
     read -p ": " SelectSlot
       case $SelectSlot in
-            [1]) echo ""; restartvpn 1; sendmessage 0 "VPN Reset" 1; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [2]) echo ""; restartvpn 2; sendmessage 0 "VPN Reset" 2; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [1]) echo ""; restartvpn 1; sendmessage 0 "VPN Reset" 1; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [2]) echo ""; restartvpn 2; sendmessage 0 "VPN Reset" 2; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [\!]) echo ""; killunmonvpn 1; sendmessage 0 "VPN Killed" 1; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [\@]) echo ""; killunmonvpn 2; sendmessage 0 "VPN Killed" 2; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [Aa]) autostart;;
@@ -459,11 +460,11 @@ do
     printf "${CClear}Please select? (${CGreen}n${CClear}=UNpause, ${CGreen}e${CClear}=Exit)"
     read -p ": " SelectSlot
       case $SelectSlot in
-            [1]) echo ""; restartvpn 1; sendmessage 0 "VPN Reset" 1; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [2]) echo ""; restartvpn 2; sendmessage 0 "VPN Reset" 2; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [3]) echo ""; restartvpn 3; sendmessage 0 "VPN Reset" 3; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [4]) echo ""; restartvpn 4; sendmessage 0 "VPN Reset" 4; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [5]) echo ""; restartvpn 5; sendmessage 0 "VPN Reset" 5; restartrouting; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [1]) echo ""; restartvpn 1; sendmessage 0 "VPN Reset" 1; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [2]) echo ""; restartvpn 2; sendmessage 0 "VPN Reset" 2; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [3]) echo ""; restartvpn 3; sendmessage 0 "VPN Reset" 3; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [4]) echo ""; restartvpn 4; sendmessage 0 "VPN Reset" 4; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [5]) echo ""; restartvpn 5; sendmessage 0 "VPN Reset" 5; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [\!]) echo ""; killunmonvpn 1; sendmessage 0 "VPN Killed" 1; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [\@]) echo ""; killunmonvpn 2; sendmessage 0 "VPN Killed" 2; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [\#]) echo ""; killunmonvpn 3; sendmessage 0 "VPN Killed" 3; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
@@ -812,6 +813,12 @@ do
      amtmemailsuccfaildisp="Disabled"
   fi
 
+  if [ "$rstspdmerlin" -eq 0 ]; then
+     rstspdmerlindisp="Disabled"
+  else
+     rstspdmerlindisp="Enabled"
+  fi
+
   clear
   echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 Configuration Options                                                       ${CClear}"
   echo -e "${InvGreen} ${CClear}"
@@ -827,12 +834,13 @@ do
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(6)${CClear} : Provide additional WAN/Dual WAN monitoring   : ${CGreen}$monitorwandisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(7)${CClear} : Whitelist VPN Server IP Lists in Skynet      : ${CGreen}$updateskynetdisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(8)${CClear} : AMTM Email Notifications on Success/Failure  : ${CGreen}$amtmemailsuccfaildisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(9)${CClear} : Reset spdMerlin Interfaces on VPN Reset      : ${CGreen}$rstspdmerlindisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} | ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(e)${CClear} : Exit${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo ""
-  read -p "Please select? (1-8, e=Exit): " SelectSlot
+  read -p "Please select? (1-9, e=Exit): " SelectSlot
     case $SelectSlot in
       1)
         clear
@@ -1255,6 +1263,45 @@ do
       8)
         amtmevents
         source "$config"
+      ;;
+
+      9)
+        clear
+        echo -e "${InvGreen} ${InvDkGray}${CWhite} Reset spdMerlin Interfaces on VPN Reset                                               ${CClear}"
+        echo -e "${InvGreen} ${CClear}"
+        echo -e "${InvGreen} ${CClear} Please indicate below if you would like to reset your spdMerlin Interfaces each${CClear}"
+        echo -e "${InvGreen} ${CClear} time VPNMON-R3 resets. This functionality will allow VPNMON-R3 to update spdMerlin${CClear}"
+        echo -e "${InvGreen} ${CClear} whenever a VPN reset occurs. SpdMerlin will then know which interfaces are active${CClear}"
+        echo -e "${InvGreen} ${CClear} in order to run manual or automated speedtests from.${CClear}"
+        echo -e "${InvGreen} ${CClear}"
+        echo -e "${InvGreen} ${CClear} Use 0 to Disable, 1 to Enable. (Default = 0)"
+        echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+        echo
+        echo -e "${CClear}Current: ${CGreen}$rstspdmerlindisp${CClear}" ; echo
+        read -p "Please Choose? (Disable = 0, Enable = 1, e=Exit): " newrstspdmerlin
+        if [ "$newrstspdmerlin" = "0" ]
+        then
+            rstspdmerlin=0
+            rstspdmerlindisp="Disabled"
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: spdMerlin Interface Reset Disabled" >> $logfile
+            saveconfig
+        elif [ "$newrstspdmerlin" = "1" ]
+        then
+            rstspdmerlin=1
+            rstspdmerlindisp="Enabled"
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: spdMerlin Interface Reset Enabled" >> $logfile
+            saveconfig
+        elif [ "$newrstspdmerlin" = "e" ]
+        then
+            echo -e "\n[Exiting]"; sleep 2
+        else
+            previousValue="$rstspdmerlin"
+            rstspdmerlin="${rstspdmerlin:=0}"
+            rstspdmerlindisp="$([ "$rstspdmerlin" = "0" ] && echo "Disabled" || echo "Enabled")"
+            [ "$rstspdmerlin" != "$previousValue" ] && \
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: spdMerlin Interface Reset $monitorwandisp" >> $logfile
+            saveconfig
+        fi
       ;;
 
     esac
@@ -1711,10 +1758,10 @@ do
          automation1unenc=$(echo "$automation1" | openssl enc -d -base64 -A)
          echo -e "${CClear}Running: $automation1unenc"
          echo ""
-         eval "$automation1unenc" > /jffs/addons/vpnmon-r3.d/vr3svr1.txt
+         eval "$automation1unenc" > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
          #Determine how many server entries are in each of the vpn slot alternate server files
-         if [ -f /jffs/addons/vpnmon-r3.d/vr3svr1.txt ]; then
-           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svr1.txt | wc -l) >/dev/null 2>&1
+         if [ -f /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt ]; then
+           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt | wc -l) >/dev/null 2>&1
            if [ $dlcnt -lt 1 ]; then
              dlcnt=0
            elif [ -z $dlcnt ]; then
@@ -1723,17 +1770,32 @@ do
          else
            dlcnt=0
          fi
-         echo ""
-         echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
-         echo ""
-         echo -e "${CGreen}[Saved to VPN Client Slot 1 Server List]${CClear}"
-         echo ""
-         echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 1" >> $logfile
-         echo ""
-         skynetwhitelist 1
-         echo ""
-         read -rsp $'Press any key to acknowledge...\n' -n1 key
+
+         if [ "$dlcnt" -gt 1 ]
+           then
+             cp "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" "/jffs/addons/vpnmon-r3.d/vr3svr1.txt" >/dev/null 2>&1
+             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+             echo ""
+             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
+             echo ""
+             echo -e "${CGreen}[Saved to VPN Client Slot 1 Server List]${CClear}"
+             echo ""
+             echo -e "${CGreen}[Execution Complete]${CClear}"
+             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 1" >> $logfile
+             echo ""
+             skynetwhitelist 1
+             echo ""
+             read -rsp $'Press any key to acknowledge...\n' -n1 key
+           else
+             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+             echo ""
+             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source - Preserving Original Server List]${CClear}"
+             echo ""
+             echo -e "${CGreen}[Please check Query Language or VPN Service API may be down]${CClear}"
+             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List Query for VPN Slot 1 yielded 0 rows -- Query may be invalid or VPN API service may be down" >> $logfile
+             echo ""
+             read -rsp $'Press any key to acknowledge...\n' -n1 key
+         fi
       ;;
 
       s1)
@@ -1777,10 +1839,10 @@ do
          automation2unenc=$(echo "$automation2" | openssl enc -d -base64 -A)
          echo -e "${CClear}Running: $automation2unenc"
          echo ""
-         eval "$automation2unenc" > /jffs/addons/vpnmon-r3.d/vr3svr2.txt
+         eval "$automation2unenc" > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
          #Determine how many server entries are in each of the vpn slot alternate server files
-         if [ -f /jffs/addons/vpnmon-r3.d/vr3svr2.txt ]; then
-           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svr2.txt | wc -l) >/dev/null 2>&1
+         if [ -f /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt ]; then
+           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt | wc -l) >/dev/null 2>&1
            if [ $dlcnt -lt 1 ]; then
              dlcnt=0
            elif [ -z $dlcnt ]; then
@@ -1789,17 +1851,32 @@ do
          else
            dlcnt=0
          fi
-         echo ""
-         echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
-         echo ""
-         echo -e "${CGreen}[Saved to VPN Client Slot 2 Server List]${CClear}"
-         echo ""
-         echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 2" >> $logfile
-         echo ""
-         skynetwhitelist 2
-         echo ""
-         read -rsp $'Press any key to acknowledge...\n' -n1 key
+
+         if [ "$dlcnt" -gt 1 ]
+           then
+             cp "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" "/jffs/addons/vpnmon-r3.d/vr3svr2.txt" >/dev/null 2>&1
+             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+             echo ""
+             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
+             echo ""
+             echo -e "${CGreen}[Saved to VPN Client Slot 2 Server List]${CClear}"
+             echo ""
+             echo -e "${CGreen}[Execution Complete]${CClear}"
+             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 2" >> $logfile
+             echo ""
+             skynetwhitelist 2
+             echo ""
+             read -rsp $'Press any key to acknowledge...\n' -n1 key
+           else
+             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+             echo ""
+             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source - Preserving Original Server List]${CClear}"
+             echo ""
+             echo -e "${CGreen}[Please check Query Language or VPN Service API may be down]${CClear}"
+             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List Query for VPN Slot 2 yielded 0 rows -- Query may be invalid or VPN API service may be down" >> $logfile
+             echo ""
+             read -rsp $'Press any key to acknowledge...\n' -n1 key
+         fi
       ;;
 
       s2)
@@ -1877,10 +1954,10 @@ do
          automation1unenc=$(echo "$automation1" | openssl enc -d -base64 -A)
          echo -e "${CClear}Running: $automation1unenc"
          echo ""
-         eval "$automation1unenc" > /jffs/addons/vpnmon-r3.d/vr3svr1.txt
+         eval "$automation1unenc" > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
          #Determine how many server entries are in each of the vpn slot alternate server files
-         if [ -f /jffs/addons/vpnmon-r3.d/vr3svr1.txt ]; then
-           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svr1.txt | wc -l) >/dev/null 2>&1
+         if [ -f /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt ]; then
+           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt | wc -l) >/dev/null 2>&1
            if [ $dlcnt -lt 1 ]; then
              dlcnt=0
            elif [ -z $dlcnt ]; then
@@ -1889,17 +1966,32 @@ do
          else
            dlcnt=0
          fi
-         echo ""
-         echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
-         echo ""
-         echo -e "${CGreen}[Saved to VPN Client Slot 1 Server List]${CClear}"
-         echo ""
-         echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 1" >> $logfile
-         echo ""
-         skynetwhitelist 1
-         echo ""
-         read -rsp $'Press any key to acknowledge...\n' -n1 key
+
+         if [ "$dlcnt" -gt 1 ]
+           then
+             cp "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" "/jffs/addons/vpnmon-r3.d/vr3svr1.txt" >/dev/null 2>&1
+             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+             echo ""
+             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
+             echo ""
+             echo -e "${CGreen}[Saved to VPN Client Slot 1 Server List]${CClear}"
+             echo ""
+             echo -e "${CGreen}[Execution Complete]${CClear}"
+             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 1" >> $logfile
+             echo ""
+             skynetwhitelist 1
+             echo ""
+             read -rsp $'Press any key to acknowledge...\n' -n1 key
+           else
+             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+             echo ""
+             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source - Preserving Original Server List]${CClear}"
+             echo ""
+             echo -e "${CGreen}[Please check Query Language or VPN Service API may be down]${CClear}"
+             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List Query for VPN Slot 1 yielded 0 rows -- Query may be invalid or VPN API service may be down" >> $logfile
+             echo ""
+             read -rsp $'Press any key to acknowledge...\n' -n1 key
+         fi
       ;;
 
       s1)
@@ -1943,10 +2035,10 @@ do
          automation2unenc=$(echo "$automation2" | openssl enc -d -base64 -A)
          echo -e "${CClear}Running: $automation2unenc"
          echo ""
-         eval "$automation2unenc" > /jffs/addons/vpnmon-r3.d/vr3svr2.txt
+         eval "$automation2unenc" > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
          #Determine how many server entries are in each of the vpn slot alternate server files
-         if [ -f /jffs/addons/vpnmon-r3.d/vr3svr2.txt ]; then
-           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svr2.txt | wc -l) >/dev/null 2>&1
+         if [ -f /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt ]; then
+           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt | wc -l) >/dev/null 2>&1
            if [ $dlcnt -lt 1 ]; then
              dlcnt=0
            elif [ -z $dlcnt ]; then
@@ -1955,17 +2047,32 @@ do
          else
            dlcnt=0
          fi
-         echo ""
-         echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
-         echo ""
-         echo -e "${CGreen}[Saved to VPN Client Slot 2 Server List]${CClear}"
-         echo ""
-         echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 2" >> $logfile
-         echo ""
-         skynetwhitelist 2
-         echo ""
-         read -rsp $'Press any key to acknowledge...\n' -n1 key
+
+         if [ "$dlcnt" -gt 1 ]
+           then
+             cp "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" "/jffs/addons/vpnmon-r3.d/vr3svr2.txt" >/dev/null 2>&1
+             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+             echo ""
+             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
+             echo ""
+             echo -e "${CGreen}[Saved to VPN Client Slot 2 Server List]${CClear}"
+             echo ""
+             echo -e "${CGreen}[Execution Complete]${CClear}"
+             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 2" >> $logfile
+             echo ""
+             skynetwhitelist 2
+             echo ""
+             read -rsp $'Press any key to acknowledge...\n' -n1 key
+           else
+             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+             echo ""
+             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source - Preserving Original Server List]${CClear}"
+             echo ""
+             echo -e "${CGreen}[Please check Query Language or VPN Service API may be down]${CClear}"
+             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List Query for VPN Slot 2 yielded 0 rows -- Query may be invalid or VPN API service may be down" >> $logfile
+             echo ""
+             read -rsp $'Press any key to acknowledge...\n' -n1 key
+         fi
       ;;
 
       s2)
@@ -2009,10 +2116,10 @@ do
          automation3unenc=$(echo "$automation3" | openssl enc -d -base64 -A)
          echo -e "${CClear}Running: $automation3unenc"
          echo ""
-         eval "$automation3unenc" > /jffs/addons/vpnmon-r3.d/vr3svr3.txt
+         eval "$automation3unenc" > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
          #Determine how many server entries are in each of the vpn slot alternate server files
-         if [ -f /jffs/addons/vpnmon-r3.d/vr3svr3.txt ]; then
-           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svr3.txt | wc -l) >/dev/null 2>&1
+         if [ -f /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt ]; then
+           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt | wc -l) >/dev/null 2>&1
            if [ $dlcnt -lt 1 ]; then
              dlcnt=0
            elif [ -z $dlcnt ]; then
@@ -2021,17 +2128,32 @@ do
          else
            dlcnt=0
          fi
-         echo ""
-         echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
-         echo ""
-         echo -e "${CGreen}[Saved to VPN Client Slot 3 Server List]${CClear}"
-         echo ""
-         echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 3" >> $logfile
-         echo ""
-         skynetwhitelist 3
-         echo ""
-         read -rsp $'Press any key to acknowledge...\n' -n1 key
+
+         if [ "$dlcnt" -gt 1 ]
+           then
+             cp "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" "/jffs/addons/vpnmon-r3.d/vr3svr3.txt" >/dev/null 2>&1
+             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+             echo ""
+             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
+             echo ""
+             echo -e "${CGreen}[Saved to VPN Client Slot 3 Server List]${CClear}"
+             echo ""
+             echo -e "${CGreen}[Execution Complete]${CClear}"
+             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 3" >> $logfile
+             echo ""
+             skynetwhitelist 3
+             echo ""
+             read -rsp $'Press any key to acknowledge...\n' -n1 key
+           else
+             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+             echo ""
+             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source - Preserving Original Server List]${CClear}"
+             echo ""
+             echo -e "${CGreen}[Please check Query Language or VPN Service API may be down]${CClear}"
+             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List Query for VPN Slot 3 yielded 0 rows -- Query may be invalid or VPN API service may be down" >> $logfile
+             echo ""
+             read -rsp $'Press any key to acknowledge...\n' -n1 key
+         fi
       ;;
 
       s3)
@@ -2075,10 +2197,10 @@ do
          automation4unenc=$(echo "$automation4" | openssl enc -d -base64 -A)
          echo -e "${CClear}Running: $automation4unenc"
          echo ""
-         eval "$automation4unenc" > /jffs/addons/vpnmon-r3.d/vr3svr4.txt
+         eval "$automation4unenc" > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
          #Determine how many server entries are in each of the vpn slot alternate server files
-         if [ -f /jffs/addons/vpnmon-r3.d/vr3svr4.txt ]; then
-           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svr4.txt | wc -l) >/dev/null 2>&1
+         if [ -f /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt ]; then
+           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt | wc -l) >/dev/null 2>&1
            if [ $dlcnt -lt 1 ]; then
              dlcnt=0
            elif [ -z $dlcnt ]; then
@@ -2087,17 +2209,32 @@ do
          else
            dlcnt=0
          fi
-         echo ""
-         echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
-         echo ""
-         echo -e "${CGreen}[Saved to VPN Client Slot 4 Server List]${CClear}"
-         echo ""
-         echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 4" >> $logfile
-         echo ""
-         skynetwhitelist 4
-         echo ""
-         read -rsp $'Press any key to acknowledge...\n' -n1 key
+
+         if [ "$dlcnt" -gt 1 ]
+           then
+             cp "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" "/jffs/addons/vpnmon-r3.d/vr3svr4.txt" >/dev/null 2>&1
+             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+             echo ""
+             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
+             echo ""
+             echo -e "${CGreen}[Saved to VPN Client Slot 4 Server List]${CClear}"
+             echo ""
+             echo -e "${CGreen}[Execution Complete]${CClear}"
+             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 4" >> $logfile
+             echo ""
+             skynetwhitelist 4
+             echo ""
+             read -rsp $'Press any key to acknowledge...\n' -n1 key
+           else
+             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+             echo ""
+             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source - Preserving Original Server List]${CClear}"
+             echo ""
+             echo -e "${CGreen}[Please check Query Language or VPN Service API may be down]${CClear}"
+             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List Query for VPN Slot 4 yielded 0 rows -- Query may be invalid or VPN API service may be down" >> $logfile
+             echo ""
+             read -rsp $'Press any key to acknowledge...\n' -n1 key
+         fi
       ;;
 
       s4)
@@ -2141,10 +2278,10 @@ do
          automation5unenc=$(echo "$automation5" | openssl enc -d -base64 -A)
          echo -e "${CClear}Running: $automation5unenc"
          echo ""
-         eval "$automation5unenc" > /jffs/addons/vpnmon-r3.d/vr3svr5.txt
+         eval "$automation5unenc" > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
          #Determine how many server entries are in each of the vpn slot alternate server files
-         if [ -f /jffs/addons/vpnmon-r3.d/vr3svr5.txt ]; then
-           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svr5.txt | wc -l) >/dev/null 2>&1
+         if [ -f /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt ]; then
+           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt | wc -l) >/dev/null 2>&1
            if [ $dlcnt -lt 1 ]; then
              dlcnt=0
            elif [ -z $dlcnt ]; then
@@ -2153,17 +2290,32 @@ do
          else
            dlcnt=0
          fi
-         echo ""
-         echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
-         echo ""
-         echo -e "${CGreen}[Saved to VPN Client Slot 5 Server List]${CClear}"
-         echo ""
-         echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 5" >> $logfile
-         echo ""
-         skynetwhitelist 5
-         echo ""
-         read -rsp $'Press any key to acknowledge...\n' -n1 key
+
+         if [ "$dlcnt" -gt 1 ]
+           then
+             cp "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" "/jffs/addons/vpnmon-r3.d/vr3svr5.txt" >/dev/null 2>&1
+             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+             echo ""
+             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
+             echo ""
+             echo -e "${CGreen}[Saved to VPN Client Slot 5 Server List]${CClear}"
+             echo ""
+             echo -e "${CGreen}[Execution Complete]${CClear}"
+             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for VPN Slot 5" >> $logfile
+             echo ""
+             skynetwhitelist 5
+             echo ""
+             read -rsp $'Press any key to acknowledge...\n' -n1 key
+           else
+             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+             echo ""
+             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source - Preserving Original Server List]${CClear}"
+             echo ""
+             echo -e "${CGreen}[Please check Query Language or VPN Service API may be down]${CClear}"
+             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List Query for VPN Slot 5 yielded 0 rows -- Query may be invalid or VPN API service may be down" >> $logfile
+             echo ""
+             read -rsp $'Press any key to acknowledge...\n' -n1 key
+         fi
       ;;
 
       s5)
@@ -2597,6 +2749,7 @@ saveconfig()
      echo 'updateskynet='$updateskynet
      echo 'amtmemailsuccess='$amtmemailsuccess
      echo 'amtmemailfailure='$amtmemailfailure
+     echo 'rstspdmerlin='$rstspdmerlin
    } > "$config"
 
    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New vpnmon-r3.cfg File Saved" >> $logfile
@@ -2816,6 +2969,19 @@ sendmessage()
       printf "Please check your network environment and configuration if this error continues to persist."
       printf "\n"
       } > "$tmpEMailBodyFile"
+    elif [ "$2" == "Server List Query Yielded 0 Rows" ]; then
+      emailSubject="WARNING: Slot $3 Server List Query Yielded 0 Rows"
+      emailBodyTitle="WARNING: Slot $3 Server List Query Yielded 0 Rows"
+      {
+      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+      printf "\n"
+      printf "<b>WARNING: VPNMON-R3</b> has detected that the Custom Server List Query for VPN Slot $3 yielded 0 results.\n"
+      printf "This may be due to an error in the query, or the VPN provider API service may be down or unreachable."
+      printf "Please check your network environment and configuration if this error continues to persist."
+      printf "\n"
+      } > "$tmpEMailBodyFile"
     fi
     _SendEMailNotification_ "VPNMON-R3 v$version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
   fi
@@ -2885,7 +3051,6 @@ lockcheck()
   fi
 
 }
-
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Initiate a VPN restart - $1 = slot number
@@ -2976,6 +3141,23 @@ restartrouting()
   sleep 5
   printf "\33[2K\r"
   trimlogs
+
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+# Optionally reset spdMerlin interfaces
+resetspdmerlin()
+{
+
+  if [ "$rstspdmerlin" == "1" ]
+  then
+    printf "\33[2K\r"
+    printf "${CGreen}\r[Reset spdMerlin Interfaces]"
+    /jffs/scripts/spdmerlin reset_interfaces force >/dev/null 2>&1
+    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: spdMerlin Interfaces Reset" >> $logfile
+    sleep 5
+    printf "\33[2K\r"
+  fi
 
 }
 
@@ -3113,21 +3295,35 @@ vreset()
               echo ""
               echo -e "${CClear}Running: $automationunenc"
               echo ""
-              eval "$automationunenc" > "/jffs/addons/vpnmon-r3.d/vr3svr$slot.txt"
-              if [ -f "/jffs/addons/vpnmon-r3.d/vr3svr$slot.txt" ]
+
+              eval "$automationunenc" > "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt"
+              if [ -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" ]
               then
-                dlcnt=$(cat "/jffs/addons/vpnmon-r3.d/vr3svr$slot.txt" | wc -l) >/dev/null 2>&1
+                dlcnt=$(cat "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" | wc -l) >/dev/null 2>&1
                 if [ -z "$dlcnt" ] || [ "$dlcnt" -lt 1 ]
                 then dlcnt=0 ; fi
               else
                 dlcnt=0
               fi
-              echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Client Server List Query Executed for VPN Slot $slot ($dlcnt rows)" >> $logfile
-              sleep 3
-              echo ""
-              skynetwhitelist $slot
-              echo ""
+
+              if [ "$dlcnt" -gt 1 ]
+              then
+                cp "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" "/jffs/addons/vpnmon-r3.d/vr3svr$slot.txt" >/dev/null 2>&1
+                rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+                echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
+                echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Client Server List Query Executed for VPN Slot $slot ($dlcnt rows)" >> $logfile
+                sleep 3
+                echo ""
+                skynetwhitelist $slot
+                echo ""
+              else
+                rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+                echo -e "${CGreen}[$dlcnt Rows Retrieved From Source - Preserving Original Server List]${CClear}"
+                echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List Query for VPN Slot $slot yielded 0 rows -- Query may be invalid or VPN API service may be down" >> $logfile
+                sendmessage 1 "Server List Query Yielded 0 Rows" $slot
+                sleep 3
+                echo ""
+              fi
             fi
           else
             echo ""
@@ -3144,6 +3340,7 @@ vreset()
   done
 
   restartrouting
+  resetspdmerlin
 
   # Clean up lockfile
   rm -f $lockfile >/dev/null 2>&1
@@ -4200,6 +4397,7 @@ do
         restartvpn $i
         sendmessage 1 "VPN Tunnel Disconnected" $i
         restartrouting
+        resetspdmerlin
         exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
       fi
 
@@ -4224,6 +4422,7 @@ do
         restartvpn $i
         sendmessage 1 "VPN Slot In Error State" $i
         restartrouting
+        resetspdmerlin
         exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
       fi
 
@@ -4248,6 +4447,7 @@ do
         restartvpn $resetvpn
         sendmessage 1 "VPN Slot Is Non-Responsive" $resetvpn
         restartrouting
+        resetspdmerlin
         exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
       fi
 
@@ -4284,6 +4484,7 @@ do
           restartvpn $i
           sendmessage 1 "VPN Slot Exceeded Max Ping" $i
           restartrouting
+          resetspdmerlin
           exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
         fi
       fi
@@ -4345,6 +4546,7 @@ do
     restartvpn $unboundreset
     sendmessage 1 "VPN Slot Not Synced With Unbound" $unboundreset
     restartrouting
+    resetspdmerlin
     exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
   fi
 
