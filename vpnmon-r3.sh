@@ -14,8 +14,8 @@
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.4.1b"                                                # Version tracker
-beta=1                                                          # Beta switch
+version="1.4.1"                                                 # Version tracker
+beta=0                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
 logfile="/jffs/addons/vpnmon-r3.d/vpnmon-r3.log"                # Static path to the log
@@ -1317,7 +1317,7 @@ vupdate()
 updatecheck # Check for the latest version from source repository
 while true; do
   clear
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} Update Utility                                                                        ${CClear}"
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 Update Utility                                                              ${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} This utility allows you to check, download and install updates"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
