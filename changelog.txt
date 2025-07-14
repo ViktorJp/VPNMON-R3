@@ -1,3 +1,13 @@
+v1.5.0   - (TBA)
+         - MINOR: Well, actually kinda major. Wireguard is now formally being supported! VPNMON-R3 will show all
+           5 Wireguard slots for more modern routers. Those who can only physically support 2 VPN slots will
+           unfortunately not be able to enjoy Wireguard at the moment. Major functionality for stopping/starting
+           WG slots are visible under the (S)how Operations menu. As Wireguard is a bit more complex than an OVPN
+           connection, there are some more items needed than a single IP address for those who are managing server
+           lists for their individual slots. Each server list will require 5 fields, separated by a comma, namely:
+           (1) Connection Name, (2) Endpoint IP, (3) Endpoint Port, (4) Private Key, and (5) Public Key. Examples
+           of these are shared on snbforums.com. 
+
 v1.4.1   - (June 29, 2025)
          - MINOR: Added the capability of optionally integrating with spdMerlin, and having it refresh it's list
            of interfaces whenever VPNMON-R3 resets. This will allow spdMerlin to know which VPN interfaces are
