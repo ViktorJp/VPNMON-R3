@@ -3406,7 +3406,7 @@ restartwg()
     servers=$(cat "/jffs/addons/vpnmon-r3.d/vr3wgsvr$1.txt" | wc -l) >/dev/null 2>&1
     if [ -z "$servers" ] || [ "$servers" -eq 0 ]
     then
-      #Restart the same server currently allocated to that vpn slot
+      #Restart the same server currently allocated to that wg slot
       currwghost="$($timeoutcmd$timeoutsec nvram get wgc$1_ep_addr)"
       printf "\33[2K\r"
       printf "${CGreen}\r[Starting WG Client $1]"
@@ -3418,7 +3418,7 @@ restartwg()
       printf "${CGreen}\r[Letting WG$1 Settle]"
       sleep 10
     else
-      #Pick a random server from the alternate servers file, populate in vpn client slot, and restart
+      #Pick a random server from the alternate servers file, populate in wg client slot, and restart
       printf "\33[2K\r"
       printf "${CGreen}\r[Selecting Random Entry]"
       RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
@@ -3440,13 +3440,13 @@ restartwg()
       nvram set wgc"$1"_ppub="${publickey}"
       sleep 2
 
-      #---------
+      #---------WG-specific nvram values
 
-      #Restart the new server currently allocated to that vpn slot
+      #Restart the new server currently allocated to that wg slot
       printf "\33[2K\r"
       printf "${CGreen}\r[Starting WG Client $1]"
       service "start_wgc $1" >/dev/null 2>&1
-      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WG$1 Connection Restarted - New Server: $RNDWGIP" >> $logfile
+      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WG$1 Connection Restarted - New Server: $endpointip" >> $logfile
       resettimer $1 "WG"
       sleep 10
       printf "\33[2K\r"
@@ -3454,7 +3454,7 @@ restartwg()
       sleep 10
     fi
   else
-    #Restart the same server currently allocated to that vpn slot
+    #Restart the same server currently allocated to that wg slot
     printf "\33[2K\r"
     printf "${CGreen}\r[Starting WG Client $1]"
     currwghost="$($timeoutcmd$timeoutsec nvram get wgc$1_ep_addr)"
@@ -3641,7 +3641,7 @@ vreset()
   echo -n > $lockfile
 
   slot=0
-  for slot in $availableslots #loop through the 3/5 vpn slots
+  for slot in $availableslots #loop through the 2/5 vpn slots
   do
       clear
       echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 - v$version | $(date)                                         ${CClear}\n"
@@ -3710,6 +3710,27 @@ vreset()
 
         restartvpn $slot
         sendmessage 0 "VPN Connection Scheduled Reset" $slot
+
+      fi
+  done
+
+  slot=0
+  for slot in $availableslots #loop through the 5 wg slots
+  do
+      clear
+      echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 - v$version | $(date)                                         ${CClear}\n"
+      echo -e "${CGreen}[WG Connection Reset Commencing]"
+      echo ""
+      echo -e "${CGreen}[Checking WG Slot $slot]"
+      echo ""
+      sleep 2
+
+      #determine if the slot is monitored and reset it
+      if [ "$((WG$slot))" == "1" ]
+      then
+
+        restartwg $slot
+        sendmessage 0 "WG Connection Scheduled Reset" $slot
 
       fi
   done
