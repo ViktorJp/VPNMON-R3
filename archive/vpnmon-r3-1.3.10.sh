@@ -1,4 +1,4 @@
-[⚠️ Suspicious Content] #!/bin/sh
+#!/bin/sh
 
 # VPNMON-R3 v1.3.9 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
