@@ -1818,7 +1818,7 @@ do
       echo -e "${InvGreen} ${CClear} Contents: <blank>"
     fi
   echo -e "${InvGreen} ${CClear}"
-  
+
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG2${CClear} ${CGreen}(2)${CClear}"
     if [ -f /jffs/addons/vpnmon-r3.d/vr3wgsvr2.txt ]; then
       wglist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3wgsvr2.txt | sed 's/,$/\n/')
@@ -1836,7 +1836,7 @@ do
       echo -e "${InvGreen} ${CClear} Contents: <blank>"
     fi
   echo -e "${InvGreen} ${CClear}"
-  
+
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}wg4${CClear} ${CGreen}(4)${CClear}"
     if [ -f /jffs/addons/vpnmon-r3.d/vr3wgsvr4.txt ]; then
       wglist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3wgsvr4.txt | sed 's/,$/\n/')
@@ -1845,7 +1845,7 @@ do
       echo -e "${InvGreen} ${CClear} Contents: <blank>"
     fi
   echo -e "${InvGreen} ${CClear}"
-  
+
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG5${CClear} ${CGreen}(5)${CClear}"
     if [ -f /jffs/addons/vpnmon-r3.d/vr3wgsvr5.txt ]; then
       wglist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3wgsvr5.txt | sed 's/,$/\n/')
@@ -1865,7 +1865,7 @@ do
       timer="$timerloop"
       break;;
   esac
- 
+
 done
 
 }
@@ -3428,10 +3428,10 @@ restartwg()
 
       WGLINE=$(sed -n "${R_LINE}p" /jffs/addons/vpnmon-r3.d/vr3wgsvr$1.txt)
       wgdescription=$(echo "$WGLINE" | cut -d ',' -f 1)
-			endpointip=$(echo "$WGLINE" | cut -d ',' -f 2)
-			endpointport=$(echo "$WGLINE" | cut -d ',' -f 3)
-			privatekey=$(echo "$WGLINE" | cut -d ',' -f 4)
-			publickey=$(echo "$WGLINE" | cut -d ',' -f 5)
+      endpointip=$(echo "$WGLINE" | cut -d ',' -f 2)
+      endpointport=$(echo "$WGLINE" | cut -d ',' -f 3)
+      privatekey=$(echo "$WGLINE" | cut -d ',' -f 4)
+      publickey=$(echo "$WGLINE" | cut -d ',' -f 5)
       nvram set wgc"$1"_desc="$wgdescription"
       nvram set wgc"$1"_ep_addr="$endpointip"
       nvram set wgc"$1"_ep_addr_r="$endpointip"
