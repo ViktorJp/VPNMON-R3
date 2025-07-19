@@ -3930,10 +3930,11 @@ restartwg()
     then
       #Restart the same server currently allocated to that wg slot
       currwghost="$($timeoutcmd$timeoutsec nvram get wgc$1_ep_addr)"
+      currwghostname="$($timeoutcmd$timeoutsec nvram get wgc$1_desc)"
       printf "\33[2K\r"
       printf "${CGreen}\r[Starting WG Client $1]"
       service "start_wgc $1" >/dev/null 2>&1
-      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WG$1 Connection Restarted - Current Server: $currwghost" >> $logfile
+      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WG$1 Connection Restarted - Current Server: $currwghostname | $currwghost" >> $logfile
       resettimer $1 "WG"
       sleep 10
       printf "\33[2K\r"
@@ -3968,7 +3969,7 @@ restartwg()
       printf "\33[2K\r"
       printf "${CGreen}\r[Starting WG Client $1]"
       service "start_wgc $1" >/dev/null 2>&1
-      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WG$1 Connection Restarted - New Server: $endpointip" >> $logfile
+      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WG$1 Connection Restarted - New Server: $wgdescription | $endpointip" >> $logfile
       resettimer $1 "WG"
       sleep 10
       printf "\33[2K\r"
@@ -4406,15 +4407,16 @@ getwgip()
 {
   TUN="wgc$1"
 
-  #Removing this because all it yields is the Endpoint IP
-  #icanhazwgip="$($timeoutcmd$timeoutsec nvram get wgc$1_ep_addr)"
-  #if [ -z "$icanhazwgip" ] || [ "$icanhazwgip" = "unknown" ]
-  #then
-     # Grab the public IP of the WG Connection #
-     icanhazwgip="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --fail --interface "$TUN" --request GET --url https://ipv4.icanhazip.com"
-     icanhazwgip="$(eval $icanhazwgip)"
-     if [ -z "$icanhazwgip" ] || echo "$icanhazwgip" | grep -qoE 'Internet|traffic|Error|error' ; then icanhazwgip="0.0.0.0" ; fi
-  #fi
+  # Added ping workaround for site2site scenarios based on suggestion from @ZebMcKayhan
+  TUN_IP=$(nvram get "$TUN"_addr | cut -d '/' -f1)
+  ip rule add from $TUN_IP lookup $TUN prio 10
+
+  icanhazwgip="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --fail --interface "$TUN" --request GET --url https://ipv4.icanhazip.com"
+  icanhazwgip="$(eval $icanhazwgip)"
+  if [ -z "$icanhazwgip" ] || echo "$icanhazwgip" | grep -qoE 'Internet|traffic|Error|error' ; then icanhazwgip="0.0.0.0" ; fi
+
+  # Added based on suggestion from @ZebMcKayhan
+  ip rule del prio 10
 
   if [ -z "$icanhazwgip" ]
   then
@@ -4527,6 +4529,10 @@ getwgcity()
      return
   fi
 
+  # Added ping workaround for site2site scenarios based on suggestion from @ZebMcKayhan
+  TUN_IP=$(nvram get "$TUN"_addr | cut -d '/' -f1)
+  ip rule add from $TUN_IP lookup $TUN prio 10
+
   if [ "$1" = "1" ]
   then
     lastwgip1="$icanhazwgip"
@@ -4593,6 +4599,9 @@ getwgcity()
     wgcity="$wgcity5"
     oldwgip5="$lastwgip5"
   fi
+
+  # Added based on suggestion from @ZebMcKayhan
+  ip rule del prio 10
 
   # Insert bogus City if screenshotmode is on
   if [ "$screenshotmode" = "1" ]; then
