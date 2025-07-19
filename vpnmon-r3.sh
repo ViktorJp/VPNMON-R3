@@ -4085,8 +4085,8 @@ skynetwhitelist()
     ##-------------------------------------##
     ## Modified by Dan G. [2025-Jul-15]    ##
     ##-------------------------------------##
-    if [[ $1 == wg* ]]; then
-      slotnum="${1#wg}"
+    if echo "$1" | grep -q "wg"; then 
+      slotnum=$(echo "$1" | tr -cd '0-9')
       printf "${CGreen}\r[Whitelisting WG Server Slot $slotnum List in the Skynet Firewall]${CClear}\n"
       awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr${slotnum}.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 - WG Server Slot $slotnum Whitelist" >/dev/null 2>&1
@@ -5667,7 +5667,7 @@ do
   echo ""
 
 
-#-----------------
+#-----------------Wireguard
 
   echo -e "${InvDkGray} Wireguard                                                                                                     ${CClear}"
   echo ""
