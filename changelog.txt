@@ -16,6 +16,8 @@ v1.5.02  - (TBA)
            reported by @CaptainSTX. Thanks!
          - PATCH: Added site2site ping workaround as discussed by @ZebMcKayhan that adds an ingenious ip rule to
            the vpndirector. Thanks for the corroboration by @SomeWhereOverTheRainBow on this!
+         - PATCH: Based on feedback from @ZebMcKayhan, added this site2site ping workaround to other items that
+           were causing lookup delays, such as the public IP and WG city resolution.
 
 v1.4.1   - (June 29, 2025)
          - MINOR: Added the capability of optionally integrating with spdMerlin, and having it refresh it's list
