@@ -2153,7 +2153,6 @@ do
       wgautomation5unenc=$(echo "$wgautomation5" | openssl enc -d -base64 -A)
       echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$wgautomation5unenc"
     fi
-    echo -e "${InvGreen} ${CClear}"
     echo ""
     read -p "Please select? (e1-e0, x1-x0, s1-s0, e=Exit): " SelectSlot5
     case $SelectSlot5 in
