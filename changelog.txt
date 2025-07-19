@@ -7,6 +7,10 @@ v1.5.0   - (TBA)
            lists for their individual slots. Each server list will require 5 fields, separated by a comma, namely:
            (1) Connection Name, (2) Endpoint IP, (3) Endpoint Port, (4) Private Key, and (5) Public Key. Examples
            of these are shared on snbforums.com. 
+         - PATCH: Fixed the "FAILOVER" message and corrected spacing thanks to @Stephen Harrington
+         - PATCH: Thanks to the huge contributions from @iTyPsIDg, not only has he figured out some automation
+           methods to pull WG info via API from NordVPN, but he added the framework for the custom WG server list
+           automation menu, along with multiple WG email events that were missing.
 
 v1.4.1   - (June 29, 2025)
          - MINOR: Added the capability of optionally integrating with spdMerlin, and having it refresh it's list
