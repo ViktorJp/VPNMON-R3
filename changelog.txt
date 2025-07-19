@@ -12,8 +12,8 @@ v1.5.02  - (TBA)
            methods to pull WG info via API from NordVPN, but he added the entire framework for the custom WG server
            list automation menu, along with multiple WG email events that were missing. I ended up combining both
            the VPN and his WG server automation screens into one single pane of glass to reduce complexity.
-         - PATCH: Instead of displaying the WG Endpoint IP on screen, it is now resolving the actual Public IP.
-           Reported by @CaptainSTX.
+         - PATCH: Instead of displaying the WG Endpoint IP on screen, it is now resolving the actual Public IP, as
+           reported by @CaptainSTX.
          - PATCH: Added site2site ping workaround as discussed by @ZebMcKayhan that adds an ingenious ip rule to
            the vpndirector. Thanks for the corroboration by @SomeWhereOverTheRainBow on this!
 
