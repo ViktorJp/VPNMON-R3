@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.5.1a (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.5.2a (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
@@ -14,7 +14,7 @@
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.5.1a"                                                # Version tracker
+version="1.5.2a"                                                # Version tracker
 beta=1                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -2526,7 +2526,9 @@ done
 
 # -------------------------------------------------------------------------------------------------------------------------
 # wgserverlistautomation lets you pick which vpn slot server list automation you want to edit/execute
-
+##-------------------------------------##
+## Added by Dan G. [2025-Jul-15]       ##
+##-------------------------------------##
 wgserverlistautomation()
 {
 
@@ -3847,15 +3849,31 @@ sendmessage()
       printf "Please check your network environment and configuration if this error continues to persist."
       printf "\n"
       } > "$tmpEMailBodyFile"
-    elif [ "$2" == "Server List Query Yielded 0 Rows" ]; then
-      emailSubject="WARNING: Slot $3 Server List Query Yielded 0 Rows"
-      emailBodyTitle="WARNING: Slot $3 Server List Query Yielded 0 Rows"
+    ##-------------------------------------##
+    ## Modified by Dan G. [2025-Jul-16]    ##
+    ##-------------------------------------##
+    elif [ "$2" == "VPN Server List Query Yielded 0 Rows" ]; then
+      emailSubject="WARNING: VPN Slot $3 Server List Query Yielded 0 Rows"
+      emailBodyTitle="WARNING: VPN Slot $3 Server List Query Yielded 0 Rows"
       {
       printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
       printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
       printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
       printf "\n"
       printf "<b>WARNING: VPNMON-R3</b> has detected that the Custom Server List Query for VPN Slot $3 yielded 0 results.\n"
+      printf "This may be due to an error in the query, or the VPN provider API service may be down or unreachable."
+      printf "Please check your network environment and configuration if this error continues to persist."
+      printf "\n"
+      } > "$tmpEMailBodyFile"
+    elif [ "$2" == "WG Server List Query Yielded 0 Rows" ]; then
+      emailSubject="WARNING: WG Slot $3 Server List Query Yielded 0 Rows"
+      emailBodyTitle="WARNING: WG Slot $3 Server List Query Yielded 0 Rows"
+      {
+      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+      printf "\n"
+      printf "<b>WARNING: VPNMON-R3</b> has detected that the Custom Server List Query for WG Slot $3 yielded 0 results.\n"
       printf "This may be due to an error in the query, or the VPN provider API service may be down or unreachable."
       printf "Please check your network environment and configuration if this error continues to persist."
       printf "\n"
@@ -3944,6 +3962,42 @@ sendmessage()
       printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
       printf "\n"
       printf "<b>SUCCESS: VPNMON-R3</b> successfully manually stopped and unmonitored VPN Slot $3\n"
+      printf "\n"
+      } > "$tmpEMailBodyFile"
+    ##-------------------------------------##
+    ## Added by Dan G. [2025-Jul-16]       ##
+    ##-------------------------------------##
+    elif [ "$2" == "WG Connection Scheduled Reset" ]; then
+      emailSubject="SUCCESS: WG Slot $3 Manual/Scheduled Reset"
+      emailBodyTitle="SUCCESS: WG Slot $3 Manual/Scheduled Reset"
+      {
+      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+      printf "\n"
+      printf "<b>SUCCESS: VPNMON-R3</b> completed a successful manual/scheduled reset on WG Slot $3\n"
+      printf "\n"
+      } > "$tmpEMailBodyFile"
+    elif [ "$2" == "WG Reset" ]; then
+      emailSubject="SUCCESS: WG Slot $3 Manual Reset"
+      emailBodyTitle="SUCCESS: WG Slot $3 Manual Reset"
+      {
+      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+      printf "\n"
+      printf "<b>SUCCESS: VPNMON-R3</b> completed a successful manual reset on WG Slot $3\n"
+      printf "\n"
+      } > "$tmpEMailBodyFile"
+    elif [ "$2" == "WG Killed" ]; then
+      emailSubject="SUCCESS: WG Slot $3 Manually Stopped & Unmonitored"
+      emailBodyTitle="SUCCESS: WG Slot $3 Manually Stopped & Unmonitored"
+      {
+      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+      printf "\n"
+      printf "<b>SUCCESS: VPNMON-R3</b> successfully manually stopped and unmonitored WG Slot $3\n"
       printf "\n"
       } > "$tmpEMailBodyFile"
     fi
@@ -4377,7 +4431,7 @@ vreset()
                 rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
                 echo -e "${CGreen}[$dlcnt Rows Retrieved From Source - Preserving Original Server List]${CClear}"
                 echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List Query for VPN Slot $slot yielded 0 rows -- Query may be invalid or VPN API service may be down" >> $logfile
-                sendmessage 1 "Server List Query Yielded 0 Rows" $slot
+                sendmessage 1 "VPN Server List Query Yielded 0 Rows" $slot
                 sleep 3
                 echo ""
               fi
@@ -4452,7 +4506,7 @@ vreset()
                 rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
                 echo -e "${CGreen}[$dlcnt Rows Retrieved From Source - Preserving Original Server List]${CClear}"
                 echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List Query for WG Slot $slot yielded 0 rows -- Query may be invalid or VPN API service may be down" >> $logfile
-                sendmessage 1 "Server List Query Yielded 0 Rows" $slot
+                sendmessage 1 "WG Server List Query Yielded 0 Rows" $slot
                 sleep 3
                 echo ""
               fi
