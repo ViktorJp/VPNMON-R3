@@ -13,7 +13,7 @@ v1.5.02  - (TBA)
            list automation menu, along with multiple WG email events that were missing. I ended up combining both
            the VPN and his WG server automation screens into one single pane of glass to reduce complexity.
          - PATCH: Instead of displaying the WG Endpoint IP on screen, it is now resolving the actual Public IP, as
-           reported by @CaptainSTX.
+           reported by @CaptainSTX. Thanks!
          - PATCH: Added site2site ping workaround as discussed by @ZebMcKayhan that adds an ingenious ip rule to
            the vpndirector. Thanks for the corroboration by @SomeWhereOverTheRainBow on this!
 
