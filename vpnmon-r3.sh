@@ -2110,51 +2110,51 @@ do
     fi
     echo -e "${InvGreen} ${CClear}"
 
-		##-------------------------------------##
-		## Added by Dan G. [2025-Jul-15]       ##
-		##-------------------------------------##
+    ##-------------------------------------##
+    ## Added by Dan G. [2025-Jul-15]       ##
+    ##-------------------------------------##
 
-	  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG1${CClear} ${CGreen}(e6)${CClear} View/Edit | ${CGreen}(x6)${CClear} Execute | ${CGreen}(s6)${CClear} Skynet WL Import${CClear}"
-	    if [ -z "$wgautomation1" ] || [ "$wgautomation1" == "" ]; then
-	      echo -e "${InvGreen} ${CClear} Contents: <blank>"
-	    else
-	      wgautomation1unenc=$(echo "$wgautomation1" | openssl enc -d -base64 -A)
-	      echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$wgautomation1unenc"
-	    fi
-	  echo -e "${InvGreen} ${CClear}"
-	  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG2${CClear} ${CGreen}(e7)${CClear} View/Edit | ${CGreen}(x7)${CClear} Execute | ${CGreen}(s7)${CClear} Skynet WL Import${CClear}"
-	    if [ -z "$wgautomation2" ] || [ "$wgautomation2" == "" ]; then
-	      echo -e "${InvGreen} ${CClear} Contents: <blank>"
-	    else
-	      wgautomation2unenc=$(echo "$wgautomation2" | openssl enc -d -base64 -A)
-	      echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$wgautomation2unenc"
-	    fi
-	  echo -e "${InvGreen} ${CClear}"
-	  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG3${CClear} ${CGreen}(e8)${CClear} View/Edit | ${CGreen}(x8)${CClear} Execute | ${CGreen}(s8)${CClear} Skynet WL Import${CClear}"
-	  if [ -z "$wgautomation3" ] || [ "$wgautomation3" == "" ]; then
-	    echo -e "${InvGreen} ${CClear} Contents: <blank>"
-	  else
-	    wgautomation3unenc=$(echo "$wgautomation3" | openssl enc -d -base64 -A)
-	    echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$wgautomation3unenc"
-	  fi
-	  echo -e "${InvGreen} ${CClear}"
-	  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG4${CClear} ${CGreen}(e9)${CClear} View/Edit | ${CGreen}(x9)${CClear} Execute | ${CGreen}(s9)${CClear} Skynet WL Import${CClear}"
-	  if [ -z "$wgautomation4" ] || [ "$wgautomation4" == "" ]; then
-	    echo -e "${InvGreen} ${CClear} Contents: <blank>"
-	  else
-	    wgautomation4unenc=$(echo "$wgautomation4" | openssl enc -d -base64 -A)
-	    echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$wgautomation4unenc"
-	  fi
-	  echo -e "${InvGreen} ${CClear}"
-	  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG5${CClear} ${CGreen}(e0)${CClear} View/Edit | ${CGreen}(x0)${CClear} Execute | ${CGreen}(s0)${CClear} Skynet WL Import${CClear}"
-	  if [ -z "$wgautomation5" ] || [ "$wgautomation5" == "" ]; then
-	    echo -e "${InvGreen} ${CClear} Contents: <blank>"
-	  else
-	    wgautomation5unenc=$(echo "$wgautomation5" | openssl enc -d -base64 -A)
-	    echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$wgautomation5unenc"
-	  fi
-	  echo -e "${InvGreen} ${CClear}"
-	  echo ""
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG1${CClear} ${CGreen}(e6)${CClear} View/Edit | ${CGreen}(x6)${CClear} Execute | ${CGreen}(s6)${CClear} Skynet WL Import${CClear}"
+      if [ -z "$wgautomation1" ] || [ "$wgautomation1" == "" ]; then
+        echo -e "${InvGreen} ${CClear} Contents: <blank>"
+      else
+        wgautomation1unenc=$(echo "$wgautomation1" | openssl enc -d -base64 -A)
+        echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$wgautomation1unenc"
+      fi
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG2${CClear} ${CGreen}(e7)${CClear} View/Edit | ${CGreen}(x7)${CClear} Execute | ${CGreen}(s7)${CClear} Skynet WL Import${CClear}"
+      if [ -z "$wgautomation2" ] || [ "$wgautomation2" == "" ]; then
+        echo -e "${InvGreen} ${CClear} Contents: <blank>"
+      else
+        wgautomation2unenc=$(echo "$wgautomation2" | openssl enc -d -base64 -A)
+        echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$wgautomation2unenc"
+      fi
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG3${CClear} ${CGreen}(e8)${CClear} View/Edit | ${CGreen}(x8)${CClear} Execute | ${CGreen}(s8)${CClear} Skynet WL Import${CClear}"
+    if [ -z "$wgautomation3" ] || [ "$wgautomation3" == "" ]; then
+      echo -e "${InvGreen} ${CClear} Contents: <blank>"
+    else
+      wgautomation3unenc=$(echo "$wgautomation3" | openssl enc -d -base64 -A)
+      echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$wgautomation3unenc"
+    fi
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG4${CClear} ${CGreen}(e9)${CClear} View/Edit | ${CGreen}(x9)${CClear} Execute | ${CGreen}(s9)${CClear} Skynet WL Import${CClear}"
+    if [ -z "$wgautomation4" ] || [ "$wgautomation4" == "" ]; then
+      echo -e "${InvGreen} ${CClear} Contents: <blank>"
+    else
+      wgautomation4unenc=$(echo "$wgautomation4" | openssl enc -d -base64 -A)
+      echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$wgautomation4unenc"
+    fi
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG5${CClear} ${CGreen}(e0)${CClear} View/Edit | ${CGreen}(x0)${CClear} Execute | ${CGreen}(s0)${CClear} Skynet WL Import${CClear}"
+    if [ -z "$wgautomation5" ] || [ "$wgautomation5" == "" ]; then
+      echo -e "${InvGreen} ${CClear} Contents: <blank>"
+    else
+      wgautomation5unenc=$(echo "$wgautomation5" | openssl enc -d -base64 -A)
+      echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$wgautomation5unenc"
+    fi
+    echo -e "${InvGreen} ${CClear}"
+    echo ""
     read -p "Please select? (e1-e0, x1-x0, s1-s0, e=Exit): " SelectSlot5
     case $SelectSlot5 in
       e1)
@@ -2980,7 +2980,7 @@ do
      [Ee])
            timer="$timerloop"
            break;;
-           
+
     esac
   fi
 
@@ -3951,10 +3951,10 @@ restartwg()
 
       WGLINE=$(sed -n "${R_LINE}p" /jffs/addons/vpnmon-r3.d/vr3wgsvr$1.txt)
       wgdescription=$(echo "$WGLINE" | cut -d ',' -f 1)
-			endpointip=$(echo "$WGLINE" | cut -d ',' -f 2)
-			endpointport=$(echo "$WGLINE" | cut -d ',' -f 3)
-			privatekey=$(echo "$WGLINE" | cut -d ',' -f 4)
-			publickey=$(echo "$WGLINE" | cut -d ',' -f 5)
+      endpointip=$(echo "$WGLINE" | cut -d ',' -f 2)
+      endpointport=$(echo "$WGLINE" | cut -d ',' -f 3)
+      privatekey=$(echo "$WGLINE" | cut -d ',' -f 4)
+      publickey=$(echo "$WGLINE" | cut -d ',' -f 5)
       nvram set wgc"$1"_desc="$wgdescription"
       nvram set wgc"$1"_ep_addr="$endpointip"
       nvram set wgc"$1"_ep_addr_r="$endpointip"
@@ -4082,7 +4082,7 @@ skynetwhitelist()
 {
   if [ "$updateskynet" == "1" ]
   then
-  	##-------------------------------------##
+    ##-------------------------------------##
     ## Modified by Dan G. [2025-Jul-15]    ##
     ##-------------------------------------##
     if [[ $1 == wg* ]]; then
@@ -4699,10 +4699,10 @@ checkwg()
       fi
     fi
   done
-  
+
   # Added based on suggestion from @ZebMcKayhan
   ip rule del prio 10
-  
+
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
