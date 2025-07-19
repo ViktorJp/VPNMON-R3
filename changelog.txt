@@ -9,8 +9,9 @@ v1.5.0   - (TBA)
            of these are shared on snbforums.com. 
          - PATCH: Fixed the "FAILOVER" message and corrected spacing thanks to @Stephen Harrington
          - PATCH: Thanks to the huge contributions from @iTyPsIDg, not only has he figured out some automation
-           methods to pull WG info via API from NordVPN, but he added the framework for the custom WG server list
-           automation menu, along with multiple WG email events that were missing.
+           methods to pull WG info via API from NordVPN, but he added the entire framework for the custom WG server
+           list automation menu, along with multiple WG email events that were missing.
+         - PATCH: Instead of displaying the WG Endpoint IP on screen, it is now resolving the actual Public IP.
 
 v1.4.1   - (June 29, 2025)
          - MINOR: Added the capability of optionally integrating with spdMerlin, and having it refresh it's list
