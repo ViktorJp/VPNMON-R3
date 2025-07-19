@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.5.2a (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.5.02a (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
@@ -14,7 +14,7 @@
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.5.2a"                                                # Version tracker
+version="1.5.02a"                                               # Version tracker
 beta=1                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -494,7 +494,6 @@ do
             [\=]) echo ""; killunmonwg 5; sendmessage 0 "WG Killed" 5; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [Aa]) autostart;;
             [Cc]) vsetup;;
-            [Dd]) wgserverlistautomation;;
             [Ee]) echo -e "${CClear}\n"; exit 0;;
             [Ii]) amtmevents;;
             [Ll]) vlogs;;
@@ -1712,7 +1711,9 @@ do
   echo -e "${InvGreen} ${CClear} Use the corresponding ${CGreen}()${CClear} key to launch and edit the list with the NANO text editor${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} VPN INSTRUCTIONS: Enter a single column of IP addresses or hostnames, as required by${CClear}"
-  echo -e "${InvGreen} ${CClear} your VPN provider. NANO INSTRUCTIONS: CTRL-O + Enter (save), CTRL-X (exit)${CClear}"
+  echo -e "${InvGreen} ${CClear} your VPN provider. ${CClear}"
+  echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear} NANO INSTRUCTIONS: CTRL-O + Enter (save), CTRL-X (exit)${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN1${CClear} ${CGreen}(1)${CClear}"
@@ -1807,8 +1808,10 @@ do
   echo -e "${InvGreen} ${CClear} Please indicate which WG Slot Server List you would like to edit/maintain.${CClear}"
   echo -e "${InvGreen} ${CClear} Use the corresponding ${CGreen}()${CClear} key to launch and edit the list with the NANO text editor${CClear}"
   echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} WG INSTRUCTIONS: Enter a comma-delimited row consisting of (1) Connection Name,${CClear}"
-  echo -e "${InvGreen} ${CClear} (2) Endpoint IP, (3) Endpoint Port, (4) Private Key, (5) Public Key${CClear}"
+  echo -e "${InvGreen} ${CClear} WG INSTRUCTIONS: Enter a 5-field comma-delimited row of WG Connections${CClear}"
+  echo -e "${InvGreen} ${CClear} Format: ConnectionName,EndpointIP,EndpointPort,PrivateKey,PublicKey${CClear}"
+  echo -e "${InvGreen} ${CClear} Example: ${CGreen}City WG,143.32.55.23,34334,fasdkkfj44j38affkasdjfj=,221t949asas42dfj32323kf=${CClear}"
+  echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} NANO INSTRUCTIONS: CTRL-O + Enter (save), CTRL-X (exit)${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo -e "${InvGreen} ${CClear}"
@@ -1881,15 +1884,15 @@ vpnserverlistautomation()
 while true
 do
   clear
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} VPN Client Slot Server List Automation                                                ${CClear}"
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} WG/VPN Client Slot Server List Automation                                             ${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} Please indicate which VPN Slot Automation Script you would like to edit/execute.${CClear}"
-  echo -e "${InvGreen} ${CClear} Custom VPN Slot Server Lists can also be whitelisted in Skynet using keys below.${CClear}"
   echo -e "${InvGreen} ${CClear} Use the corresponding ${CGreen}()${CClear} key to edit or launch your update statements${CClear}"
   echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} INSTRUCTIONS: Using carefully crafted CURL statements that query your VPN Provider's${CClear}"
-  echo -e "${InvGreen} ${CClear} server lists via API lookups, you can redirect their output into single-column IP${CClear}"
-  echo -e "${InvGreen} ${CClear} address lists for use by VPNMON-R3 for each of your VPN Client Slots.${CClear}"
+  echo -e "${InvGreen} ${CClear} VPN INSTRUCTIONS: Insert CURL statement that outputs a single-column Server IP list${CClear}"
+  echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear} WG INSTRUCTIONS: Insert CURL statement that outputs a 5-field comma-separated list${CClear}"
+  echo -e "${InvGreen} ${CClear} in this format: ConnectionName,EndpointIP,EndpointPort,PrivateKey,PublicKey${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN1${CClear} ${CGreen}(e1)${CClear} View/Edit | ${CGreen}(x1)${CClear} Execute | ${CGreen}(s1)${CClear} Skynet WL Import${CClear}"
@@ -1911,8 +1914,8 @@ do
 
   if [ "$availableslots" == "1 2" ]; then
     echo ""
-    read -p "Please select? (e1-e2, x1-x2, s1-s2, e=Exit): " SelectSlot3
-    case $SelectSlot3 in
+    read -p "Please select? (e1-e2, x1-x2, s1-s2, e=Exit): " SelectSlot2
+    case $SelectSlot2 in
       e1)
          echo ""
          if [ "$automation1" == "" ] || [ -z "$automation1" ]; then
@@ -2106,8 +2109,53 @@ do
       echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$automation5unenc"
     fi
     echo -e "${InvGreen} ${CClear}"
-    echo ""
-    read -p "Please select? (e1-e5, x1-x5, s1-s5, e=Exit): " SelectSlot5
+
+		##-------------------------------------##
+		## Added by Dan G. [2025-Jul-15]       ##
+		##-------------------------------------##
+
+	  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG1${CClear} ${CGreen}(e6)${CClear} View/Edit | ${CGreen}(x6)${CClear} Execute | ${CGreen}(s6)${CClear} Skynet WL Import${CClear}"
+	    if [ -z "$wgautomation1" ] || [ "$wgautomation1" == "" ]; then
+	      echo -e "${InvGreen} ${CClear} Contents: <blank>"
+	    else
+	      wgautomation1unenc=$(echo "$wgautomation1" | openssl enc -d -base64 -A)
+	      echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$wgautomation1unenc"
+	    fi
+	  echo -e "${InvGreen} ${CClear}"
+	  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG2${CClear} ${CGreen}(e7)${CClear} View/Edit | ${CGreen}(x7)${CClear} Execute | ${CGreen}(s7)${CClear} Skynet WL Import${CClear}"
+	    if [ -z "$wgautomation2" ] || [ "$wgautomation2" == "" ]; then
+	      echo -e "${InvGreen} ${CClear} Contents: <blank>"
+	    else
+	      wgautomation2unenc=$(echo "$wgautomation2" | openssl enc -d -base64 -A)
+	      echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$wgautomation2unenc"
+	    fi
+	  echo -e "${InvGreen} ${CClear}"
+	  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG3${CClear} ${CGreen}(e8)${CClear} View/Edit | ${CGreen}(x8)${CClear} Execute | ${CGreen}(s8)${CClear} Skynet WL Import${CClear}"
+	  if [ -z "$wgautomation3" ] || [ "$wgautomation3" == "" ]; then
+	    echo -e "${InvGreen} ${CClear} Contents: <blank>"
+	  else
+	    wgautomation3unenc=$(echo "$wgautomation3" | openssl enc -d -base64 -A)
+	    echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$wgautomation3unenc"
+	  fi
+	  echo -e "${InvGreen} ${CClear}"
+	  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG4${CClear} ${CGreen}(e9)${CClear} View/Edit | ${CGreen}(x9)${CClear} Execute | ${CGreen}(s9)${CClear} Skynet WL Import${CClear}"
+	  if [ -z "$wgautomation4" ] || [ "$wgautomation4" == "" ]; then
+	    echo -e "${InvGreen} ${CClear} Contents: <blank>"
+	  else
+	    wgautomation4unenc=$(echo "$wgautomation4" | openssl enc -d -base64 -A)
+	    echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$wgautomation4unenc"
+	  fi
+	  echo -e "${InvGreen} ${CClear}"
+	  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG5${CClear} ${CGreen}(e0)${CClear} View/Edit | ${CGreen}(x0)${CClear} Execute | ${CGreen}(s0)${CClear} Skynet WL Import${CClear}"
+	  if [ -z "$wgautomation5" ] || [ "$wgautomation5" == "" ]; then
+	    echo -e "${InvGreen} ${CClear} Contents: <blank>"
+	  else
+	    wgautomation5unenc=$(echo "$wgautomation5" | openssl enc -d -base64 -A)
+	    echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$wgautomation5unenc"
+	  fi
+	  echo -e "${InvGreen} ${CClear}"
+	  echo ""
+    read -p "Please select? (e1-e0, x1-x0, s1-s0, e=Exit): " SelectSlot5
     case $SelectSlot5 in
       e1)
          echo ""
@@ -2514,677 +2562,425 @@ do
          read -rsp $'Press any key to acknowledge...\n' -n1 key
       ;;
 
-     [Ee])
-           timer="$timerloop"
-           break;;
-    esac
-  fi
-
-done
-
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# wgserverlistautomation lets you pick which vpn slot server list automation you want to edit/execute
-##-------------------------------------##
-## Added by Dan G. [2025-Jul-15]       ##
-##-------------------------------------##
-wgserverlistautomation()
-{
-
-while true
-do
-  clear
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} WG Client Slot Server List Automation                                                ${CClear}"
-  echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} Please indicate which WG Slot Automation Script you would like to edit/execute.${CClear}"
-  echo -e "${InvGreen} ${CClear} Custom WG Slot Server Lists can also be whitelisted in Skynet using keys below.${CClear}"
-  echo -e "${InvGreen} ${CClear} Use the corresponding ${CGreen}()${CClear} key to edit or launch your update statements${CClear}"
-  echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} INSTRUCTIONS: Using carefully crafted CURL statements that query your VPN Provider's${CClear}"
-  echo -e "${InvGreen} ${CClear} server lists via API lookups, you can redirect their output into five-column CSV${CClear}"
-  echo -e "${InvGreen} ${CClear} address lists for use by VPNMON-R3 for each of your WG Client Slots.${CClear}"
-  echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-  echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG1${CClear} ${CGreen}(e1)${CClear} View/Edit | ${CGreen}(x1)${CClear} Execute | ${CGreen}(s1)${CClear} Skynet WL Import${CClear}"
-    if [ -z "$wgautomation1" ] || [ "$wgautomation1" == "" ]; then
-      echo -e "${InvGreen} ${CClear} Contents: <blank>"
-    else
-      wgautomation1unenc=$(echo "$wgautomation1" | openssl enc -d -base64 -A)
-      echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$wgautomation1unenc"
-    fi
-  echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG2${CClear} ${CGreen}(e2)${CClear} View/Edit | ${CGreen}(x2)${CClear} Execute | ${CGreen}(s2)${CClear} Skynet WL Import${CClear}"
-    if [ -z "$wgautomation2" ] || [ "$wgautomation2" == "" ]; then
-      echo -e "${InvGreen} ${CClear} Contents: <blank>"
-    else
-      wgautomation2unenc=$(echo "$wgautomation2" | openssl enc -d -base64 -A)
-      echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$wgautomation2unenc"
-    fi
-  echo -e "${InvGreen} ${CClear}"
-
-  if [ "$availableslots" == "1 2" ]; then
-    echo ""
-    read -p "Please select? (e1-e2, x1-x2, s1-s2, e=Exit): " SelectSlot3
-    case $SelectSlot3 in
-      e1)
+     e6)
+       echo ""
+       if [ "$wgautomation1" == "" ] || [ -z "$wgautomation1" ]; then
+         echo -e "${CClear}Old Script: <blank>"
          echo ""
-         if [ "$wgautomation1" == "" ] || [ -z "$wgautomation1" ]; then
-           echo -e "${CClear}Old Script: <blank>"
-           echo ""
-         else
-           echo -en "${CClear}Old Script: "; echo "$wgautomation1" | openssl enc -d -base64 -A
-           echo ""
-         fi
-         read -rp 'Enter New Script (e=Exit): ' wgautomation1new
-         if [ "$wgautomation1new" == "" ] || [ -z "$wgautomation1new" ]; then
-           wgautomation1=""
-           saveconfig
-         elif [ "$wgautomation1new" == "e" ]; then
-           echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
-         else
-           wgautomation1=`echo $wgautomation1new | openssl enc -base64 -A`
-           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for WG Slot 1" >> $logfile
-           saveconfig
-         fi
-      ;;
+       else
+         echo -en "${CClear}Old Script: "; echo "$wgautomation1" | openssl enc -d -base64 -A
+         echo ""
+       fi
+       read -rp 'Enter New Script (e=Exit): ' wgautomation1new
+       if [ "$wgautomation1new" == "" ] || [ -z "$wgautomation1new" ]; then
+         wgautomation1=""
+         saveconfig
+       elif [ "$wgautomation1new" == "e" ]; then
+         echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
+       else
+         wgautomation1=`echo $wgautomation1new | openssl enc -base64 -A`
+         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Custom WG Server List Command entered for WG Slot 1" >> $logfile
+         saveconfig
+       fi
+    ;;
 
-      x1)
-         echo ""
-         echo -e "${CGreen}[Executing Script]${CClear}"
-         wgautomation1unenc=$(echo "$wgautomation1" | openssl enc -d -base64 -A)
-         echo -e "${CClear}Running: $wgautomation1unenc"
-         echo ""
-         eval "$wgautomation1nenc" > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-         #Determine how many server entries are in each of the vpn slot alternate server files
-         if [ -f /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt ]; then
-           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt | wc -l) >/dev/null 2>&1
-           if [ $dlcnt -lt 1 ]; then
-             dlcnt=0
-           elif [ -z $dlcnt ]; then
-             dlcnt=0
-           fi
-         else
+    x6)
+       echo ""
+       echo -e "${CGreen}[Executing Script]${CClear}"
+       wgautomation1unenc=$(echo "$wgautomation1" | openssl enc -d -base64 -A)
+       echo -e "${CClear}Running: $wgautomation1unenc"
+       echo ""
+       eval "$wgautomation1unenc" > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
+       #Determine how many server entries are in each of the vpn slot alternate server files
+       if [ -f /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt ]; then
+         dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt | wc -l) >/dev/null 2>&1
+         if [ $dlcnt -lt 1 ]; then
+           dlcnt=0
+         elif [ -z $dlcnt ]; then
            dlcnt=0
          fi
+       else
+         dlcnt=0
+       fi
 
-         if [ "$dlcnt" -gt 1 ]
-           then
-             cp "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" "/jffs/addons/vpnmon-r3.d/vr3wgsvr1.txt" >/dev/null 2>&1
-             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
-             echo ""
-             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
-             echo ""
-             echo -e "${CGreen}[Saved to WG Client Slot 1 Server List]${CClear}"
-             echo ""
-             echo -e "${CGreen}[Execution Complete]${CClear}"
-             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for WG Slot 1" >> $logfile
-             echo ""
-             skynetwhitelist wg1
-             echo ""
-             read -rsp $'Press any key to acknowledge...\n' -n1 key
-           else
-             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
-             echo ""
-             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source - Preserving Original Server List]${CClear}"
-             echo ""
-             echo -e "${CGreen}[Please check Query Language or VPN Service API may be down]${CClear}"
-             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List Query for WG Slot 1 yielded 0 rows -- Query may be invalid or VPN API service may be down" >> $logfile
-             echo ""
-             read -rsp $'Press any key to acknowledge...\n' -n1 key
-         fi
-      ;;
-
-      s1)
-         echo ""
-         echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
-         awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr1.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 1 Import" >/dev/null 2>&1
-         rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
-         echo ""
-         echo -e "${CGreen}[Contents of WG Slot 1 Imported]${CClear}"
-         echo ""
-         echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for WG Slot 1" >> $logfile
-         echo ""
-         read -rsp $'Press any key to acknowledge...\n' -n1 key
-      ;;
-
-      e2)
-         echo ""
-         if [ "$wgautomation2" == "" ] || [ -z "$wgautomation2" ]; then
-           echo -e "${CClear}Old Script: <blank>"
+       if [ "$dlcnt" -gt 1 ]
+         then
+           cp "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" "/jffs/addons/vpnmon-r3.d/vr3wgsvr1.txt" >/dev/null 2>&1
+           rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
            echo ""
-         else
-           echo -en "${CClear}Old Script: "; echo "$wgautomation2" | openssl enc -d -base64 -A
+           echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
            echo ""
-         fi
-         read -rp 'Enter New Script (e=Exit): ' wgautomation2new
-         if [ "$wgautomation2new" == "" ] || [ -z "$wgautomation2new" ]; then
-           wgautomation2=""
-           saveconfig
-         elif [ "$wgautomation2new" == "e" ]; then
-           echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
+           echo -e "${CGreen}[Saved to WG Client Slot 1 Server List]${CClear}"
+           echo ""
+           echo -e "${CGreen}[Execution Complete]${CClear}"
+           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom WG Server List Command executed for WG Slot 1" >> $logfile
+           echo ""
+           skynetwhitelist wg1
+           echo ""
+           read -rsp $'Press any key to acknowledge...\n' -n1 key
          else
-           wgautomation2=`echo $wgautomation2new | openssl enc -base64 -A`
-           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for WG Slot 2" >> $logfile
-           saveconfig
-         fi
-      ;;
+           rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+           echo ""
+           echo -e "${CGreen}[$dlcnt Rows Retrieved From Source - Preserving Original Server List]${CClear}"
+           echo ""
+           echo -e "${CGreen}[Please check Query Language or WG Service API may be down]${CClear}"
+           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom WG Client Server List Query for WG Slot 1 yielded 0 rows -- Query may be invalid or WG API service may be down" >> $logfile
+           echo ""
+           read -rsp $'Press any key to acknowledge...\n' -n1 key
+       fi
+    ;;
 
-      x2)
+    s6)
+       echo ""
+       echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
+       awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr1.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
+       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 1 Import" >/dev/null 2>&1
+       rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+       echo ""
+       echo -e "${CGreen}[Contents of WG Slot 1 Imported]${CClear}"
+       echo ""
+       echo -e "${CGreen}[Execution Complete]${CClear}"
+       echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for WG Slot 1" >> $logfile
+       echo ""
+       read -rsp $'Press any key to acknowledge...\n' -n1 key
+    ;;
+
+    e7)
+       echo ""
+       if [ "$wgautomation2" == "" ] || [ -z "$wgautomation2" ]; then
+         echo -e "${CClear}Old Script: <blank>"
          echo ""
-         echo -e "${CGreen}[Executing Script]${CClear}"
-         wgautomation2unenc=$(echo "$wgautomation2" | openssl enc -d -base64 -A)
-         echo -e "${CClear}Running: $wgautomation2unenc"
+       else
+         echo -en "${CClear}Old Script: "; echo "$wgautomation2" | openssl enc -d -base64 -A
          echo ""
-         eval "$wgautomation2unenc" > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-         #Determine how many server entries are in each of the vpn slot alternate server files
-         if [ -f /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt ]; then
-           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt | wc -l) >/dev/null 2>&1
-           if [ $dlcnt -lt 1 ]; then
-             dlcnt=0
-           elif [ -z $dlcnt ]; then
-             dlcnt=0
-           fi
-         else
+       fi
+       read -rp 'Enter New Script (e=Exit): ' wgautomation2new
+       if [ "$wgautomation2new" == "" ] || [ -z "$wgautomation2new" ]; then
+         wgautomation2=""
+         saveconfig
+       elif [ "$wgautomation2new" == "e" ]; then
+         echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
+       else
+         wgautomation2=`echo $wgautomation2new | openssl enc -base64 -A`
+         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Custom WG Server List Command entered for WG Slot 2" >> $logfile
+         saveconfig
+       fi
+    ;;
+
+    x7)
+       echo ""
+       echo -e "${CGreen}[Executing Script]${CClear}"
+       wgautomation2unenc=$(echo "$wgautomation2" | openssl enc -d -base64 -A)
+       echo -e "${CClear}Running: $wgautomation2unenc"
+       echo ""
+       eval "$wgautomation2unenc" > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
+       #Determine how many server entries are in each of the vpn slot alternate server files
+       if [ -f /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt ]; then
+         dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt | wc -l) >/dev/null 2>&1
+         if [ $dlcnt -lt 1 ]; then
+           dlcnt=0
+         elif [ -z $dlcnt ]; then
            dlcnt=0
          fi
+       else
+         dlcnt=0
+       fi
 
-         if [ "$dlcnt" -gt 1 ]
-           then
-             cp "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" "/jffs/addons/vpnmon-r3.d/vr3wgsvr2.txt" >/dev/null 2>&1
-             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
-             echo ""
-             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
-             echo ""
-             echo -e "${CGreen}[Saved to WG Client Slot 2 Server List]${CClear}"
-             echo ""
-             echo -e "${CGreen}[Execution Complete]${CClear}"
-             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for WG Slot 2" >> $logfile
-             echo ""
-             skynetwhitelist wg2
-             echo ""
-             read -rsp $'Press any key to acknowledge...\n' -n1 key
-           else
-             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
-             echo ""
-             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source - Preserving Original Server List]${CClear}"
-             echo ""
-             echo -e "${CGreen}[Please check Query Language or VPN Service API may be down]${CClear}"
-             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List Query for WG Slot 2 yielded 0 rows -- Query may be invalid or VPN API service may be down" >> $logfile
-             echo ""
-             read -rsp $'Press any key to acknowledge...\n' -n1 key
-         fi
-      ;;
-
-      s2)
-         echo ""
-         echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
-         awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr2.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 2 Import" >/dev/null 2>&1
-         rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
-         echo ""
-         echo -e "${CGreen}[Contents of VPN Slot 2 Imported]${CClear}"
-         echo ""
-         echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for WG Slot 2" >> $logfile
-         echo ""
-         read -rsp $'Press any key to acknowledge...\n' -n1 key
-      ;;
-
-      [Ee])
-            timer="$timerloop"
-            break;;
-    esac
-  fi
-
-  if [ "$availableslots" == "1 2 3 4 5" ]; then
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG3${CClear} ${CGreen}(e3)${CClear} View/Edit | ${CGreen}(x3)${CClear} Execute | ${CGreen}(s3)${CClear} Skynet WL Import${CClear}"
-    if [ -z "$wgautomation3" ] || [ "$wgautomation3" == "" ]; then
-      echo -e "${InvGreen} ${CClear} Contents: <blank>"
-    else
-      wgautomation3unenc=$(echo "$wgautomation3" | openssl enc -d -base64 -A)
-      echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$wgautomation3unenc"
-    fi
-    echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG4${CClear} ${CGreen}(e4)${CClear} View/Edit | ${CGreen}(x4)${CClear} Execute | ${CGreen}(s4)${CClear} Skynet WL Import${CClear}"
-    if [ -z "$wgautomation4" ] || [ "$wgautomation4" == "" ]; then
-      echo -e "${InvGreen} ${CClear} Contents: <blank>"
-    else
-      wgautomation4unenc=$(echo "$wgautomation4" | openssl enc -d -base64 -A)
-      echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$wgautomation4unenc"
-    fi
-    echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG5${CClear} ${CGreen}(e5)${CClear} View/Edit | ${CGreen}(x5)${CClear} Execute | ${CGreen}(s5)${CClear} Skynet WL Import${CClear}"
-    if [ -z "$wgautomation5" ] || [ "$wgautomation5" == "" ]; then
-      echo -e "${InvGreen} ${CClear} Contents: <blank>"
-    else
-      wgautomation5unenc=$(echo "$wgautomation5" | openssl enc -d -base64 -A)
-      echo -en "${InvGreen} ${CClear} Contents: ${InvDkGray}${CWhite}"; printf "%.75s>\n" "$wgautomation5unenc"
-    fi
-    echo -e "${InvGreen} ${CClear}"
-    echo ""
-    read -p "Please select? (e1-e5, x1-x5, s1-s5, e=Exit): " SelectSlot5
-    case $SelectSlot5 in
-       e1)
-         echo ""
-         if [ "$wgautomation1" == "" ] || [ -z "$wgautomation1" ]; then
-           echo -e "${CClear}Old Script: <blank>"
+       if [ "$dlcnt" -gt 1 ]
+         then
+           cp "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" "/jffs/addons/vpnmon-r3.d/vr3wgsvr2.txt" >/dev/null 2>&1
+           rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
            echo ""
-         else
-           echo -en "${CClear}Old Script: "; echo "$wgautomation1" | openssl enc -d -base64 -A
+           echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
            echo ""
-         fi
-         read -rp 'Enter New Script (e=Exit): ' wgautomation1new
-         if [ "$wgautomation1new" == "" ] || [ -z "$wgautomation1new" ]; then
-           wgautomation1=""
-           saveconfig
-         elif [ "$wgautomation1new" == "e" ]; then
-           echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
+           echo -e "${CGreen}[Saved to WG Client Slot 2 Server List]${CClear}"
+           echo ""
+           echo -e "${CGreen}[Execution Complete]${CClear}"
+           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom WG Server List Command executed for WG Slot 2" >> $logfile
+           echo ""
+           skynetwhitelist wg2
+           echo ""
+           read -rsp $'Press any key to acknowledge...\n' -n1 key
          else
-           wgautomation1=`echo $wgautomation1new | openssl enc -base64 -A`
-           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for WG Slot 1" >> $logfile
-           saveconfig
-         fi
-      ;;
+           rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+           echo ""
+           echo -e "${CGreen}[$dlcnt Rows Retrieved From Source - Preserving Original Server List]${CClear}"
+           echo ""
+           echo -e "${CGreen}[Please check Query Language or WG Service API may be down]${CClear}"
+           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom WG Client Server List Query for WG Slot 2 yielded 0 rows -- Query may be invalid or WG API service may be down" >> $logfile
+           echo ""
+           read -rsp $'Press any key to acknowledge...\n' -n1 key
+       fi
+    ;;
 
-      x1)
+    s7)
+       echo ""
+       echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
+       awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr2.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
+       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 2 Import" >/dev/null 2>&1
+       rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+       echo ""
+       echo -e "${CGreen}[Contents of WG Slot 2 Imported]${CClear}"
+       echo ""
+       echo -e "${CGreen}[Execution Complete]${CClear}"
+       echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for WG Slot 2" >> $logfile
+       echo ""
+       read -rsp $'Press any key to acknowledge...\n' -n1 key
+    ;;
+
+    e8)
+       echo ""
+       if [ "$wgautomation3" == "" ] || [ -z "$wgautomation3" ]; then
+         echo -e "${CClear}Old Script: <blank>"
          echo ""
-         echo -e "${CGreen}[Executing Script]${CClear}"
-         wgautomation1unenc=$(echo "$wgautomation1" | openssl enc -d -base64 -A)
-         echo -e "${CClear}Running: $wgautomation1unenc"
+       else
+         echo -en "${CClear}Old Script: "; echo "$wgautomation3" | openssl enc -d -base64 -A
          echo ""
-         eval "$wgautomation1nenc" > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-         #Determine how many server entries are in each of the vpn slot alternate server files
-         if [ -f /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt ]; then
-           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt | wc -l) >/dev/null 2>&1
-           if [ $dlcnt -lt 1 ]; then
-             dlcnt=0
-           elif [ -z $dlcnt ]; then
-             dlcnt=0
-           fi
-         else
+       fi
+       read -rp 'Enter New Script (e=Exit): ' wgautomation3new
+       if [ "$wgautomation3new" == "" ] || [ -z "$wgautomation3new" ]; then
+         wgautomation3=""
+         saveconfig
+       elif [ "$wgautomation3new" == "e" ]; then
+         echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
+       else
+         wgautomation3=`echo $wgautomation3new | openssl enc -base64 -A`
+         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Custom WG Server List Command entered for WG Slot 3" >> $logfile
+         saveconfig
+       fi
+    ;;
+
+    x8)
+       echo ""
+       echo -e "${CGreen}[Executing Script]${CClear}"
+       wgautomation3unenc=$(echo "$wgautomation3" | openssl enc -d -base64 -A)
+       echo -e "${CClear}Running: $wgautomation3unenc"
+       echo ""
+       eval "$wgautomation3unenc" > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
+       #Determine how many server entries are in each of the vpn slot alternate server files
+       if [ -f /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt ]; then
+         dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt | wc -l) >/dev/null 2>&1
+         if [ $dlcnt -lt 1 ]; then
+           dlcnt=0
+         elif [ -z $dlcnt ]; then
            dlcnt=0
          fi
+       else
+         dlcnt=0
+       fi
 
-         if [ "$dlcnt" -gt 1 ]
-           then
-             cp "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" "/jffs/addons/vpnmon-r3.d/vr3wgsvr1.txt" >/dev/null 2>&1
-             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
-             echo ""
-             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
-             echo ""
-             echo -e "${CGreen}[Saved to WG Client Slot 1 Server List]${CClear}"
-             echo ""
-             echo -e "${CGreen}[Execution Complete]${CClear}"
-             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for WG Slot 1" >> $logfile
-             echo ""
-             skynetwhitelist wg1
-             echo ""
-             read -rsp $'Press any key to acknowledge...\n' -n1 key
-           else
-             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
-             echo ""
-             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source - Preserving Original Server List]${CClear}"
-             echo ""
-             echo -e "${CGreen}[Please check Query Language or VPN Service API may be down]${CClear}"
-             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List Query for WG Slot 1 yielded 0 rows -- Query may be invalid or VPN API service may be down" >> $logfile
-             echo ""
-             read -rsp $'Press any key to acknowledge...\n' -n1 key
-         fi
-      ;;
-
-      s1)
-         echo ""
-         echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
-         awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr1.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 1 Import" >/dev/null 2>&1
-         rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
-         echo ""
-         echo -e "${CGreen}[Contents of WG Slot 1 Imported]${CClear}"
-         echo ""
-         echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for WG Slot 1" >> $logfile
-         echo ""
-         read -rsp $'Press any key to acknowledge...\n' -n1 key
-      ;;
-
-      e2)
-         echo ""
-         if [ "$wgautomation2" == "" ] || [ -z "$wgautomation2" ]; then
-           echo -e "${CClear}Old Script: <blank>"
+       if [ "$dlcnt" -gt 1 ]
+         then
+           cp "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" "/jffs/addons/vpnmon-r3.d/vr3wgsvr3.txt" >/dev/null 2>&1
+           rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
            echo ""
-         else
-           echo -en "${CClear}Old Script: "; echo "$wgautomation2" | openssl enc -d -base64 -A
+           echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
            echo ""
-         fi
-         read -rp 'Enter New Script (e=Exit): ' wgautomation2new
-         if [ "$wgautomation2new" == "" ] || [ -z "$wgautomation2new" ]; then
-           wgautomation2=""
-           saveconfig
-         elif [ "$wgautomation2new" == "e" ]; then
-           echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
+           echo -e "${CGreen}[Saved to WG Client Slot 3 Server List]${CClear}"
+           echo ""
+           echo -e "${CGreen}[Execution Complete]${CClear}"
+           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom WG Server List Command executed for WG Slot 3" >> $logfile
+           echo ""
+           skynetwhitelist wg3
+           echo ""
+           read -rsp $'Press any key to acknowledge...\n' -n1 key
          else
-           wgautomation2=`echo $wgautomation2new | openssl enc -base64 -A`
-           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for WG Slot 2" >> $logfile
-           saveconfig
-         fi
-      ;;
+           rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+           echo ""
+           echo -e "${CGreen}[$dlcnt Rows Retrieved From Source - Preserving Original Server List]${CClear}"
+           echo ""
+           echo -e "${CGreen}[Please check Query Language or WG Service API may be down]${CClear}"
+           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom WG Client Server List Query for WG Slot 3 yielded 0 rows -- Query may be invalid or WG API service may be down" >> $logfile
+           echo ""
+           read -rsp $'Press any key to acknowledge...\n' -n1 key
+       fi
+    ;;
 
-      x2)
+    s8)
+       echo ""
+       echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
+       awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr3.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
+       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 3 Import" >/dev/null 2>&1
+       rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+       echo ""
+       echo -e "${CGreen}[Contents of WG Slot 3 Imported]${CClear}"
+       echo ""
+       echo -e "${CGreen}[Execution Complete]${CClear}"
+       echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for WG Slot 3" >> $logfile
+       echo ""
+       read -rsp $'Press any key to acknowledge...\n' -n1 key
+    ;;
+
+    e9)
+       echo ""
+       if [ "$wgautomation4" == "" ] || [ -z "$wgautomation4" ]; then
+         echo -e "${CClear}Old Script: <blank>"
          echo ""
-         echo -e "${CGreen}[Executing Script]${CClear}"
-         wgautomation2unenc=$(echo "$wgautomation2" | openssl enc -d -base64 -A)
-         echo -e "${CClear}Running: $wgautomation2unenc"
+       else
+         echo -en "${CClear}Old Script: "; echo "$wgautomation4" | openssl enc -d -base64 -A
          echo ""
-         eval "$wgautomation2unenc" > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-         #Determine how many server entries are in each of the vpn slot alternate server files
-         if [ -f /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt ]; then
-           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt | wc -l) >/dev/null 2>&1
-           if [ $dlcnt -lt 1 ]; then
-             dlcnt=0
-           elif [ -z $dlcnt ]; then
-             dlcnt=0
-           fi
-         else
+       fi
+       read -rp 'Enter New Script (e=Exit): ' wgautomation4new
+       if [ "$wgautomation4new" == "" ] || [ -z "$wgautomation4new" ]; then
+         wgautomation4=""
+         saveconfig
+       elif [ "$wgautomation4new" == "e" ]; then
+         echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
+       else
+         wgautomation4=`echo $wgautomation4new | openssl enc -base64 -A`
+         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Custom WG Server List Command entered for WG Slot 4" >> $logfile
+         saveconfig
+       fi
+    ;;
+
+    x9)
+       echo ""
+       echo -e "${CGreen}[Executing Script]${CClear}"
+       wgautomation4unenc=$(echo "$wgautomation4" | openssl enc -d -base64 -A)
+       echo -e "${CClear}Running: $wgautomation4unenc"
+       echo ""
+       eval "$wgautomation4unenc" > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
+       #Determine how many server entries are in each of the vpn slot alternate server files
+       if [ -f /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt ]; then
+         dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt | wc -l) >/dev/null 2>&1
+         if [ $dlcnt -lt 1 ]; then
+           dlcnt=0
+         elif [ -z $dlcnt ]; then
            dlcnt=0
          fi
+       else
+         dlcnt=0
+       fi
 
-         if [ "$dlcnt" -gt 1 ]
-           then
-             cp "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" "/jffs/addons/vpnmon-r3.d/vr3wgsvr2.txt" >/dev/null 2>&1
-             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
-             echo ""
-             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
-             echo ""
-             echo -e "${CGreen}[Saved to WG Client Slot 2 Server List]${CClear}"
-             echo ""
-             echo -e "${CGreen}[Execution Complete]${CClear}"
-             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for WG Slot 2" >> $logfile
-             echo ""
-             skynetwhitelist wg2
-             echo ""
-             read -rsp $'Press any key to acknowledge...\n' -n1 key
-           else
-             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
-             echo ""
-             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source - Preserving Original Server List]${CClear}"
-             echo ""
-             echo -e "${CGreen}[Please check Query Language or VPN Service API may be down]${CClear}"
-             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List Query for WG Slot 2 yielded 0 rows -- Query may be invalid or VPN API service may be down" >> $logfile
-             echo ""
-             read -rsp $'Press any key to acknowledge...\n' -n1 key
-         fi
-      ;;
-
-      s2)
-         echo ""
-         echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
-         awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr2.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 2 Import" >/dev/null 2>&1
-         rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
-         echo ""
-         echo -e "${CGreen}[Contents of WG Slot 2 Imported]${CClear}"
-         echo ""
-         echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for WG Slot 2" >> $logfile
-         echo ""
-         read -rsp $'Press any key to acknowledge...\n' -n1 key
-      ;;
-
-      e3)
-         echo ""
-         if [ "$wgautomation3" == "" ] || [ -z "$wgautomation3" ]; then
-           echo -e "${CClear}Old Script: <blank>"
+       if [ "$dlcnt" -gt 1 ]
+         then
+           cp "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" "/jffs/addons/vpnmon-r3.d/vr3wgsvr4.txt" >/dev/null 2>&1
+           rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
            echo ""
-         else
-           echo -en "${CClear}Old Script: "; echo "$wgautomation3" | openssl enc -d -base64 -A
+           echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
            echo ""
-         fi
-         read -rp 'Enter New Script (e=Exit): ' wgautomation3new
-         if [ "$wgautomation3new" == "" ] || [ -z "$wgautomation3new" ]; then
-           wgautomation3=""
-           saveconfig
-         elif [ "$wgautomation3new" == "e" ]; then
-           echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
+           echo -e "${CGreen}[Saved to WG Client Slot 4 Server List]${CClear}"
+           echo ""
+           echo -e "${CGreen}[Execution Complete]${CClear}"
+           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom WG Server List Command executed for WG Slot 4" >> $logfile
+           echo ""
+           skynetwhitelist wg4
+           echo ""
+           read -rsp $'Press any key to acknowledge...\n' -n1 key
          else
-           wgautomation3=`echo $wgautomation3new | openssl enc -base64 -A`
-           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for WG Slot 3" >> $logfile
-           saveconfig
-         fi
-      ;;
+           rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+           echo ""
+           echo -e "${CGreen}[$dlcnt Rows Retrieved From Source - Preserving Original Server List]${CClear}"
+           echo ""
+           echo -e "${CGreen}[Please check Query Language or WG Service API may be down]${CClear}"
+           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom WG Client Server List Query for WG Slot 4 yielded 0 rows -- Query may be invalid or WG API service may be down" >> $logfile
+           echo ""
+           read -rsp $'Press any key to acknowledge...\n' -n1 key
+       fi
+    ;;
 
-      x3)
+    s9)
+       echo ""
+       echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
+       awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr4.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
+       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 4 Import" >/dev/null 2>&1
+       rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+       echo ""
+       echo -e "${CGreen}[Contents of WG Slot 4 Imported]${CClear}"
+       echo ""
+       echo -e "${CGreen}[Execution Complete]${CClear}"
+       echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for WG Slot 4" >> $logfile
+       echo ""
+       read -rsp $'Press any key to acknowledge...\n' -n1 key
+    ;;
+
+    e0)
+       echo ""
+       if [ "$wgautomation5" == "" ] || [ -z "$wgautomation5" ]; then
+         echo -e "${CClear}Old Script: <blank>"
          echo ""
-         echo -e "${CGreen}[Executing Script]${CClear}"
-         wgautomation3unenc=$(echo "$wgautomation3" | openssl enc -d -base64 -A)
-         echo -e "${CClear}Running: $wgautomation3unenc"
+       else
+         echo -en "${CClear}Old Script: "; echo "$wgautomation5" | openssl enc -d -base64 -A
          echo ""
-         eval "$wgautomation3unenc" > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-         #Determine how many server entries are in each of the vpn slot alternate server files
-         if [ -f /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt ]; then
-           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt | wc -l) >/dev/null 2>&1
-           if [ $dlcnt -lt 1 ]; then
-             dlcnt=0
-           elif [ -z $dlcnt ]; then
-             dlcnt=0
-           fi
-         else
+       fi
+       read -rp 'Enter New Script (e=Exit): ' wgautomation5new
+       if [ "$wgautomation5new" == "" ] || [ -z "$wgautomation5new" ]; then
+         wgautomation5=""
+         saveconfig
+       elif [ "$wgautomation5new" == "e" ]; then
+         echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
+       else
+         wgautomation5=`echo $wgautomation5new | openssl enc -base64 -A`
+         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Custom WG Server List Command entered for WG Slot 5" >> $logfile
+         saveconfig
+       fi
+    ;;
+
+    x0)
+       echo ""
+       echo -e "${CGreen}[Executing Script]${CClear}"
+       wgautomation5unenc=$(echo "$wgautomation5" | openssl enc -d -base64 -A)
+       echo -e "${CClear}Running: $wgautomation5unenc"
+       echo ""
+       eval "$wgautomation5unenc" > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
+       #Determine how many server entries are in each of the vpn slot alternate server files
+       if [ -f /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt ]; then
+         dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt | wc -l) >/dev/null 2>&1
+         if [ $dlcnt -lt 1 ]; then
+           dlcnt=0
+         elif [ -z $dlcnt ]; then
            dlcnt=0
          fi
+       else
+         dlcnt=0
+       fi
 
-         if [ "$dlcnt" -gt 1 ]
-           then
-             cp "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" "/jffs/addons/vpnmon-r3.d/vr3wgsvr3.txt" >/dev/null 2>&1
-             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
-             echo ""
-             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
-             echo ""
-             echo -e "${CGreen}[Saved to WG Client Slot 3 Server List]${CClear}"
-             echo ""
-             echo -e "${CGreen}[Execution Complete]${CClear}"
-             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for WG Slot 3" >> $logfile
-             echo ""
-             skynetwhitelist wg3
-             echo ""
-             read -rsp $'Press any key to acknowledge...\n' -n1 key
-           else
-             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
-             echo ""
-             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source - Preserving Original Server List]${CClear}"
-             echo ""
-             echo -e "${CGreen}[Please check Query Language or VPN Service API may be down]${CClear}"
-             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List Query for WG Slot 3 yielded 0 rows -- Query may be invalid or VPN API service may be down" >> $logfile
-             echo ""
-             read -rsp $'Press any key to acknowledge...\n' -n1 key
-         fi
-      ;;
-
-      s3)
-         echo ""
-         echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
-         awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr3.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 1 Import" >/dev/null 2>&1
-         rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
-         echo ""
-         echo -e "${CGreen}[Contents of WG Slot 3 Imported]${CClear}"
-         echo ""
-         echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for WG Slot 3" >> $logfile
-         echo ""
-         read -rsp $'Press any key to acknowledge...\n' -n1 key
-      ;;
-
-      e4)
-         echo ""
-         if [ "$wgautomation4" == "" ] || [ -z "$wgautomation4" ]; then
-           echo -e "${CClear}Old Script: <blank>"
+       if [ "$dlcnt" -gt 1 ]
+         then
+           cp "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" "/jffs/addons/vpnmon-r3.d/vr3wgsvr5.txt" >/dev/null 2>&1
+           rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
            echo ""
-         else
-           echo -en "${CClear}Old Script: "; echo "$wgautomation4" | openssl enc -d -base64 -A
+           echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
            echo ""
-         fi
-         read -rp 'Enter New Script (e=Exit): ' wgautomation4new
-         if [ "$wgautomation4new" == "" ] || [ -z "$wgautomation4new" ]; then
-           wgautomation4=""
-           saveconfig
-         elif [ "$wgautomation4new" == "e" ]; then
-           echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
-         else
-           wgautomation4=`echo $wgautomation4new | openssl enc -base64 -A`
-           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for WG Slot 4" >> $logfile
-           saveconfig
-         fi
-      ;;
-
-      x4)
-         echo ""
-         echo -e "${CGreen}[Executing Script]${CClear}"
-         wgautomation4unenc=$(echo "$wgautomation4" | openssl enc -d -base64 -A)
-         echo -e "${CClear}Running: $wgautomation4unenc"
-         echo ""
-         eval "$wgautomation4unenc" > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-         #Determine how many server entries are in each of the vpn slot alternate server files
-         if [ -f /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt ]; then
-           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt | wc -l) >/dev/null 2>&1
-           if [ $dlcnt -lt 1 ]; then
-             dlcnt=0
-           elif [ -z $dlcnt ]; then
-             dlcnt=0
-           fi
-         else
-           dlcnt=0
-         fi
-
-         if [ "$dlcnt" -gt 1 ]
-           then
-             cp "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" "/jffs/addons/vpnmon-r3.d/vr3wgsvr4.txt" >/dev/null 2>&1
-             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
-             echo ""
-             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
-             echo ""
-             echo -e "${CGreen}[Saved to WG Client Slot 4 Server List]${CClear}"
-             echo ""
-             echo -e "${CGreen}[Execution Complete]${CClear}"
-             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for WG Slot 4" >> $logfile
-             echo ""
-             skynetwhitelist wg4
-             echo ""
-             read -rsp $'Press any key to acknowledge...\n' -n1 key
-           else
-             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
-             echo ""
-             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source - Preserving Original Server List]${CClear}"
-             echo ""
-             echo -e "${CGreen}[Please check Query Language or VPN Service API may be down]${CClear}"
-             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List Query for WG Slot 4 yielded 0 rows -- Query may be invalid or VPN API service may be down" >> $logfile
-             echo ""
-             read -rsp $'Press any key to acknowledge...\n' -n1 key
-         fi
-      ;;
-
-      s4)
-         echo ""
-         echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
-         awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr4.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 2 Import" >/dev/null 2>&1
-         rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
-         echo ""
-         echo -e "${CGreen}[Contents of WG Slot 4 Imported]${CClear}"
-         echo ""
-         echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for WG Slot 4" >> $logfile
-         echo ""
-         read -rsp $'Press any key to acknowledge...\n' -n1 key
-      ;;
-
-      e5)
-         echo ""
-         if [ "$wgautomation5" == "" ] || [ -z "$wgautomation5" ]; then
-           echo -e "${CClear}Old Script: <blank>"
+           echo -e "${CGreen}[Saved to WG Client Slot 5 Server List]${CClear}"
            echo ""
-         else
-           echo -en "${CClear}Old Script: "; echo "$wgautomation5" | openssl enc -d -base64 -A
+           echo -e "${CGreen}[Execution Complete]${CClear}"
+           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom WG Server List Command executed for WG Slot 5" >> $logfile
            echo ""
-         fi
-         read -rp 'Enter New Script (e=Exit): ' wgautomation5new
-         if [ "$wgautomation5new" == "" ] || [ -z "$wgautomation5new" ]; then
-           wgautomation5=""
-           saveconfig
-         elif [ "$wgautomation5new" == "e" ]; then
-           echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
+           skynetwhitelist wg5
+           echo ""
+           read -rsp $'Press any key to acknowledge...\n' -n1 key
          else
-           wgautomation5=`echo $wgautomation5new | openssl enc -base64 -A`
-           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Custom VPN Server List Command entered for WG Slot 5" >> $logfile
-           saveconfig
-         fi
-      ;;
+           rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+           echo ""
+           echo -e "${CGreen}[$dlcnt Rows Retrieved From Source - Preserving Original Server List]${CClear}"
+           echo ""
+           echo -e "${CGreen}[Please check Query Language or WG Service API may be down]${CClear}"
+           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom WG Client Server List Query for WG Slot 5 yielded 0 rows -- Query may be invalid or WG API service may be down" >> $logfile
+           echo ""
+           read -rsp $'Press any key to acknowledge...\n' -n1 key
+       fi
+    ;;
 
-      x5)
-         echo ""
-         echo -e "${CGreen}[Executing Script]${CClear}"
-         wgautomation5unenc=$(echo "$wgautomation5" | openssl enc -d -base64 -A)
-         echo -e "${CClear}Running: $wgautomation5unenc"
-         echo ""
-         eval "$wgautomation5unenc" > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-         #Determine how many server entries are in each of the vpn slot alternate server files
-         if [ -f /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt ]; then
-           dlcnt=$(cat /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt | wc -l) >/dev/null 2>&1
-           if [ $dlcnt -lt 1 ]; then
-             dlcnt=0
-           elif [ -z $dlcnt ]; then
-             dlcnt=0
-           fi
-         else
-           dlcnt=0
-         fi
-
-         if [ "$dlcnt" -gt 1 ]
-           then
-             cp "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" "/jffs/addons/vpnmon-r3.d/vr3wgsvr5.txt" >/dev/null 2>&1
-             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
-             echo ""
-             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
-             echo ""
-             echo -e "${CGreen}[Saved to WG Client Slot 5 Server List]${CClear}"
-             echo ""
-             echo -e "${CGreen}[Execution Complete]${CClear}"
-             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Server List Command executed for WG Slot 5" >> $logfile
-             echo ""
-             skynetwhitelist wg5
-             echo ""
-             read -rsp $'Press any key to acknowledge...\n' -n1 key
-           else
-             rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
-             echo ""
-             echo -e "${CGreen}[$dlcnt Rows Retrieved From Source - Preserving Original Server List]${CClear}"
-             echo ""
-             echo -e "${CGreen}[Please check Query Language or VPN Service API may be down]${CClear}"
-             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List Query for WG Slot 5 yielded 0 rows -- Query may be invalid or VPN API service may be down" >> $logfile
-             echo ""
-             read -rsp $'Press any key to acknowledge...\n' -n1 key
-         fi
-      ;;
-
-      s5)
-         echo ""
-         echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
-         awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr5.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 2 Import" >/dev/null 2>&1
-         rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
-         echo ""
-         echo -e "${CGreen}[Contents oWG Slot 5 Imported]${CClear}"
-         echo ""
-         echo -e "${CGreen}[Execution Complete]${CClear}"
-         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for WG Slot 5" >> $logfile
-         echo ""
-         read -rsp $'Press any key to acknowledge...\n' -n1 key
-      ;;
+    s0)
+       echo ""
+       echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
+       awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr5.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
+       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 5 Import" >/dev/null 2>&1
+       rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
+       echo ""
+       echo -e "${CGreen}[Contents of WG Slot 5 Imported]${CClear}"
+       echo ""
+       echo -e "${CGreen}[Execution Complete]${CClear}"
+       echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Skynet Whitelist imported for WG Slot 5" >> $logfile
+       echo ""
+       read -rsp $'Press any key to acknowledge...\n' -n1 key
+    ;;
 
      [Ee])
            timer="$timerloop"
            break;;
+           
     esac
   fi
 
@@ -4155,10 +3951,10 @@ restartwg()
 
       WGLINE=$(sed -n "${R_LINE}p" /jffs/addons/vpnmon-r3.d/vr3wgsvr$1.txt)
       wgdescription=$(echo "$WGLINE" | cut -d ',' -f 1)
-      endpointip=$(echo "$WGLINE" | cut -d ',' -f 2)
-      endpointport=$(echo "$WGLINE" | cut -d ',' -f 3)
-      privatekey=$(echo "$WGLINE" | cut -d ',' -f 4)
-      publickey=$(echo "$WGLINE" | cut -d ',' -f 5)
+			endpointip=$(echo "$WGLINE" | cut -d ',' -f 2)
+			endpointport=$(echo "$WGLINE" | cut -d ',' -f 3)
+			privatekey=$(echo "$WGLINE" | cut -d ',' -f 4)
+			publickey=$(echo "$WGLINE" | cut -d ',' -f 5)
       nvram set wgc"$1"_desc="$wgdescription"
       nvram set wgc"$1"_ep_addr="$endpointip"
       nvram set wgc"$1"_ep_addr_r="$endpointip"
@@ -4286,11 +4082,14 @@ skynetwhitelist()
 {
   if [ "$updateskynet" == "1" ]
   then
+  	##-------------------------------------##
+    ## Modified by Dan G. [2025-Jul-15]    ##
+    ##-------------------------------------##
     if [[ $1 == wg* ]]; then
       slotnum="${1#wg}"
       printf "${CGreen}\r[Whitelisting WG Server Slot $slotnum List in the Skynet Firewall]${CClear}\n"
       awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr${slotnum}.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-      firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 - WG Slot $slotnum Import" >/dev/null 2>&1
+      firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 - WG Server Slot $slotnum Whitelist" >/dev/null 2>&1
       rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
       echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WG Server Slot $slotnum List has been whitelisted in Skynet" >> $logfile
     else
@@ -4608,14 +4407,15 @@ getwgip()
 {
   TUN="wgc$1"
 
-  icanhazwgip="$($timeoutcmd$timeoutsec nvram get wgc$1_ep_addr)"
-  if [ -z "$icanhazwgip" ] || [ "$icanhazwgip" = "unknown" ]
-  then
+  #Removing this because all it yields is the Endpoint IP
+  #icanhazwgip="$($timeoutcmd$timeoutsec nvram get wgc$1_ep_addr)"
+  #if [ -z "$icanhazwgip" ] || [ "$icanhazwgip" = "unknown" ]
+  #then
      # Grab the public IP of the WG Connection #
      icanhazwgip="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --fail --interface "$TUN" --request GET --url https://ipv4.icanhazip.com"
      icanhazwgip="$(eval $icanhazwgip)"
      if [ -z "$icanhazwgip" ] || echo "$icanhazwgip" | grep -qoE 'Internet|traffic|Error|error' ; then icanhazwgip="0.0.0.0" ; fi
-  fi
+  #fi
 
   if [ -z "$icanhazwgip" ]
   then
@@ -4858,6 +4658,10 @@ checkwg()
   TRIES=3
   TUN="wgc$1"
 
+  # Added ping workaround for site2site scenarios based on suggestion from @ZebMcKayhan
+  TUN_IP=$(nvram get "$TUN"_addr | cut -d '/' -f1)
+  ip rule add from $TUN_IP lookup $TUN prio 10
+
   while [ "$CNT" -lt "$TRIES" ]; do # Loop through number of tries
     ping -I $TUN -q -c 1 -W 2 $PINGHOST > /dev/null 2>&1 # First try pings
     RC=$?
@@ -4895,6 +4699,10 @@ checkwg()
       fi
     fi
   done
+  
+  # Added based on suggestion from @ZebMcKayhan
+  ip rule del prio 10
+  
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -5035,7 +4843,7 @@ wancheck()
             ## No need to do left-padding with zeros for alignment ##
             [ -n "${WAN0PING:+xSETx}" ] && WAN0PING="$(printf "[%8.3f]" "$WAN0PING")"
         else
-            WAN0PING="FAILOVER"
+            WAN0PING="[FAILOVER]"
         fi
 
         # On the rare occasion where it's unable to get the Ping time, show ERROR #
@@ -5058,7 +4866,7 @@ wancheck()
            WAN0IP="$(printf '%15s' "11.22.33.44")"
         fi
 
-        if [ "$WAN0PING" = "FAILOVER" ]
+        if [ "$WAN0PING" = "[FAILOVER]" ]
         then
            echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN0${CClear} | ${CGreen}[X]${CClear} | "
            printf "%-6s" "$WAN0IFNAME"
@@ -5087,7 +4895,7 @@ wancheck()
             ## No need to do left-padding with zeros for alignment ##
             [ -n "${WAN1PING:+xSETx}" ] && WAN1PING="$(printf "[%8.3f]" "$WAN1PING")"
         else
-            WAN1PING="FAILOVER"
+            WAN1PING="[FAILOVER]"
         fi
 
         # On the rare occasion where it's unable to get the Ping time, show ERROR #
@@ -5103,7 +4911,7 @@ wancheck()
            WAN1IP="$(printf '%15s' "$WAN1IP")"
         fi
 
-        if [ "$WAN1PING" = "FAILOVER" ]
+        if [ "$WAN1PING" = "[FAILOVER]" ]
         then
            echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN1${CClear} | ${CGreen}[X]${CClear} | "
            printf "%-6s" "$WAN1IFNAME"
@@ -5326,7 +5134,7 @@ displayopsmenu()
       echo -e "${InvGreen} ${CClear} Stop/Unmonitor   WG 1:${CGreen}(^)${CClear} 2:${CGreen}(&)${CClear} 3:${CGreen}(-)${CClear} 4:${CGreen}(+)${CClear} 5:${CGreen}(=)${CClear}    ${InvGreen} ${CClear} ${CGreen}(A)${CClear}utostart VPNMON-R3 on Reboot: $rebootprot"
       echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN/WG Slots              ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer VPN Check Loop Interval: $timerLoopStr"
       echo -e "${InvGreen} ${CClear} Update/Maintain ${CGreen}(V)${CClear}PN/${CGreen}(W)${CClear}G Server Lists              ${InvGreen} ${CClear} ${CGreen}(P)${CClear}ing Maximum Before Reset in ms: $pingResetStr"
-      echo -e "${InvGreen} ${CClear} E${CGreen}(D)${CClear}it/R${CGreen}(U)${CClear}n Server List Automation                  ${InvGreen} ${CClear} AMTM Email Not${CGreen}(I)${CClear}fications: $amtmdisp"
+      echo -e "${InvGreen} ${CClear} Edit/R${CGreen}(U)${CClear}n Server List Automation                    ${InvGreen} ${CClear} AMTM Email Not${CGreen}(I)${CClear}fications: $amtmdisp"
       echo -e "${InvGreen} ${CClear}${CDkGray}--------------------------------------------------------------------------------------------------------------${CClear}"
       echo ""
     fi
