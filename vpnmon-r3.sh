@@ -850,12 +850,12 @@ fi
 
 while true
 do
-	if [ "$availableslots" == "1 2" ]; then
-		 availableslotsdisp="2 x OVPN"
-	elif [ "$availableslots" == "1 2 3 4 5" ]; then
-		 availableslotsdisp="5 x OVPN | 5 x WG"
-	fi
-	
+  if [ "$availableslots" = "1 2" ]; then
+     availableslotsdisp="2 x OVPN"
+  elif [ "$availableslots" = "1 2 3 4 5" ]; then
+     availableslotsdisp="5 x OVPN | 5 x WG"
+  fi
+
   if [ "$unboundclient" -eq 0 ]; then
      unboundclientexp="Disabled"
   else
@@ -880,13 +880,13 @@ do
      updateskynetdisp="Enabled"
   fi
 
-  if [ "$amtmemailsuccess" == "0" ] && [ "$amtmemailfailure" == "0" ]; then
+  if [ "$amtmemailsuccess" = "0" ] && [ "$amtmemailfailure" = "0" ]; then
      amtmemailsuccfaildisp="Disabled"
-  elif [ "$amtmemailsuccess" == "1" ] && [ "$amtmemailfailure" == "0" ]; then
+  elif [ "$amtmemailsuccess" = "1" ] && [ "$amtmemailfailure" = "0" ]; then
      amtmemailsuccfaildisp="Success"
-  elif [ "$amtmemailsuccess" == "0" ] && [ "$amtmemailfailure" == "1" ]; then
+  elif [ "$amtmemailsuccess" = "0" ] && [ "$amtmemailfailure" = "1" ]; then
      amtmemailsuccfaildisp="Failure"
-  elif [ "$amtmemailsuccess" == "1" ] && [ "$amtmemailfailure" == "1" ]; then
+  elif [ "$amtmemailsuccess" = "1" ] && [ "$amtmemailfailure" = "1" ]; then
      amtmemailsuccfaildisp="Success, Failure"
   else
      amtmemailsuccfaildisp="Disabled"
@@ -1096,8 +1096,8 @@ do
             break
           fi
 
-          if [ "$unboundovervpn" == "0" ] || [ "$unboundovervpn" == "1" ] || [ "$unboundovervpn" == "2" ] || [ "$unboundovervpn" == "3" ] || [ "$unboundovervpn" == "4" ] || [ "$unboundovervpn" == "5" ] || [ "$unboundovervpn" == "e" ]; then
-            if [ "$unboundovervpn" == "0" ]; then
+          if [ "$unboundovervpn" = "0" ] || [ "$unboundovervpn" = "1" ] || [ "$unboundovervpn" = "2" ] || [ "$unboundovervpn" = "3" ] || [ "$unboundovervpn" = "4" ] || [ "$unboundovervpn" = "5" ] || [ "$unboundovervpn" = "e" ]; then
+            if [ "$unboundovervpn" = "0" ]; then
 
               # Delete all additions made to files to enable Unbound over VPN functionality
               echo ""
@@ -1132,13 +1132,13 @@ do
               sleep 3
               break
 
-            elif [ "$unboundovervpn" == "1" ] || [ "$unboundovervpn" == "2" ] || [ "$unboundovervpn" == "3" ] || [ "$unboundovervpn" == "4" ] || [ "$unboundovervpn" == "5" ]; then
+            elif [ "$unboundovervpn" = "1" ] || [ "$unboundovervpn" = "2" ] || [ "$unboundovervpn" = "3" ] || [ "$unboundovervpn" = "4" ] || [ "$unboundovervpn" = "5" ]; then
 
-              if [ "$unboundovervpn" == "$unboundclient" ]; then
+              if [ "$unboundovervpn" = "$unboundclient" ]; then
                 echo -e "${CClear}\n[Unbound over VPN$unboundovervpn Already Active]"; sleep 2; break
               fi
 
-              if [ "$unboundovervpn" == "1" ] || [ "$unboundovervpn" == "2" ] || [ "$unboundovervpn" == "3" ] || [ "$unboundovervpn" == "4" ] || [ "$unboundovervpn" == "5" ] && [ $unboundclient -ge 1 ]; then
+              if [ "$unboundovervpn" = "1" ] || [ "$unboundovervpn" = "2" ] || [ "$unboundovervpn" = "3" ] || [ "$unboundovervpn" = "4" ] || [ "$unboundovervpn" = "5" ] && [ $unboundclient -ge 1 ]; then
                 echo ""
                 echo -e "${CRed}When changing a VPN Client Slot (from Slot #$unboundclient to Slot #$unboundovervpn), please proceed to 'Disable'"
                 echo -e "first (option 0), then choose a new VPN Slot."
@@ -1216,7 +1216,7 @@ do
               read -rsp $'Press any key to continue...\n' -n1 key
               break
 
-            elif [ "$unboundovervpn" == "e" ]; then
+            elif [ "$unboundovervpn" = "e" ]; then
               echo -e "${CClear}\n[Exiting]"; sleep 2; break
             fi
 
@@ -1413,7 +1413,7 @@ while true; do
   echo -e "Current Version: ${CGreen}$version${CClear}"
   echo -e "Updated Version: ${CGreen}$DLversion${CClear}"
   echo ""
-  if [ "$version" == "$DLversion" ]
+  if [ "$version" = "$DLversion" ]
     then
       echo -e "You are on the latest version! Would you like to download anyways? This will overwrite${CClear}"
       echo -e "your local copy with the current build.${CClear}"
@@ -1473,7 +1473,7 @@ updatecheck()
       DLversion=$(cat $dlverpath)
 
       # Compare the new version with the old version and log it
-      if [ "$beta" == "1" ]; then   # Check if Dev/Beta Mode is enabled and disable notification message
+      if [ "$beta" = "1" ]; then   # Check if Dev/Beta Mode is enabled and disable notification message
         UpdateNotify=0
       elif [ "$DLversion" != "$version" ]; then
         DLversionPF=$(printf "%-8s" $DLversion)
@@ -1558,16 +1558,16 @@ do
 
     if [ "$availableslots" = "1 2" ]
     then
-      if [ "$VPN1" == "1" ]; then VPN1Disp="${CGreen}Y${CCyan}"; else VPN1=0; VPN1Disp="${CRed}N${CCyan}"; fi
-      if [ "$VPN2" == "1" ]; then VPN2Disp="${CGreen}Y${CCyan}"; else VPN2=0; VPN2Disp="${CRed}N${CCyan}"; fi
+      if [ "$VPN1" = "1" ]; then VPN1Disp="${CGreen}Y${CCyan}"; else VPN1=0; VPN1Disp="${CRed}N${CCyan}"; fi
+      if [ "$VPN2" = "1" ]; then VPN2Disp="${CGreen}Y${CCyan}"; else VPN2=0; VPN2Disp="${CRed}N${CCyan}"; fi
       echo -e "${InvGreen} ${CClear}"
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN1${CClear} ${CGreen}(1) -${CClear} $VPN1Disp${CClear}"
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN2${CClear} ${CGreen}(2) -${CClear} $VPN2Disp${CClear}"
       echo ""
       read -p "Please select? (1-2, e=Exit): " SelectSlot
         case $SelectSlot in
-          1) if [ "$VPN1" == "0" ]; then VPN1=1; VPN1Disp="${CGreen}Y${CCyan}"; elif [ "$VPN1" == "1" ]; then VPN1=0; VPN1Disp="${CRed}N${CCyan}"; fi;;
-          2) if [ "$VPN2" == "0" ]; then VPN2=1; VPN2Disp="${CGreen}Y${CCyan}"; elif [ "$VPN2" == "1" ]; then VPN2=0; VPN2Disp="${CRed}N${CCyan}"; fi;;
+          1) if [ "$VPN1" = "0" ]; then VPN1=1; VPN1Disp="${CGreen}Y${CCyan}"; elif [ "$VPN1" = "1" ]; then VPN1=0; VPN1Disp="${CRed}N${CCyan}"; fi;;
+          2) if [ "$VPN2" = "0" ]; then VPN2=1; VPN2Disp="${CGreen}Y${CCyan}"; elif [ "$VPN2" = "1" ]; then VPN2=0; VPN2Disp="${CRed}N${CCyan}"; fi;;
           [Ee])
              { echo 'VPN1='$VPN1
                echo 'VPN2='$VPN2
@@ -1579,16 +1579,16 @@ do
 
     elif [ "$availableslots" = "1 2 3 4 5" ]
     then
-      if [ "$VPN1" == "1" ]; then VPN1Disp="${CGreen}Y${CCyan}"; else VPN1=0; VPN1Disp="${CRed}N${CCyan}"; fi
-      if [ "$VPN2" == "1" ]; then VPN2Disp="${CGreen}Y${CCyan}"; else VPN2=0; VPN2Disp="${CRed}N${CCyan}"; fi
-      if [ "$VPN3" == "1" ]; then VPN3Disp="${CGreen}Y${CCyan}"; else VPN3=0; VPN3Disp="${CRed}N${CCyan}"; fi
-      if [ "$VPN4" == "1" ]; then VPN4Disp="${CGreen}Y${CCyan}"; else VPN4=0; VPN4Disp="${CRed}N${CCyan}"; fi
-      if [ "$VPN5" == "1" ]; then VPN5Disp="${CGreen}Y${CCyan}"; else VPN5=0; VPN5Disp="${CRed}N${CCyan}"; fi
-      if [ "$WG1" == "1" ]; then WG1Disp="${CGreen}Y${CCyan}"; else WG1=0; WG1Disp="${CRed}N${CCyan}"; fi
-      if [ "$WG2" == "1" ]; then WG2Disp="${CGreen}Y${CCyan}"; else WG2=0; WG2Disp="${CRed}N${CCyan}"; fi
-      if [ "$WG3" == "1" ]; then WG3Disp="${CGreen}Y${CCyan}"; else WG3=0; WG3Disp="${CRed}N${CCyan}"; fi
-      if [ "$WG4" == "1" ]; then WG4Disp="${CGreen}Y${CCyan}"; else WG4=0; WG4Disp="${CRed}N${CCyan}"; fi
-      if [ "$WG5" == "1" ]; then WG5Disp="${CGreen}Y${CCyan}"; else WG5=0; WG5Disp="${CRed}N${CCyan}"; fi
+      if [ "$VPN1" = "1" ]; then VPN1Disp="${CGreen}Y${CCyan}"; else VPN1=0; VPN1Disp="${CRed}N${CCyan}"; fi
+      if [ "$VPN2" = "1" ]; then VPN2Disp="${CGreen}Y${CCyan}"; else VPN2=0; VPN2Disp="${CRed}N${CCyan}"; fi
+      if [ "$VPN3" = "1" ]; then VPN3Disp="${CGreen}Y${CCyan}"; else VPN3=0; VPN3Disp="${CRed}N${CCyan}"; fi
+      if [ "$VPN4" = "1" ]; then VPN4Disp="${CGreen}Y${CCyan}"; else VPN4=0; VPN4Disp="${CRed}N${CCyan}"; fi
+      if [ "$VPN5" = "1" ]; then VPN5Disp="${CGreen}Y${CCyan}"; else VPN5=0; VPN5Disp="${CRed}N${CCyan}"; fi
+      if [ "$WG1" = "1" ]; then WG1Disp="${CGreen}Y${CCyan}"; else WG1=0; WG1Disp="${CRed}N${CCyan}"; fi
+      if [ "$WG2" = "1" ]; then WG2Disp="${CGreen}Y${CCyan}"; else WG2=0; WG2Disp="${CRed}N${CCyan}"; fi
+      if [ "$WG3" = "1" ]; then WG3Disp="${CGreen}Y${CCyan}"; else WG3=0; WG3Disp="${CRed}N${CCyan}"; fi
+      if [ "$WG4" = "1" ]; then WG4Disp="${CGreen}Y${CCyan}"; else WG4=0; WG4Disp="${CRed}N${CCyan}"; fi
+      if [ "$WG5" = "1" ]; then WG5Disp="${CGreen}Y${CCyan}"; else WG5=0; WG5Disp="${CRed}N${CCyan}"; fi
       echo -e "${InvGreen} ${CClear}"
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN1${CClear} ${CGreen}(1) -${CClear} $VPN1Disp${CClear}"
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN2${CClear} ${CGreen}(2) -${CClear} $VPN2Disp${CClear}"
@@ -1608,16 +1608,16 @@ do
       echo ""
       read -p "Please select? (1-0, e=Exit): " SelectSlot
         case $SelectSlot in
-          1) if [ "$VPN1" == "0" ]; then VPN1=1; VPN1Disp="${CGreen}Y${CCyan}"; elif [ "$VPN1" == "1" ]; then VPN1=0; VPN1Disp="${CRed}N${CCyan}"; fi;;
-          2) if [ "$VPN2" == "0" ]; then VPN2=1; VPN2Disp="${CGreen}Y${CCyan}"; elif [ "$VPN2" == "1" ]; then VPN2=0; VPN2Disp="${CRed}N${CCyan}"; fi;;
-          3) if [ "$VPN3" == "0" ]; then VPN3=1; VPN3Disp="${CGreen}Y${CCyan}"; elif [ "$VPN3" == "1" ]; then VPN3=0; VPN3Disp="${CRed}N${CCyan}"; fi;;
-          4) if [ "$VPN4" == "0" ]; then VPN4=1; VPN4Disp="${CGreen}Y${CCyan}"; elif [ "$VPN4" == "1" ]; then VPN4=0; VPN4Disp="${CRed}N${CCyan}"; fi;;
-          5) if [ "$VPN5" == "0" ]; then VPN5=1; VPN5Disp="${CGreen}Y${CCyan}"; elif [ "$VPN5" == "1" ]; then VPN5=0; VPN5Disp="${CRed}N${CCyan}"; fi;;
-          6) if [ "$WG1" == "0" ]; then WG1=1; WG1Disp="${CGreen}Y${CCyan}"; elif [ "$WG1" == "1" ]; then WG1=0; WG1Disp="${CRed}N${CCyan}"; fi;;
-          7) if [ "$WG2" == "0" ]; then WG2=1; WG2Disp="${CGreen}Y${CCyan}"; elif [ "$WG2" == "1" ]; then WG2=0; WG2Disp="${CRed}N${CCyan}"; fi;;
-          8) if [ "$WG3" == "0" ]; then WG3=1; WG3Disp="${CGreen}Y${CCyan}"; elif [ "$WG3" == "1" ]; then WG3=0; WG3Disp="${CRed}N${CCyan}"; fi;;
-          9) if [ "$WG4" == "0" ]; then WG4=1; WG4Disp="${CGreen}Y${CCyan}"; elif [ "$WG4" == "1" ]; then WG4=0; WG4Disp="${CRed}N${CCyan}"; fi;;
-          0) if [ "$WG5" == "0" ]; then WG5=1; WG5Disp="${CGreen}Y${CCyan}"; elif [ "$WG5" == "1" ]; then WG5=0; WG5Disp="${CRed}N${CCyan}"; fi;;
+          1) if [ "$VPN1" = "0" ]; then VPN1=1; VPN1Disp="${CGreen}Y${CCyan}"; elif [ "$VPN1" = "1" ]; then VPN1=0; VPN1Disp="${CRed}N${CCyan}"; fi;;
+          2) if [ "$VPN2" = "0" ]; then VPN2=1; VPN2Disp="${CGreen}Y${CCyan}"; elif [ "$VPN2" = "1" ]; then VPN2=0; VPN2Disp="${CRed}N${CCyan}"; fi;;
+          3) if [ "$VPN3" = "0" ]; then VPN3=1; VPN3Disp="${CGreen}Y${CCyan}"; elif [ "$VPN3" = "1" ]; then VPN3=0; VPN3Disp="${CRed}N${CCyan}"; fi;;
+          4) if [ "$VPN4" = "0" ]; then VPN4=1; VPN4Disp="${CGreen}Y${CCyan}"; elif [ "$VPN4" = "1" ]; then VPN4=0; VPN4Disp="${CRed}N${CCyan}"; fi;;
+          5) if [ "$VPN5" = "0" ]; then VPN5=1; VPN5Disp="${CGreen}Y${CCyan}"; elif [ "$VPN5" = "1" ]; then VPN5=0; VPN5Disp="${CRed}N${CCyan}"; fi;;
+          6) if [ "$WG1" = "0" ]; then WG1=1; WG1Disp="${CGreen}Y${CCyan}"; elif [ "$WG1" = "1" ]; then WG1=0; WG1Disp="${CRed}N${CCyan}"; fi;;
+          7) if [ "$WG2" = "0" ]; then WG2=1; WG2Disp="${CGreen}Y${CCyan}"; elif [ "$WG2" = "1" ]; then WG2=0; WG2Disp="${CRed}N${CCyan}"; fi;;
+          8) if [ "$WG3" = "0" ]; then WG3=1; WG3Disp="${CGreen}Y${CCyan}"; elif [ "$WG3" = "1" ]; then WG3=0; WG3Disp="${CRed}N${CCyan}"; fi;;
+          9) if [ "$WG4" = "0" ]; then WG4=1; WG4Disp="${CGreen}Y${CCyan}"; elif [ "$WG4" = "1" ]; then WG4=0; WG4Disp="${CRed}N${CCyan}"; fi;;
+          0) if [ "$WG5" = "0" ]; then WG5=1; WG5Disp="${CGreen}Y${CCyan}"; elif [ "$WG5" = "1" ]; then WG5=0; WG5Disp="${CRed}N${CCyan}"; fi;;
           [Ee])
              { echo 'VPN1='$VPN1
                echo 'VPN2='$VPN2
@@ -1661,16 +1661,16 @@ do
   echo -e "${InvGreen} ${CClear} Use the corresponding ${CGreen}()${CClear} key to enable/disable email event notifications:${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
 
-  if [ "$amtmemailsuccess" == "1" ]; then amtmemailsuccessdisp="${CGreen}Y${CCyan}"; else amtmemailsuccess=0; amtmemailsuccessdisp="${CRed}N${CCyan}"; fi
-  if [ "$amtmemailfailure" == "1" ]; then amtmemailfailuredisp="${CGreen}Y${CCyan}"; else amtmemailfailure=0; amtmemailfailuredisp="${CRed}N${CCyan}"; fi
+  if [ "$amtmemailsuccess" = "1" ]; then amtmemailsuccessdisp="${CGreen}Y${CCyan}"; else amtmemailsuccess=0; amtmemailsuccessdisp="${CRed}N${CCyan}"; fi
+  if [ "$amtmemailfailure" = "1" ]; then amtmemailfailuredisp="${CGreen}Y${CCyan}"; else amtmemailfailure=0; amtmemailfailuredisp="${CRed}N${CCyan}"; fi
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN Success Event Notifications${CClear} ${CGreen}(1) -${CClear} $amtmemailsuccessdisp${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN Failure Event Notifications${CClear} ${CGreen}(2) -${CClear} $amtmemailfailuredisp${CClear}"
   echo ""
   read -p "Please select? (1-2, e=Exit, t=Test Email): " SelectSlot
     case $SelectSlot in
-      1) if [ "$amtmemailsuccess" == "0" ]; then amtmemailsuccess=1; amtmemailsuccessdisp="${CGreen}Y${CCyan}"; elif [ "$amtmemailsuccess" == "1" ]; then amtmemailsuccess=0; amtmemailsuccessdisp="${CRed}N${CCyan}"; fi;;
-      2) if [ "$amtmemailfailure" == "0" ]; then amtmemailfailure=1; amtmemailfailuredisp="${CGreen}Y${CCyan}"; elif [ "$amtmemailfailure" == "1" ]; then amtmemailfailure=0; amtmemailfailuredisp="${CRed}N${CCyan}"; fi;;
+      1) if [ "$amtmemailsuccess" = "0" ]; then amtmemailsuccess=1; amtmemailsuccessdisp="${CGreen}Y${CCyan}"; elif [ "$amtmemailsuccess" = "1" ]; then amtmemailsuccess=0; amtmemailsuccessdisp="${CRed}N${CCyan}"; fi;;
+      2) if [ "$amtmemailfailure" = "0" ]; then amtmemailfailure=1; amtmemailfailuredisp="${CGreen}Y${CCyan}"; elif [ "$amtmemailfailure" = "1" ]; then amtmemailfailure=0; amtmemailfailuredisp="${CRed}N${CCyan}"; fi;;
       [Tt])
          if [ -f "$CUSTOM_EMAIL_LIBFile" ]
          then
@@ -1748,7 +1748,7 @@ do
     fi
   echo -e "${InvGreen} ${CClear}"
 
-  if [ "$availableslots" == "1 2" ]
+  if [ "$availableslots" = "1 2" ]
   then
     echo ""
     read -p "Please select? (1-2, e=Exit): " SelectSlot
@@ -1761,7 +1761,7 @@ do
     esac
   fi
 
-  if [ "$availableslots" == "1 2 3 4 5" ]
+  if [ "$availableslots" = "1 2 3 4 5" ]
   then
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN3${CClear} ${CGreen}(3)${CClear}"
       if [ -f /jffs/addons/vpnmon-r3.d/vr3svr3.txt ]; then
@@ -1810,7 +1810,7 @@ done
 wgserverlistmaint()
 {
 
-if [ "$availableslots" == "1 2" ]
+if [ "$availableslots" = "1 2" ]
   then
     return
 fi
@@ -1911,7 +1911,7 @@ do
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN1${CClear} ${CGreen}(e1)${CClear} View/Edit | ${CGreen}(x1)${CClear} Execute | ${CGreen}(s1)${CClear} Skynet WL Import${CClear}"
-    if [ -z "$automation1" ] || [ "$automation1" == "" ]; then
+    if [ -z "$automation1" ] || [ "$automation1" = "" ]; then
       echo -e "${InvGreen} ${CClear} Contents: <blank>"
     else
       automation1unenc=$(echo "$automation1" | openssl enc -d -base64 -A)
@@ -1919,7 +1919,7 @@ do
     fi
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN2${CClear} ${CGreen}(e2)${CClear} View/Edit | ${CGreen}(x2)${CClear} Execute | ${CGreen}(s2)${CClear} Skynet WL Import${CClear}"
-    if [ -z "$automation2" ] || [ "$automation2" == "" ]; then
+    if [ -z "$automation2" ] || [ "$automation2" = "" ]; then
       echo -e "${InvGreen} ${CClear} Contents: <blank>"
     else
       automation2unenc=$(echo "$automation2" | openssl enc -d -base64 -A)
@@ -1927,13 +1927,13 @@ do
     fi
   echo -e "${InvGreen} ${CClear}"
 
-  if [ "$availableslots" == "1 2" ]; then
+  if [ "$availableslots" = "1 2" ]; then
     echo ""
     read -p "Please select? (e1-e2, x1-x2, s1-s2, e=Exit): " SelectSlot2
     case $SelectSlot2 in
       e1)
          echo ""
-         if [ "$automation1" == "" ] || [ -z "$automation1" ]; then
+         if [ "$automation1" = "" ] || [ -z "$automation1" ]; then
            echo -e "${CClear}Old Script: <blank>"
            echo ""
          else
@@ -1941,10 +1941,10 @@ do
            echo ""
          fi
          read -rp 'Enter New Script (e=Exit): ' automation1new
-         if [ "$automation1new" == "" ] || [ -z "$automation1new" ]; then
+         if [ "$automation1new" = "" ] || [ -z "$automation1new" ]; then
            automation1=""
            saveconfig
-         elif [ "$automation1new" == "e" ]; then
+         elif [ "$automation1new" = "e" ]; then
            echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else
            automation1=`echo $automation1new | openssl enc -base64 -A`
@@ -2014,7 +2014,7 @@ do
 
       e2)
          echo ""
-         if [ "$automation2" == "" ] || [ -z "$automation2" ]; then
+         if [ "$automation2" = "" ] || [ -z "$automation2" ]; then
            echo -e "${CClear}Old Script: <blank>"
            echo ""
          else
@@ -2022,10 +2022,10 @@ do
            echo ""
          fi
          read -rp 'Enter New Script (e=Exit): ' automation2new
-         if [ "$automation2new" == "" ] || [ -z "$automation2new" ]; then
+         if [ "$automation2new" = "" ] || [ -z "$automation2new" ]; then
            automation2=""
            saveconfig
-         elif [ "$automation2new" == "e" ]; then
+         elif [ "$automation2new" = "e" ]; then
            echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else
            automation2=`echo $automation2new | openssl enc -base64 -A`
@@ -2099,9 +2099,9 @@ do
     esac
   fi
 
-  if [ "$availableslots" == "1 2 3 4 5" ]; then
+  if [ "$availableslots" = "1 2 3 4 5" ]; then
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN3${CClear} ${CGreen}(e3)${CClear} View/Edit | ${CGreen}(x3)${CClear} Execute | ${CGreen}(s3)${CClear} Skynet WL Import${CClear}"
-    if [ -z "$automation3" ] || [ "$automation3" == "" ]; then
+    if [ -z "$automation3" ] || [ "$automation3" = "" ]; then
       echo -e "${InvGreen} ${CClear} Contents: <blank>"
     else
       automation3unenc=$(echo "$automation3" | openssl enc -d -base64 -A)
@@ -2109,7 +2109,7 @@ do
     fi
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN4${CClear} ${CGreen}(e4)${CClear} View/Edit | ${CGreen}(x4)${CClear} Execute | ${CGreen}(s4)${CClear} Skynet WL Import${CClear}"
-    if [ -z "$automation4" ] || [ "$automation4" == "" ]; then
+    if [ -z "$automation4" ] || [ "$automation4" = "" ]; then
       echo -e "${InvGreen} ${CClear} Contents: <blank>"
     else
       automation4unenc=$(echo "$automation4" | openssl enc -d -base64 -A)
@@ -2117,7 +2117,7 @@ do
     fi
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN5${CClear} ${CGreen}(e5)${CClear} View/Edit | ${CGreen}(x5)${CClear} Execute | ${CGreen}(s5)${CClear} Skynet WL Import${CClear}"
-    if [ -z "$automation5" ] || [ "$automation5" == "" ]; then
+    if [ -z "$automation5" ] || [ "$automation5" = "" ]; then
       echo -e "${InvGreen} ${CClear} Contents: <blank>"
     else
       automation5unenc=$(echo "$automation5" | openssl enc -d -base64 -A)
@@ -2130,7 +2130,7 @@ do
     ##-------------------------------------##
 
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG1${CClear} ${CGreen}(e6)${CClear} View/Edit | ${CGreen}(x6)${CClear} Execute | ${CGreen}(s6)${CClear} Skynet WL Import${CClear}"
-      if [ -z "$wgautomation1" ] || [ "$wgautomation1" == "" ]; then
+      if [ -z "$wgautomation1" ] || [ "$wgautomation1" = "" ]; then
         echo -e "${InvGreen} ${CClear} Contents: <blank>"
       else
         wgautomation1unenc=$(echo "$wgautomation1" | openssl enc -d -base64 -A)
@@ -2138,7 +2138,7 @@ do
       fi
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG2${CClear} ${CGreen}(e7)${CClear} View/Edit | ${CGreen}(x7)${CClear} Execute | ${CGreen}(s7)${CClear} Skynet WL Import${CClear}"
-      if [ -z "$wgautomation2" ] || [ "$wgautomation2" == "" ]; then
+      if [ -z "$wgautomation2" ] || [ "$wgautomation2" = "" ]; then
         echo -e "${InvGreen} ${CClear} Contents: <blank>"
       else
         wgautomation2unenc=$(echo "$wgautomation2" | openssl enc -d -base64 -A)
@@ -2146,7 +2146,7 @@ do
       fi
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG3${CClear} ${CGreen}(e8)${CClear} View/Edit | ${CGreen}(x8)${CClear} Execute | ${CGreen}(s8)${CClear} Skynet WL Import${CClear}"
-    if [ -z "$wgautomation3" ] || [ "$wgautomation3" == "" ]; then
+    if [ -z "$wgautomation3" ] || [ "$wgautomation3" = "" ]; then
       echo -e "${InvGreen} ${CClear} Contents: <blank>"
     else
       wgautomation3unenc=$(echo "$wgautomation3" | openssl enc -d -base64 -A)
@@ -2154,7 +2154,7 @@ do
     fi
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG4${CClear} ${CGreen}(e9)${CClear} View/Edit | ${CGreen}(x9)${CClear} Execute | ${CGreen}(s9)${CClear} Skynet WL Import${CClear}"
-    if [ -z "$wgautomation4" ] || [ "$wgautomation4" == "" ]; then
+    if [ -z "$wgautomation4" ] || [ "$wgautomation4" = "" ]; then
       echo -e "${InvGreen} ${CClear} Contents: <blank>"
     else
       wgautomation4unenc=$(echo "$wgautomation4" | openssl enc -d -base64 -A)
@@ -2162,7 +2162,7 @@ do
     fi
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG5${CClear} ${CGreen}(e0)${CClear} View/Edit | ${CGreen}(x0)${CClear} Execute | ${CGreen}(s0)${CClear} Skynet WL Import${CClear}"
-    if [ -z "$wgautomation5" ] || [ "$wgautomation5" == "" ]; then
+    if [ -z "$wgautomation5" ] || [ "$wgautomation5" = "" ]; then
       echo -e "${InvGreen} ${CClear} Contents: <blank>"
     else
       wgautomation5unenc=$(echo "$wgautomation5" | openssl enc -d -base64 -A)
@@ -2173,7 +2173,7 @@ do
     case $SelectSlot5 in
       e1)
          echo ""
-         if [ "$automation1" == "" ] || [ -z "$automation1" ]; then
+         if [ "$automation1" = "" ] || [ -z "$automation1" ]; then
            echo -e "${CClear}Old Script: <blank>"
            echo ""
          else
@@ -2181,10 +2181,10 @@ do
            echo ""
          fi
          read -rp 'Enter New Script (e=Exit): ' automation1new
-         if [ "$automation1new" == "" ] || [ -z "$automation1new" ]; then
+         if [ "$automation1new" = "" ] || [ -z "$automation1new" ]; then
            automation1=""
            saveconfig
-         elif [ "$automation1new" == "e" ]; then
+         elif [ "$automation1new" = "e" ]; then
            echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else
            automation1=`echo $automation1new | openssl enc -base64 -A`
@@ -2254,7 +2254,7 @@ do
 
       e2)
          echo ""
-         if [ "$automation2" == "" ] || [ -z "$automation2" ]; then
+         if [ "$automation2" = "" ] || [ -z "$automation2" ]; then
            echo -e "${CClear}Old Script: <blank>"
            echo ""
          else
@@ -2262,10 +2262,10 @@ do
            echo ""
          fi
          read -rp 'Enter New Script (e=Exit): ' automation2new
-         if [ "$automation2new" == "" ] || [ -z "$automation2new" ]; then
+         if [ "$automation2new" = "" ] || [ -z "$automation2new" ]; then
            automation2=""
            saveconfig
-         elif [ "$automation2new" == "e" ]; then
+         elif [ "$automation2new" = "e" ]; then
            echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else
            automation2=`echo $automation2new | openssl enc -base64 -A`
@@ -2335,7 +2335,7 @@ do
 
       e3)
          echo ""
-         if [ "$automation3" == "" ] || [ -z "$automation3" ]; then
+         if [ "$automation3" = "" ] || [ -z "$automation3" ]; then
            echo -e "${CClear}Old Script: <blank>"
            echo ""
          else
@@ -2343,10 +2343,10 @@ do
            echo ""
          fi
          read -rp 'Enter New Script (e=Exit): ' automation3new
-         if [ "$automation3new" == "" ] || [ -z "$automation3new" ]; then
+         if [ "$automation3new" = "" ] || [ -z "$automation3new" ]; then
            automation3=""
            saveconfig
-         elif [ "$automation3new" == "e" ]; then
+         elif [ "$automation3new" = "e" ]; then
            echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else
            automation3=`echo $automation3new | openssl enc -base64 -A`
@@ -2416,7 +2416,7 @@ do
 
       e4)
          echo ""
-         if [ "$automation4" == "" ] || [ -z "$automation4" ]; then
+         if [ "$automation4" ="" ] || [ -z "$automation4" ]; then
            echo -e "${CClear}Old Script: <blank>"
            echo ""
          else
@@ -2424,10 +2424,10 @@ do
            echo ""
          fi
          read -rp 'Enter New Script (e=Exit): ' automation4new
-         if [ "$automation4new" == "" ] || [ -z "$automation4new" ]; then
+         if [ "$automation4new" = "" ] || [ -z "$automation4new" ]; then
            automation4=""
            saveconfig
-         elif [ "$automation4new" == "e" ]; then
+         elif [ "$automation4new" = "e" ]; then
            echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else
            automation4=`echo $automation4new | openssl enc -base64 -A`
@@ -2497,7 +2497,7 @@ do
 
       e5)
          echo ""
-         if [ "$automation5" == "" ] || [ -z "$automation5" ]; then
+         if [ "$automation5" = "" ] || [ -z "$automation5" ]; then
            echo -e "${CClear}Old Script: <blank>"
            echo ""
          else
@@ -2505,10 +2505,10 @@ do
            echo ""
          fi
          read -rp 'Enter New Script (e=Exit): ' automation5new
-         if [ "$automation5new" == "" ] || [ -z "$automation5new" ]; then
+         if [ "$automation5new" = "" ] || [ -z "$automation5new" ]; then
            automation5=""
            saveconfig
-         elif [ "$automation5new" == "e" ]; then
+         elif [ "$automation5new" = "e" ]; then
            echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
          else
            automation5=`echo $automation5new | openssl enc -base64 -A`
@@ -2578,7 +2578,7 @@ do
 
      e6)
        echo ""
-       if [ "$wgautomation1" == "" ] || [ -z "$wgautomation1" ]; then
+       if [ "$wgautomation1" = "" ] || [ -z "$wgautomation1" ]; then
          echo -e "${CClear}Old Script: <blank>"
          echo ""
        else
@@ -2586,10 +2586,10 @@ do
          echo ""
        fi
        read -rp 'Enter New Script (e=Exit): ' wgautomation1new
-       if [ "$wgautomation1new" == "" ] || [ -z "$wgautomation1new" ]; then
+       if [ "$wgautomation1new" = "" ] || [ -z "$wgautomation1new" ]; then
          wgautomation1=""
          saveconfig
-       elif [ "$wgautomation1new" == "e" ]; then
+       elif [ "$wgautomation1new" = "e" ]; then
          echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
        else
          wgautomation1=`echo $wgautomation1new | openssl enc -base64 -A`
@@ -2661,7 +2661,7 @@ do
 
     e7)
        echo ""
-       if [ "$wgautomation2" == "" ] || [ -z "$wgautomation2" ]; then
+       if [ "$wgautomation2" = "" ] || [ -z "$wgautomation2" ]; then
          echo -e "${CClear}Old Script: <blank>"
          echo ""
        else
@@ -2669,10 +2669,10 @@ do
          echo ""
        fi
        read -rp 'Enter New Script (e=Exit): ' wgautomation2new
-       if [ "$wgautomation2new" == "" ] || [ -z "$wgautomation2new" ]; then
+       if [ "$wgautomation2new" = "" ] || [ -z "$wgautomation2new" ]; then
          wgautomation2=""
          saveconfig
-       elif [ "$wgautomation2new" == "e" ]; then
+       elif [ "$wgautomation2new" = "e" ]; then
          echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
        else
          wgautomation2=`echo $wgautomation2new | openssl enc -base64 -A`
@@ -2744,7 +2744,7 @@ do
 
     e8)
        echo ""
-       if [ "$wgautomation3" == "" ] || [ -z "$wgautomation3" ]; then
+       if [ "$wgautomation3" = "" ] || [ -z "$wgautomation3" ]; then
          echo -e "${CClear}Old Script: <blank>"
          echo ""
        else
@@ -2752,10 +2752,10 @@ do
          echo ""
        fi
        read -rp 'Enter New Script (e=Exit): ' wgautomation3new
-       if [ "$wgautomation3new" == "" ] || [ -z "$wgautomation3new" ]; then
+       if [ "$wgautomation3new" = "" ] || [ -z "$wgautomation3new" ]; then
          wgautomation3=""
          saveconfig
-       elif [ "$wgautomation3new" == "e" ]; then
+       elif [ "$wgautomation3new" = "e" ]; then
          echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
        else
          wgautomation3=`echo $wgautomation3new | openssl enc -base64 -A`
@@ -2827,7 +2827,7 @@ do
 
     e9)
        echo ""
-       if [ "$wgautomation4" == "" ] || [ -z "$wgautomation4" ]; then
+       if [ "$wgautomation4" = "" ] || [ -z "$wgautomation4" ]; then
          echo -e "${CClear}Old Script: <blank>"
          echo ""
        else
@@ -2835,10 +2835,10 @@ do
          echo ""
        fi
        read -rp 'Enter New Script (e=Exit): ' wgautomation4new
-       if [ "$wgautomation4new" == "" ] || [ -z "$wgautomation4new" ]; then
+       if [ "$wgautomation4new" = "" ] || [ -z "$wgautomation4new" ]; then
          wgautomation4=""
          saveconfig
-       elif [ "$wgautomation4new" == "e" ]; then
+       elif [ "$wgautomation4new" = "e" ]; then
          echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
        else
          wgautomation4=`echo $wgautomation4new | openssl enc -base64 -A`
@@ -2910,7 +2910,7 @@ do
 
     e0)
        echo ""
-       if [ "$wgautomation5" == "" ] || [ -z "$wgautomation5" ]; then
+       if [ "$wgautomation5" = "" ] || [ -z "$wgautomation5" ]; then
          echo -e "${CClear}Old Script: <blank>"
          echo ""
        else
@@ -2918,10 +2918,10 @@ do
          echo ""
        fi
        read -rp 'Enter New Script (e=Exit): ' wgautomation5new
-       if [ "$wgautomation5new" == "" ] || [ -z "$wgautomation5new" ]; then
+       if [ "$wgautomation5new" = "" ] || [ -z "$wgautomation5new" ]; then
          wgautomation5=""
          saveconfig
-       elif [ "$wgautomation5new" == "e" ]; then
+       elif [ "$wgautomation5new" = "e" ]; then
          echo ""; echo -e "${CGreen}[Exiting]${CClear}"; sleep 1
        else
          wgautomation5=`echo $wgautomation5new | openssl enc -base64 -A`
@@ -3562,7 +3562,7 @@ _SendEMailNotification_()
 sendmessage()
 {
   #If AMTM email functionality is disabled, return back to the function call
-  if [ "$amtmemailsuccess" == "0" ] && [ "$amtmemailfailure" == "0" ]; then
+  if [ "$amtmemailsuccess" = "0" ] && [ "$amtmemailfailure" = "0" ]; then
      return
   fi
 
@@ -3585,8 +3585,8 @@ sendmessage()
   tmpEMailBodyFile="/tmp/var/tmp/tmpEMailBody_${scriptFileNTag}.$$.TXT"
 
   #Pick the scenario and send email
-  if [ "$1" == "1" ] && [ "$amtmemailfailure" == "1" ]; then
-    if [ "$2" == "Recovering from WAN Down" ]; then
+  if [ "$1" = "1" ] && [ "$amtmemailfailure" = "1" ]; then
+    if [ "$2" = "Recovering from WAN Down" ]; then
       emailSubject="ALERT: Router Recovering from WAN Down"
       emailBodyTitle="ALERT: Router Recovering from WAN Down"
       {
@@ -3599,7 +3599,7 @@ sendmessage()
       printf "connectivity to stabilize before re-establishing VPN connectivity.\n"
       printf "\n"
       } > "$tmpEMailBodyFile"
-    elif [ "$2" == "VPN Slot In Error State" ]; then
+    elif [ "$2" = "VPN Slot In Error State" ]; then
       emailSubject="FAILURE: VPN Slot $3 in Error State"
       emailBodyTitle="FAILURE: VPN Slot $3 in Error State"
       {
@@ -3611,7 +3611,7 @@ sendmessage()
       printf "Please check your network environment and configuration if this error continues to persist."
       printf "\n"
       } > "$tmpEMailBodyFile"
-    elif [ "$2" == "VPN Tunnel Disconnected" ]; then
+    elif [ "$2" = "VPN Tunnel Disconnected" ]; then
       emailSubject="FAILURE: VPN Slot $3 has Disconnected"
       emailBodyTitle="FAILURE: VPN Slot $3 has Disconnected"
       {
@@ -3623,7 +3623,7 @@ sendmessage()
       printf "Please check your network environment and configuration if this error continues to persist."
       printf "\n"
       } > "$tmpEMailBodyFile"
-    elif [ "$2" == "VPN Slot Is Non-Responsive" ]; then
+    elif [ "$2" = "VPN Slot Is Non-Responsive" ]; then
       emailSubject="FAILURE: VPN Slot $3 is Non-Responsive"
       emailBodyTitle="FAILURE: VPN Slot $3 is Non-Responsive"
       {
@@ -3635,7 +3635,7 @@ sendmessage()
       printf "Please check your network environment and configuration if this error continues to persist."
       printf "\n"
       } > "$tmpEMailBodyFile"
-    elif [ "$2" == "VPN Slot Exceeded Max Ping" ]; then
+    elif [ "$2" = "VPN Slot Exceeded Max Ping" ]; then
       emailSubject="WARNING: VPN Slot $3 Exceeded Max Ping"
       emailBodyTitle="WARNING: VPN Slot $3 Exceeded Max Ping"
       {
@@ -3647,7 +3647,7 @@ sendmessage()
       printf "Please check your network environment and configuration if this error continues to persist."
       printf "\n"
       } > "$tmpEMailBodyFile"
-    elif [ "$2" == "VPN Slot Not Synced With Unbound" ]; then
+    elif [ "$2" = "VPN Slot Not Synced With Unbound" ]; then
       emailSubject="WARNING: VPN Slot $3 Not Synced with Unbound"
       emailBodyTitle="WARNING: VPN Slot $3 Not Synced with Unbound"
       {
@@ -3662,7 +3662,7 @@ sendmessage()
     ##-------------------------------------##
     ## Modified by Dan G. [2025-Jul-16]    ##
     ##-------------------------------------##
-    elif [ "$2" == "VPN Server List Query Yielded 0 Rows" ]; then
+    elif [ "$2" = "VPN Server List Query Yielded 0 Rows" ]; then
       emailSubject="WARNING: VPN Slot $3 Server List Query Yielded 0 Rows"
       emailBodyTitle="WARNING: VPN Slot $3 Server List Query Yielded 0 Rows"
       {
@@ -3675,7 +3675,7 @@ sendmessage()
       printf "Please check your network environment and configuration if this error continues to persist."
       printf "\n"
       } > "$tmpEMailBodyFile"
-    elif [ "$2" == "WG Server List Query Yielded 0 Rows" ]; then
+    elif [ "$2" = "WG Server List Query Yielded 0 Rows" ]; then
       emailSubject="WARNING: WG Slot $3 Server List Query Yielded 0 Rows"
       emailBodyTitle="WARNING: WG Slot $3 Server List Query Yielded 0 Rows"
       {
@@ -3688,7 +3688,7 @@ sendmessage()
       printf "Please check your network environment and configuration if this error continues to persist."
       printf "\n"
       } > "$tmpEMailBodyFile"
-    elif [ "$2" == "WG Slot Exceeded Max Ping" ]; then
+    elif [ "$2" = "WG Slot Exceeded Max Ping" ]; then
       emailSubject="WARNING: WG Slot $3 Exceeded Max Ping"
       emailBodyTitle="WARNING: WG Slot $3 Exceeded Max Ping"
       {
@@ -3700,7 +3700,7 @@ sendmessage()
       printf "Please check your network environment and configuration if this error continues to persist."
       printf "\n"
       } > "$tmpEMailBodyFile"
-    elif [ "$2" == "WG Handshake Exceeded" ]; then
+    elif [ "$2" = "WG Handshake Exceeded" ]; then
       emailSubject="WARNING: WG Slot $3 Exceeded Handshake"
       emailBodyTitle="WARNING: WG Slot $3 Exceeded Handshake"
       {
@@ -3712,7 +3712,7 @@ sendmessage()
       printf "Please check your network environment and configuration if this error continues to persist."
       printf "\n"
       } > "$tmpEMailBodyFile"
-    elif [ "$2" == "WG Tunnel Disconnected" ]; then
+    elif [ "$2" = "WG Tunnel Disconnected" ]; then
       emailSubject="WARNING: WG Slot $3 Tunnel Disconnected"
       emailBodyTitle="WARNING: WG Slot $3 Tunnel Disconnected"
       {
@@ -3724,7 +3724,7 @@ sendmessage()
       printf "Please check your network environment and configuration if this error continues to persist."
       printf "\n"
       } > "$tmpEMailBodyFile"
-    elif [ "$2" == "WG Slot Is Non-Responsive" ]; then
+    elif [ "$2" = "WG Slot Is Non-Responsive" ]; then
       emailSubject="WARNING: WG Slot $3 is Non-Responsive"
       emailBodyTitle="WARNING: WG Slot $3 is Non-Responsive"
       {
@@ -3740,8 +3740,8 @@ sendmessage()
     _SendEMailNotification_ "VPNMON-R3 v$version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
   fi
 
-  if [ "$1" == "0" ] && [ "$amtmemailsuccess" == "1" ]; then
-    if [ "$2" == "VPN Connection Scheduled Reset" ]; then
+  if [ "$1" = "0" ] && [ "$amtmemailsuccess" = "1" ]; then
+    if [ "$2" = "VPN Connection Scheduled Reset" ]; then
       emailSubject="SUCCESS: VPN Slot $3 Manual/Scheduled Reset"
       emailBodyTitle="SUCCESS: VPN Slot $3 Manual/Scheduled Reset"
       {
@@ -3752,7 +3752,7 @@ sendmessage()
       printf "<b>SUCCESS: VPNMON-R3</b> completed a successful manual/scheduled reset on VPN Slot $3\n"
       printf "\n"
       } > "$tmpEMailBodyFile"
-    elif [ "$2" == "VPN Reset" ]; then
+    elif [ "$2" = "VPN Reset" ]; then
       emailSubject="SUCCESS: VPN Slot $3 Manual Reset"
       emailBodyTitle="SUCCESS: VPN Slot $3 Manual Reset"
       {
@@ -3763,7 +3763,7 @@ sendmessage()
       printf "<b>SUCCESS: VPNMON-R3</b> completed a successful manual reset on VPN Slot $3\n"
       printf "\n"
       } > "$tmpEMailBodyFile"
-    elif [ "$2" == "VPN Killed" ]; then
+    elif [ "$2" = "VPN Killed" ]; then
       emailSubject="SUCCESS: VPN Slot $3 Manually Stopped & Unmonitored"
       emailBodyTitle="SUCCESS: VPN Slot $3 Manually Stopped & Unmonitored"
       {
@@ -3777,7 +3777,7 @@ sendmessage()
     ##-------------------------------------##
     ## Added by Dan G. [2025-Jul-16]       ##
     ##-------------------------------------##
-    elif [ "$2" == "WG Connection Scheduled Reset" ]; then
+    elif [ "$2" = "WG Connection Scheduled Reset" ]; then
       emailSubject="SUCCESS: WG Slot $3 Manual/Scheduled Reset"
       emailBodyTitle="SUCCESS: WG Slot $3 Manual/Scheduled Reset"
       {
@@ -3788,7 +3788,7 @@ sendmessage()
       printf "<b>SUCCESS: VPNMON-R3</b> completed a successful manual/scheduled reset on WG Slot $3\n"
       printf "\n"
       } > "$tmpEMailBodyFile"
-    elif [ "$2" == "WG Reset" ]; then
+    elif [ "$2" = "WG Reset" ]; then
       emailSubject="SUCCESS: WG Slot $3 Manual Reset"
       emailBodyTitle="SUCCESS: WG Slot $3 Manual Reset"
       {
@@ -3799,7 +3799,7 @@ sendmessage()
       printf "<b>SUCCESS: VPNMON-R3</b> completed a successful manual reset on WG Slot $3\n"
       printf "\n"
       } > "$tmpEMailBodyFile"
-    elif [ "$2" == "WG Killed" ]; then
+    elif [ "$2" = "WG Killed" ]; then
       emailSubject="SUCCESS: WG Slot $3 Manually Stopped & Unmonitored"
       emailBodyTitle="SUCCESS: WG Slot $3 Manually Stopped & Unmonitored"
       {
@@ -3858,7 +3858,7 @@ restartvpn()
     printf "${CGreen}\r[Stopping VPN Client $1]"
     service stop_vpnclient$1 >/dev/null 2>&1
     sleep 20
-    if [ "$currvpnstate" == "-1" ]; then
+    if [ "$currvpnstate" = "-1" ]; then
       nvram set vpn_client$1_state=0
     fi
     printf "\33[2K\r"
@@ -4028,7 +4028,7 @@ restartrouting()
 resetspdmerlin()
 {
 
-  if [ "$rstspdmerlin" == "1" ]
+  if [ "$rstspdmerlin" = "1" ]
   then
     printf "\33[2K\r"
     printf "${CGreen}\r[Reset spdMerlin Interfaces]"
@@ -4095,7 +4095,7 @@ killunmonwg()
 
 skynetwhitelist()
 {
-  if [ "$updateskynet" == "1" ]
+  if [ "$updateskynet" = "1" ]
   then
     ##-------------------------------------##
     ## Modified by Dan G. [2025-Jul-15]    ##
@@ -4125,12 +4125,12 @@ resettimer()
  # Create initial vr3timers.txt file if it does not exist
   if [ ! -f /jffs/addons/vpnmon-r3.d/vr3timers.txt ]; then
 
-    if [ "$availableslots" == "1 2" ]; then
+    if [ "$availableslots" = "1 2" ]; then
       { echo 'VPNTIMER1=0'
         echo 'VPNTIMER2=0'
       } > /jffs/addons/vpnmon-r3.d/vr3timers.txt
 
-    elif [ "$availableslots" == "1 2 3 4 5" ]; then
+    elif [ "$availableslots" = "1 2 3 4 5" ]; then
       { echo 'VPNTIMER1=0'
         echo 'VPNTIMER2=0'
         echo 'VPNTIMER3=0'
@@ -4146,9 +4146,9 @@ resettimer()
     fi
   fi
 
-  if [ "$2" == "VPN" ]; then
+  if [ "$2" = "VPN" ]; then
     sed -i "s/^VPNTIMER$1=.*/VPNTIMER$1=$(date +%s)/" "/jffs/addons/vpnmon-r3.d/vr3timers.txt"
-  elif [ "$2" == "WG" ]; then
+  elif [ "$2" = "WG" ]; then
     sed -i "s/^WGTIMER$1=.*/WGTIMER$1=$(date +%s)/" "/jffs/addons/vpnmon-r3.d/vr3timers.txt"
   fi
 
@@ -4202,7 +4202,7 @@ vreset()
       sleep 2
 
       #determine if the slot is monitored and reset it
-      if [ "$((VPN$slot))" == "1" ]
+      if [ "$((VPN$slot))" = "1" ]
       then
         if [ "$refreshserverlists" -eq 1 ]
         then
@@ -4276,7 +4276,7 @@ vreset()
       sleep 2
 
       #determine if the slot is monitored and reset it
-      if [ "$((WG$slot))" == "1" ]
+      if [ "$((WG$slot))" = "1" ]
       then
         if [ "$refreshserverlists" -eq 1 ]
         then
@@ -4762,10 +4762,10 @@ checkwan()
         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: WAN Connectivity Issue Detected" >> $logfile
     fi
 
-    if [ "$wandownbreakertrip" == "1" ]
+    if [ "$wandownbreakertrip" = "1" ]
     then
         # The WAN is most likely down, and keep looping through until NVRAM reports that it's back up
-        while [ "$wandownbreakertrip" == "1" ]
+        while [ "$wandownbreakertrip" = "1" ]
         do
           if [ "$availableslots" = "1 2" ]
           then
@@ -5123,13 +5123,13 @@ displayopsmenu()
        pingResetStr="${CGreen}$pingreset ms${CClear}"
     fi
 
-    if [ "$amtmemailsuccess" == "0" ] && [ "$amtmemailfailure" == "0" ]; then
+    if [ "$amtmemailsuccess" = "0" ] && [ "$amtmemailfailure" = "0" ]; then
        amtmdisp="${CDkGray}Disabled        "
-    elif [ "$amtmemailsuccess" == "1" ] && [ "$amtmemailfailure" == "0" ]; then
+    elif [ "$amtmemailsuccess" = "1" ] && [ "$amtmemailfailure" = "0" ]; then
        amtmdisp="${CGreen}Success         "
-    elif [ "$amtmemailsuccess" == "0" ] && [ "$amtmemailfailure" == "1" ]; then
+    elif [ "$amtmemailsuccess" = "0" ] && [ "$amtmemailfailure" = "1" ]; then
        amtmdisp="${CGreen}Failure         "
-    elif [ "$amtmemailsuccess" == "1" ] && [ "$amtmemailfailure" == "1" ]; then
+    elif [ "$amtmemailsuccess" = "1" ] && [ "$amtmemailfailure" = "1" ]; then
        amtmdisp="${CGreen}Success, Failure"
     else
        amtmdisp="${CDkGray}Disabled        "
@@ -5208,7 +5208,7 @@ then
 fi
 
 # Check and see if an invalid commandline option is being used
-if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-setup" ] || [ "$1" == "-reset" ] || [ "$1" == "-bw" ] || [ "$1" == "-noswitch" ] || [ "$1" == "-screen" ] || [ "$1" == "-now" ]
+if [ "$1" = "-h" ] || [ "$1" = "-help" ] || [ "$1" = "-setup" ] || [ "$1" = "-reset" ] || [ "$1" = "-bw" ] || [ "$1" = "-noswitch" ] || [ "$1" = "-screen" ] || [ "$1" = "-now" ]
 then
     clear
 else
@@ -5224,7 +5224,7 @@ else
 fi
 
 # Check to see if the help option is being called
-if [ "$1" == "-h" ] || [ "$1" == "-help" ]
+if [ "$1" = "-h" ] || [ "$1" = "-help" ]
 then
   clear
   echo ""
@@ -5261,7 +5261,7 @@ then
 fi
 
 # Check to see if the setup option is being called
-if [ "$1" == "-setup" ]
+if [ "$1" = "-setup" ]
 then
     logoNM
     vsetup
@@ -5269,20 +5269,20 @@ then
 fi
 
 # Check to see if the reset option is being called
-if [ "$1" == "-reset" ]
+if [ "$1" = "-reset" ]
 then
     echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN Reset initiated through -RESET switch" >> $logfile
     vreset
 fi
 
 # Check to see if the screen option is being called and run operations normally using the screen utility
-if [ "$1" == "-screen" ]
+if [ "$1" = "-screen" ]
 then
     screen -wipe >/dev/null 2>&1 # Kill any dead screen sessions
     sleep 1
     ScreenSess=$(screen -ls | grep "vpnmon-r3" | awk '{print $1}' | cut -d . -f 1)
       if [ -z $ScreenSess ]; then
-        if [ "$bypassscreentimer" == "1" ]; then
+        if [ "$bypassscreentimer" = "1" ]; then
           screen -dmS "vpnmon-r3" $apppath -noswitch
           sleep 1
           screen -r vpnmon-r3
@@ -5300,7 +5300,7 @@ then
           exit 0
         fi
       else
-        if [ "$bypassscreentimer" == "1" ]; then
+        if [ "$bypassscreentimer" = "1" ]; then
           sleep 1
         else
           clear
@@ -5545,7 +5545,7 @@ do
       fi
 
       #Calculate connected time for current VPN slot
-      if [ $((VPNTIMER$i)) == "0" ] || [ "$((VPN$i))" == "0" ]
+      if [ $((VPNTIMER$i)) = "0" ] || [ "$((VPN$i))" = "0" ]
       then
         sincelastreset=""
       else
@@ -5560,7 +5560,7 @@ do
       echo -e "$vpnindicator${InvDkGray}${CWhite} VPN$i${CClear} | $monitored | $servercnt | $vpnhealth | $vpnstate | $vpnip | $svrping | $vpncity$sincelastreset $citychange$ubsync"
 
       #if a vpn is monitored and disconnected, try to restart it
-      if [ "$((VPN$i))" == "1" ] && [ "$vpnstate" == "Disconnected" ]
+      if [ "$((VPN$i))" = "1" ] && [ "$vpnstate" = "Disconnected" ]
       then #reconnect
         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$i has disconnected" >> $logfile
         echo ""
@@ -5584,7 +5584,7 @@ do
       fi
 
       #if a vpn is monitored and in error state, try to restart it
-      if [ "$((VPN$i))" == "1" ] && [ "$vpnstate" == "Error State " ]
+      if [ "$((VPN$i))" = "1" ] && [ "$vpnstate" = "Error State " ]
       then #reconnect
         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$i is in an error state and being reconnected" >> $logfile
         echo ""
@@ -5609,7 +5609,7 @@ do
       fi
 
       #if a vpn is monitored and not responsive, try to restart it
-      if [ "$((VPN$i))" == "1" ] && [ "$resetvpn" != "0" ]
+      if [ "$((VPN$i))" = "1" ] && [ "$resetvpn" != "0" ]
       then #reconnect
         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$i is non-responsive and being reconnected" >> $logfile
         echo ""
@@ -5683,165 +5683,193 @@ do
 
 #-----------------Wireguard
 
-  echo -e "${InvDkGray} Wireguard                                                                                                     ${CClear}"
-  echo ""
+  if [ "$availableslots" = "1 2 3 4 5" ]; then
 
-  #Display WG client slot grid
-  echo -e "  Slot | Mon |  Svrs  | Health | WG State     | Public WG IP    | Ping--->WG | City Exit / Time"
-  echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
+    echo -e "${InvDkGray} Wireguard                                                                                                     ${CClear}"
+    echo ""
 
-  i=0
-  for i in $availableslots #loop through the VPN slots
-  do
-      #Set variables
-      wgcitychange=""
+    #Display WG client slot grid
+    echo -e "  Slot | Mon |  Svrs  | Health | WG State     | Public WG IP    | Ping--->WG | City Exit / Time"
+    echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
 
-      #determine if the slot is monitored#
-      if [ "$((WG$i))" = "1" ]; then
-         wgmonitored="${CGreen}[X]${CClear}"
-      else
-         wgmonitored="[ ]"
-      fi
+    i=0
+    for i in $availableslots #loop through the VPN slots
+    do
+        #Set variables
+        wgcitychange=""
 
-      #determine the vpn state, and if connected, get vpn IP and city
-      wgstate="$(_WG_GetClientState_ "$i")"
-
-      if [ "$wgstate" = "0" ]
-      then
-         wgstate="Disconnected"
-         wghealth="${CDkGray}[n/a ]${CClear}"
-         wgindicator="${InvDkGray} ${CClear}"
-         wgip="          ${CDkGray}[n/a]${CClear}"
-         wgcity="${CDkGray}[n/a]${CClear}"
-         wgsvrping="     ${CDkGray}[n/a]${CClear}"
-      elif [ "$wgstate" = "2" ]
-      then
-         wgstate="Connected   "
-         checkwg "$i"
-         getwgip "$i"
-         getwgcity "$i"
-         if [ -z "$wgping" ]
-         then
-             wgsvrping="${CRed}[PING ERR]${CClear}"
-             wghealth="${CYellow}[UNKN]${CClear}"
-             wgindicator="${InvYellow} ${CClear}"
-         else
-             ## No need to do left-padding with zeros for alignment ##
-             wgsvrping="$(printf "[%8.3f]" "$wgping")"
-         fi
-      else
-         wgstate="Unknown     "
-         wghealth="${CDkGray}[n/a ]${CClear}"
-         wgindicator="${InvDkGray} ${CClear}"
-         wgip="          ${CDkGray}[n/a]${CClear}"
-         wgcity="${CDkGray}[n/a]${CClear}"
-         wgsvrping="     ${CDkGray}[n/a]${CClear}"
-      fi
-
-      #Determine how many server entries are in each of the vpn slot alternate server files#
-      if [ -s "/jffs/addons/vpnmon-r3.d/vr3wgsvr$i.txt" ]
-      then
-          wgservercnt="$(cat "/jffs/addons/vpnmon-r3.d/vr3wgsvr$i.txt" | wc -l)"
-          if [ -z "$wgservercnt" ] || [ "$wgservercnt" -lt 1 ]
-          then
-              wgservercnt="${CRed}[0000]${CClear}"
-          else
-              ## No need to do left-padding with zeros for alignment ##
-              wgservercnt="$(printf "[%4d]" "$wgservercnt")"
-          fi
-      else
-          wgservercnt="${CRed}[0000]${CClear}"
-      fi
-
-      #Calculate connected time for current VPN slot
-      if [ $((WGTIMER$i)) == "0" ] || [ "$((WG$i))" == "0" ]
-      then
-        wgsincelastreset=""
-      else
-        wgcurrtime=$(date +%s)
-        wgtimediff=$((wgcurrtime-WGTIMER$i))
-        wgsincelastreset=$(printf ': %dd %02dh:%02dm\n' $(($wgtimediff/86400)) $(($wgtimediff%86400/3600)) $(($wgtimediff%3600/60)))
-      fi
-
-      #if "$firstDataCollection" ; then printf "\r\033[0K" ; firstDataCollection=false ; fi
-
-      # Print the results of all data gathered sofar #
-      echo -e "$wgindicator${InvDkGray}${CWhite}  WG$i${CClear} | $wgmonitored | $wgservercnt | $wghealth | $wgstate | $wgip | $wgsvrping | $wgcity$wgsincelastreset $wgcitychange"
-
-      #if a wg connection is monitored and disconnected, try to restart it
-      if [ "$((WG$i))" == "1" ] && [ "$wgstate" == "Disconnected" ]
-      then #reconnect
-        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WG$i has disconnected" >> $logfile
-        echo ""
-        printf "\33[2K\r"
-
-        #Display a standard timer#
-        timer=0
-        while [ $timer -ne 5 ]
-        do
-          timer="$((timer+1))"
-          preparebar 46 "|"
-          progressbarpause $timer 5 "" "s" "Standard"
-        done
-        printf "\33[2K\r"
-
-        restartwg $i
-        sendmessage 1 "WG Tunnel Disconnected" $i
-        restartrouting
-        resetspdmerlin
-        exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
-      fi
-
-      #if the wg handshake exceeds 200s, try to restart it
-      # Inspiration from ZebMcKayHan's WGC Watchdog Script
-      if [ "$((WG$i))" == "1" ] && [ "$wgstate" == "Connected" ]
-      then
-        last_handshake=$(wg show wgc$i latest-handshakes | awk '{print $2}') >/dev/null 2>&1
-        if [ ! -z $last_handshake ]
-          then
-            idle_seconds=$((`date +%s`-${last_handshake}))
-            if [ "$idle_seconds" -gt "200" ]
-            then #reconnect
-              echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WG$i handshake exceeded 200s" >> $logfile
-              echo ""
-              printf "\33[2K\r"
-
-              #Display a standard timer#
-              timer=0
-              while [ $timer -ne 5 ]
-              do
-                timer="$((timer+1))"
-                preparebar 46 "|"
-                progressbarpause $timer 5 "" "s" "Standard"
-              done
-              printf "\33[2K\r"
-
-              restartwg $i
-              sendmessage 1 "WG Handshake Exceeded" $i
-              restartrouting
-              resetspdmerlin
-              exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
-            fi
+        #determine if the slot is monitored#
+        if [ "$((WG$i))" = "1" ]; then
+           wgmonitored="${CGreen}[X]${CClear}"
+        else
+           wgmonitored="[ ]"
         fi
-      fi
 
-      # if a wg connection ping is greater than a certain amount, restart it
-      maxsvrping=$(awk "BEGIN {printf \"%3.0f\", ${wgping}}") >/dev/null 2>&1
-      MP=$?
-      if [ $MP -ne 0 ]; then
-        maxsvrping=0
-        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: Invalid WG PING information received." >> $logfile
-      fi
+        #determine the vpn state, and if connected, get vpn IP and city
+        wgstate="$(_WG_GetClientState_ "$i")"
 
-      if [ "$pingreset" -gt 0 ]
-      then
-        if [ "$maxsvrping" -ge "$pingreset" ]
+        if [ "$wgstate" = "0" ]
         then
+           wgstate="Disconnected"
+           wghealth="${CDkGray}[n/a ]${CClear}"
+           wgindicator="${InvDkGray} ${CClear}"
+           wgip="          ${CDkGray}[n/a]${CClear}"
+           wgcity="${CDkGray}[n/a]${CClear}"
+           wgsvrping="     ${CDkGray}[n/a]${CClear}"
+        elif [ "$wgstate" = "2" ]
+        then
+           wgstate="Connected   "
+           checkwg "$i"
+           getwgip "$i"
+           getwgcity "$i"
+           if [ -z "$wgping" ]
+           then
+               wgsvrping="${CRed}[PING ERR]${CClear}"
+               wghealth="${CYellow}[UNKN]${CClear}"
+               wgindicator="${InvYellow} ${CClear}"
+           else
+               ## No need to do left-padding with zeros for alignment ##
+               wgsvrping="$(printf "[%8.3f]" "$wgping")"
+           fi
+        else
+           wgstate="Unknown     "
+           wghealth="${CDkGray}[n/a ]${CClear}"
+           wgindicator="${InvDkGray} ${CClear}"
+           wgip="          ${CDkGray}[n/a]${CClear}"
+           wgcity="${CDkGray}[n/a]${CClear}"
+           wgsvrping="     ${CDkGray}[n/a]${CClear}"
+        fi
+
+        #Determine how many server entries are in each of the vpn slot alternate server files#
+        if [ -s "/jffs/addons/vpnmon-r3.d/vr3wgsvr$i.txt" ]
+        then
+            wgservercnt="$(cat "/jffs/addons/vpnmon-r3.d/vr3wgsvr$i.txt" | wc -l)"
+            if [ -z "$wgservercnt" ] || [ "$wgservercnt" -lt 1 ]
+            then
+                wgservercnt="${CRed}[0000]${CClear}"
+            else
+                ## No need to do left-padding with zeros for alignment ##
+                wgservercnt="$(printf "[%4d]" "$wgservercnt")"
+            fi
+        else
+            wgservercnt="${CRed}[0000]${CClear}"
+        fi
+
+        #Calculate connected time for current VPN slot
+        if [ $((WGTIMER$i)) = "0" ] || [ "$((WG$i))" = "0" ]
+        then
+          wgsincelastreset=""
+        else
+          wgcurrtime=$(date +%s)
+          wgtimediff=$((wgcurrtime-WGTIMER$i))
+          wgsincelastreset=$(printf ': %dd %02dh:%02dm\n' $(($wgtimediff/86400)) $(($wgtimediff%86400/3600)) $(($wgtimediff%3600/60)))
+        fi
+
+        #if "$firstDataCollection" ; then printf "\r\033[0K" ; firstDataCollection=false ; fi
+
+        # Print the results of all data gathered sofar #
+        echo -e "$wgindicator${InvDkGray}${CWhite}  WG$i${CClear} | $wgmonitored | $wgservercnt | $wghealth | $wgstate | $wgip | $wgsvrping | $wgcity$wgsincelastreset $wgcitychange"
+
+        #if a wg connection is monitored and disconnected, try to restart it
+        if [ "$((WG$i))" = "1" ] && [ "$wgstate" = "Disconnected" ]
+        then #reconnect
+          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WG$i has disconnected" >> $logfile
           echo ""
           printf "\33[2K\r"
-          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WG$i PING exceeds max allowed ($pingreset ms)" >> $logfile
-          printf "${CGreen}\r[Maximum PING Exceeded]"
-          sleep 3
+
+          #Display a standard timer#
+          timer=0
+          while [ $timer -ne 5 ]
+          do
+            timer="$((timer+1))"
+            preparebar 46 "|"
+            progressbarpause $timer 5 "" "s" "Standard"
+          done
+          printf "\33[2K\r"
+
+          restartwg $i
+          sendmessage 1 "WG Tunnel Disconnected" $i
+          restartrouting
+          resetspdmerlin
+          exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
+        fi
+
+        #if the wg handshake exceeds 200s, try to restart it
+        # Inspiration from ZebMcKayHan's WGC Watchdog Script
+        if [ "$((WG$i))" = "1" ] && [ "$wgstate" = "Connected" ]
+        then
+          last_handshake=$(wg show wgc$i latest-handshakes | awk '{print $2}') >/dev/null 2>&1
+          if [ ! -z $last_handshake ]
+            then
+              idle_seconds=$((`date +%s`-${last_handshake}))
+              if [ "$idle_seconds" -gt "200" ]
+              then #reconnect
+                echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WG$i handshake exceeded 200s" >> $logfile
+                echo ""
+                printf "\33[2K\r"
+
+                #Display a standard timer#
+                timer=0
+                while [ $timer -ne 5 ]
+                do
+                  timer="$((timer+1))"
+                  preparebar 46 "|"
+                  progressbarpause $timer 5 "" "s" "Standard"
+                done
+                printf "\33[2K\r"
+
+                restartwg $i
+                sendmessage 1 "WG Handshake Exceeded" $i
+                restartrouting
+                resetspdmerlin
+                exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
+              fi
+          fi
+        fi
+
+        # if a wg connection ping is greater than a certain amount, restart it
+        maxsvrping=$(awk "BEGIN {printf \"%3.0f\", ${wgping}}") >/dev/null 2>&1
+        MP=$?
+        if [ $MP -ne 0 ]; then
+          maxsvrping=0
+          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: Invalid WG PING information received." >> $logfile
+        fi
+
+        if [ "$pingreset" -gt 0 ]
+        then
+          if [ "$maxsvrping" -ge "$pingreset" ]
+          then
+            echo ""
+            printf "\33[2K\r"
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WG$i PING exceeds max allowed ($pingreset ms)" >> $logfile
+            printf "${CGreen}\r[Maximum PING Exceeded]"
+            sleep 3
+            printf "\33[2K\r"
+
+            #display a standard timer#
+            timer=0
+            while [ $timer -ne 5 ]
+            do
+              timer="$((timer+1))"
+              preparebar 46 "|"
+              progressbarpause $timer 5 "" "s" "Standard"
+              #sleep 1
+            done
+            printf "\33[2K\r"
+
+            restartwg $i
+            sendmessage 1 "WG Slot Exceeded Max Ping" $i
+            restartrouting
+            resetspdmerlin
+            exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
+          fi
+        fi
+
+        #if a wg is monitored and not responsive, try to restart it
+        if [ "$((WG$i))" = "1" ] && [ "$resetwg" != "0" ]
+        then #reconnect
+          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WG$i is non-responsive and being reconnected" >> $logfile
+          echo ""
           printf "\33[2K\r"
 
           #display a standard timer#
@@ -5855,48 +5883,23 @@ do
           done
           printf "\33[2K\r"
 
-          restartwg $i
-          sendmessage 1 "WG Slot Exceeded Max Ping" $i
+          restartwg $resetwg
+          sendmessage 1 "WG Slot Is Non-Responsive" $resetwg
           restartrouting
           resetspdmerlin
           exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
         fi
-      fi
 
-      #if a wg is monitored and not responsive, try to restart it
-      if [ "$((WG$i))" == "1" ] && [ "$resetwg" != "0" ]
-      then #reconnect
-        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WG$i is non-responsive and being reconnected" >> $logfile
-        echo ""
-        printf "\33[2K\r"
+        #Reset variables
+        wgsincelastreset=""
 
-        #display a standard timer#
-        timer=0
-        while [ $timer -ne 5 ]
-        do
-          timer="$((timer+1))"
-          preparebar 46 "|"
-          progressbarpause $timer 5 "" "s" "Standard"
-          #sleep 1
-        done
-        printf "\33[2K\r"
+    done
 
-        restartwg $resetwg
-        sendmessage 1 "WG Slot Is Non-Responsive" $resetwg
-        restartrouting
-        resetspdmerlin
-        exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
-      fi
+    echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
+    echo ""
 
-      #Reset variables
-      wgsincelastreset=""
-
-  done
-
-  echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
-  echo ""
-
-#-----------------
+  #-----------------
+  fi
 
   #display a standard timer#
   timer=0
