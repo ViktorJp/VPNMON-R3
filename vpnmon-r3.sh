@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.5.02a (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.5.03b (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
@@ -14,7 +14,7 @@
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.5.02a"                                               # Version tracker
+version="1.5.03b"                                               # Version tracker
 beta=1                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -1815,7 +1815,7 @@ do
   echo -e "${InvGreen} ${CClear} NANO INSTRUCTIONS: CTRL-O + Enter (save), CTRL-X (exit)${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG1${CClear} ${CGreen}(1)${CClear}"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG1${CClear} ${CGreen}(6)${CClear}"
     if [ -f /jffs/addons/vpnmon-r3.d/vr3wgsvr1.txt ]; then
       wglist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3wgsvr1.txt | sed 's/,$/\n/')
       echo -en "${InvGreen} ${CClear} Contents: "; printf "%.75s>\n" $wglist
@@ -1824,7 +1824,7 @@ do
     fi
   echo -e "${InvGreen} ${CClear}"
 
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG2${CClear} ${CGreen}(2)${CClear}"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG2${CClear} ${CGreen}(7)${CClear}"
     if [ -f /jffs/addons/vpnmon-r3.d/vr3wgsvr2.txt ]; then
       wglist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3wgsvr2.txt | sed 's/,$/\n/')
       echo -en "${InvGreen} ${CClear} Contents: "; printf "%.75s>\n" $wglist
@@ -1833,7 +1833,7 @@ do
     fi
   echo -e "${InvGreen} ${CClear}"
 
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG3${CClear} ${CGreen}(3)${CClear}"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG3${CClear} ${CGreen}(8)${CClear}"
     if [ -f /jffs/addons/vpnmon-r3.d/vr3wgsvr3.txt ]; then
       wglist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3wgsvr3.txt | sed 's/,$/\n/')
       echo -en "${InvGreen} ${CClear} Contents: "; printf "%.75s>\n" $wglist
@@ -1842,7 +1842,7 @@ do
     fi
   echo -e "${InvGreen} ${CClear}"
 
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}wg4${CClear} ${CGreen}(4)${CClear}"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}wg4${CClear} ${CGreen}(9)${CClear}"
     if [ -f /jffs/addons/vpnmon-r3.d/vr3wgsvr4.txt ]; then
       wglist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3wgsvr4.txt | sed 's/,$/\n/')
       echo -en "${InvGreen} ${CClear} Contents: "; printf "%.75s>\n" $wglist
@@ -1851,7 +1851,7 @@ do
     fi
   echo -e "${InvGreen} ${CClear}"
 
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG5${CClear} ${CGreen}(5)${CClear}"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG5${CClear} ${CGreen}(0)${CClear}"
     if [ -f /jffs/addons/vpnmon-r3.d/vr3wgsvr5.txt ]; then
       wglist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3wgsvr5.txt | sed 's/,$/\n/')
       echo -en "${InvGreen} ${CClear} Contents: "; printf "%.75s>\n" $wglist
@@ -1859,13 +1859,13 @@ do
       echo -e "${InvGreen} ${CClear} Contents: <blank>"
     fi
   echo ""
-  read -p "Please select? (1-5, e=Exit): " SelectSlot
+  read -p "Please select? (6-0, e=Exit): " SelectSlot
   case $SelectSlot in
-    1) export TERM=linux; nano +999999 --linenumbers /jffs/addons/vpnmon-r3.d/vr3wgsvr1.txt;;
-    2) export TERM=linux; nano +999999 --linenumbers /jffs/addons/vpnmon-r3.d/vr3wgsvr2.txt;;
-    3) export TERM=linux; nano +999999 --linenumbers /jffs/addons/vpnmon-r3.d/vr3wgsvr3.txt;;
-    4) export TERM=linux; nano +999999 --linenumbers /jffs/addons/vpnmon-r3.d/vr3wgsvr4.txt;;
-    5) export TERM=linux; nano +999999 --linenumbers /jffs/addons/vpnmon-r3.d/vr3wgsvr5.txt;;
+    6) export TERM=linux; nano +999999 --linenumbers /jffs/addons/vpnmon-r3.d/vr3wgsvr1.txt;;
+    7) export TERM=linux; nano +999999 --linenumbers /jffs/addons/vpnmon-r3.d/vr3wgsvr2.txt;;
+    8) export TERM=linux; nano +999999 --linenumbers /jffs/addons/vpnmon-r3.d/vr3wgsvr3.txt;;
+    9) export TERM=linux; nano +999999 --linenumbers /jffs/addons/vpnmon-r3.d/vr3wgsvr4.txt;;
+    0) export TERM=linux; nano +999999 --linenumbers /jffs/addons/vpnmon-r3.d/vr3wgsvr5.txt;;
     [Ee])
       timer="$timerloop"
       break;;
@@ -4085,7 +4085,7 @@ skynetwhitelist()
     ##-------------------------------------##
     ## Modified by Dan G. [2025-Jul-15]    ##
     ##-------------------------------------##
-    if echo "$1" | grep -q "wg"; then 
+    if echo "$1" | grep -q "wg"; then
       slotnum=$(echo "$1" | tr -cd '0-9')
       printf "${CGreen}\r[Whitelisting WG Server Slot $slotnum List in the Skynet Firewall]${CClear}\n"
       awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr${slotnum}.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
@@ -4267,13 +4267,13 @@ vreset()
         then
           if [ -f "/jffs/addons/vpnmon-r3.d/vr3wgsvr$slot.txt" ]
           then
-            echo -e "${CGreen}[Executing Custom Server List Script for WG Slot $slot]${CClear}"
+            echo -e "${CGreen}[Executing Custom WG Server List Script for WG Slot $slot]${CClear}"
             slottmp="wgautomation${slot}"
             eval slottmp="\$${slottmp}"
             if [ -z "$slottmp" ]
             then
               echo ""
-              echo -e "${CGreen}[Custom VPN Client Server Query not found for WG Slot $slot]${CClear}"
+              echo -e "${CGreen}[Custom WG Client Server Query not found for WG Slot $slot]${CClear}"
             else
               wgautomationunenc="$(echo "$slottmp" | openssl enc -d -base64 -A)"
               echo ""
@@ -4292,19 +4292,18 @@ vreset()
 
               if [ "$dlcnt" -gt 1 ]
               then
-                wgslot = "wg$slot"
                 cp "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" "/jffs/addons/vpnmon-r3.d/vr3wgsvr$slot.txt" >/dev/null 2>&1
                 rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
                 echo -e "${CGreen}[$dlcnt Rows Retrieved From Source]${CClear}"
-                echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom VPN Client Server List Query Executed for WG Slot $slot ($dlcnt rows)" >> $logfile
+                echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Custom WG Client Server List Query Executed for WG Slot $slot ($dlcnt rows)" >> $logfile
                 sleep 3
                 echo ""
-                skynetwhitelist $wgslot
+                skynetwhitelist wg$slot
                 echo ""
               else
                 rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
                 echo -e "${CGreen}[$dlcnt Rows Retrieved From Source - Preserving Original Server List]${CClear}"
-                echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List Query for WG Slot $slot yielded 0 rows -- Query may be invalid or VPN API service may be down" >> $logfile
+                echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom WG Client Server List Query for WG Slot $slot yielded 0 rows -- Query may be invalid or WG API service may be down" >> $logfile
                 sendmessage 1 "WG Server List Query Yielded 0 Rows" $slot
                 sleep 3
                 echo ""
@@ -4312,8 +4311,8 @@ vreset()
             fi
           else
             echo ""
-            echo -e "${CRed}[Custom VPN Client Server List File not found for WG Slot $slot]${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom VPN Client Server List File not found for WG Slot $slot" >> $logfile
+            echo -e "${CRed}[Custom WG Client Server List File not found for WG Slot $slot]${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Custom WG Client Server List File not found for WG Slot $slot" >> $logfile
             sleep 3
           fi
         fi
