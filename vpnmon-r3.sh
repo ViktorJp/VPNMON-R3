@@ -1817,8 +1817,10 @@ do
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG1${CClear} ${CGreen}(6)${CClear}"
     if [ -f /jffs/addons/vpnmon-r3.d/vr3wgsvr1.txt ]; then
-      wglist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3wgsvr1.txt | sed 's/,$/\n/')
-      echo -en "${InvGreen} ${CClear} Contents: "; printf "%.75s>\n" $wglist
+      #wglist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3wgsvr1.txt | sed 's/,$/\n/')
+      #wglist=$(awk -F, '{print $1}' /jffs/addons/vpnmon-r3.d/vr3wgsvr1.txt | paste -s -d,)
+      wglist=$(awk -F, '{printf "%s%s", sep, $1; sep=","} END {print ""}' /jffs/addons/vpnmon-r3.d/vr3wgsvr1.txt | awk '{print substr($0, 1, 75) ">"}')
+      echo -en "${InvGreen} ${CClear} Contents: "; echo $wglist
     else
       echo -e "${InvGreen} ${CClear} Contents: <blank>"
     fi
@@ -1826,8 +1828,10 @@ do
 
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG2${CClear} ${CGreen}(7)${CClear}"
     if [ -f /jffs/addons/vpnmon-r3.d/vr3wgsvr2.txt ]; then
-      wglist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3wgsvr2.txt | sed 's/,$/\n/')
-      echo -en "${InvGreen} ${CClear} Contents: "; printf "%.75s>\n" $wglist
+      #wglist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3wgsvr2.txt | sed 's/,$/\n/')
+      #wglist=$(awk -F, '{print $1}' /jffs/addons/vpnmon-r3.d/vr3wgsvr2.txt | paste -s -d,)
+      wglist=$(awk -F, '{printf "%s%s", sep, $1; sep=","} END {print ""}' /jffs/addons/vpnmon-r3.d/vr3wgsvr2.txt | awk '{print substr($0, 1, 75) ">"}')
+      echo -en "${InvGreen} ${CClear} Contents: "; echo $wglist
     else
       echo -e "${InvGreen} ${CClear} Contents: <blank>"
     fi
@@ -1835,8 +1839,10 @@ do
 
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG3${CClear} ${CGreen}(8)${CClear}"
     if [ -f /jffs/addons/vpnmon-r3.d/vr3wgsvr3.txt ]; then
-      wglist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3wgsvr3.txt | sed 's/,$/\n/')
-      echo -en "${InvGreen} ${CClear} Contents: "; printf "%.75s>\n" $wglist
+      #wglist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3wgsvr3.txt | sed 's/,$/\n/')
+      #wglist=$(awk -F, '{print $1}' /jffs/addons/vpnmon-r3.d/vr3wgsvr3.txt | paste -s -d,)
+      wglist=$(awk -F, '{printf "%s%s", sep, $1; sep=","} END {print ""}' /jffs/addons/vpnmon-r3.d/vr3wgsvr3.txt | awk '{print substr($0, 1, 75) ">"}')
+      echo -en "${InvGreen} ${CClear} Contents: "; echo $wglist
     else
       echo -e "${InvGreen} ${CClear} Contents: <blank>"
     fi
@@ -1844,8 +1850,10 @@ do
 
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}wg4${CClear} ${CGreen}(9)${CClear}"
     if [ -f /jffs/addons/vpnmon-r3.d/vr3wgsvr4.txt ]; then
-      wglist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3wgsvr4.txt | sed 's/,$/\n/')
-      echo -en "${InvGreen} ${CClear} Contents: "; printf "%.75s>\n" $wglist
+      #wglist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3wgsvr4.txt | sed 's/,$/\n/')
+      #wglist=$(awk -F, '{print $1}' /jffs/addons/vpnmon-r3.d/vr3wgsvr4.txt | paste -s -d,)
+      wglist=$(awk -F, '{printf "%s%s", sep, $1; sep=","} END {print ""}' /jffs/addons/vpnmon-r3.d/vr3wgsvr4.txt | awk '{print substr($0, 1, 75) ">"}')
+      echo -en "${InvGreen} ${CClear} Contents: "; echo $wglist
     else
       echo -e "${InvGreen} ${CClear} Contents: <blank>"
     fi
@@ -1853,8 +1861,10 @@ do
 
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG5${CClear} ${CGreen}(0)${CClear}"
     if [ -f /jffs/addons/vpnmon-r3.d/vr3wgsvr5.txt ]; then
-      wglist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3wgsvr5.txt | sed 's/,$/\n/')
-      echo -en "${InvGreen} ${CClear} Contents: "; printf "%.75s>\n" $wglist
+      #wglist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3wgsvr5.txt | sed 's/,$/\n/')
+      #wglist=$(awk -F, '{print $1}' /jffs/addons/vpnmon-r3.d/vr3wgsvr5.txt | paste -s -d,)
+      wglist=$(awk -F, '{printf "%s%s", sep, $1; sep=","} END {print ""}' /jffs/addons/vpnmon-r3.d/vr3wgsvr5.txt | awk '{print substr($0, 1, 75) ">"}')
+      echo -en "${InvGreen} ${CClear} Contents: "; echo $wglist
     else
       echo -e "${InvGreen} ${CClear} Contents: <blank>"
     fi
