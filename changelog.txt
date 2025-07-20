@@ -24,6 +24,11 @@ v1.5.03b - (TBA)
            instead of "VPN". 
          - PATCH: Fixed the WG Client Slot Server List Maintenance page to accurately display the first value
            (Connection Description) in a comma-separated list.
+         - PATCH: Clarified the "Number of Available OVPN/WG Client Slots" menu item under the config, to bring
+           more understanding that (2) is strictly for older routers who can only have a max of 2 OVPN client
+           slots at any given time, but also don't have any native WG capability without the help of 3rd party
+           scripts. The (5) option provides capabilities for 5 x OVPN and 5 x WG client slots, as available on
+           most (if not all) newer routers running the later versions of the Merlin FW.
 
 v1.4.1   - (June 29, 2025)
          - MINOR: Added the capability of optionally integrating with spdMerlin, and having it refresh it's list
