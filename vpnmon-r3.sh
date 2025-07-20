@@ -850,6 +850,12 @@ fi
 
 while true
 do
+	if [ "$availableslots" == "1 2" ]; then
+		 availableslotsdisp="2 x OVPN"
+	elif [ "$availableslots" == "1 2 3 4 5" ]; then
+		 availableslotsdisp="5 x OVPN | 5 x WG"
+	fi
+	
   if [ "$unboundclient" -eq 0 ]; then
      unboundclientexp="Disabled"
   else
@@ -899,7 +905,7 @@ do
   echo -e "${InvGreen} ${CClear} customizable parameters that affect the operation of this script.${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(1)${CClear} : Number of VPN Client Slots available         : ${CGreen}$availableslots"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(1)${CClear} : Number of VPN/WG Client Slots available      : ${CGreen}$availableslotsdisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(2)${CClear} : Custom PING host to determine VPN health     : ${CGreen}$PINGHOST"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(3)${CClear} : Custom Event Log size (rows)                 : ${CGreen}$logsize"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(4)${CClear} : Unbound DNS Lookups over VPN Integration     : ${CGreen}$unboundclientexp"
@@ -917,21 +923,28 @@ do
     case $SelectSlot in
       1)
         clear
-        echo -e "${InvGreen} ${InvDkGray}${CWhite} Number of VPN Client Slots Available on Router                                        ${CClear}"
+        echo -e "${InvGreen} ${InvDkGray}${CWhite} Number of VPN/WG Client Slots Available on Router                                     ${CClear}"
         echo -e "${InvGreen} ${CClear}"
-        echo -e "${InvGreen} ${CClear} Please indicate how many VPN client slots your router is configured with. Certain${CClear}"
-        echo -e "${InvGreen} ${CClear} older model routers (RT-AC68U) can only handle a maximum of 2 client slots, while${CClear}"
-        echo -e "${InvGreen} ${CClear} the vast majority of newer models can handle 5."
+        echo -e "${InvGreen} ${CClear} Please indicate how many VPN/WG client slots your router is configured with. Certain${CClear}"
+        echo -e "${InvGreen} ${CClear} older model routers (RT-AC68U) can only handle a maximum of 2 OVPN client slots, and${CClear}"
+        echo -e "${InvGreen} ${CClear} natively can't handle WG without some effort using 3rd party scripts, while the vast${CClear}"
+        echo -e "${InvGreen} ${CClear} majority of newer models can handle 5 OVPN and 5 WG slots. Easiest way to tell is by${CClear}"
+        echo -e "${InvGreen} ${CClear} looking at your VPN settings within the Merlin Web UI. Please choose below:"
         echo -e "${InvGreen} ${CClear}"
-        echo -e "${InvGreen} ${CClear} (Default = 5 VPN client slots)${CClear}"
+        echo -e "${InvGreen} ${CClear} ${CGreen}(2)${CClear} = 2 x OVPN slots (Older router models)"
+        echo -e "${InvGreen} ${CClear}"
+        echo -e "${InvGreen} ${CClear} ${CGreen}(5)${CClear} = 5 x OVPN | 5 x WG slots (Newer router models)"
+        echo -e "${InvGreen} ${CClear}"
+        echo -e "${InvGreen} ${CClear} (Default = 5 VPN/WG client slots)${CClear}"
         echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
         echo
-        echo -e "${CClear}Current: ${CGreen}$availableslots${CClear}" ; echo
+        echo -e "${CClear}Current: ${CGreen}$availableslotsdisp${CClear}" ; echo
         read -p "Please enter value (2 or 5)? (e=Exit): " newAvailableSlots
         if [ "$newAvailableSlots" = "2" ]
         then
             availableslots="1 2"
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslots" >> $logfile
+            availableslotsdisp="2 x OVPN"
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslotsdisp" >> $logfile
             rm -f /jffs/addons/vpnmon-r3.d/vr3clients.txt
             rm -f /jffs/addons/vpnmon-r3.d/vr3timers.txt
             saveconfig
@@ -939,7 +952,8 @@ do
         elif [ "$newAvailableSlots" = "5" ]
         then
             availableslots="1 2 3 4 5"
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslots" >> $logfile
+            availableslotsdisp="5 x OVPN | 5 x WG"
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslotsdisp" >> $logfile
             rm -f /jffs/addons/vpnmon-r3.d/vr3clients.txt
             rm -f /jffs/addons/vpnmon-r3.d/vr3timers.txt
             saveconfig
@@ -950,8 +964,9 @@ do
         else
             previousValue="$availableslots"
             availableslots="${availableslots:=1 2 3 4 5}"
+            availableslotsdisp="5 x OVPN | 5 x WG"
             [ "$availableslots" != "$previousValue" ] && \
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslots" >> $logfile
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslotsdisp" >> $logfile
             rm -f /jffs/addons/vpnmon-r3.d/vr3clients.txt
             rm -f /jffs/addons/vpnmon-r3.d/vr3timers.txt
             saveconfig
@@ -1817,8 +1832,6 @@ do
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG1${CClear} ${CGreen}(6)${CClear}"
     if [ -f /jffs/addons/vpnmon-r3.d/vr3wgsvr1.txt ]; then
-      #wglist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3wgsvr1.txt | sed 's/,$/\n/')
-      #wglist=$(awk -F, '{print $1}' /jffs/addons/vpnmon-r3.d/vr3wgsvr1.txt | paste -s -d,)
       wglist=$(awk -F, '{printf "%s%s", sep, $1; sep=","} END {print ""}' /jffs/addons/vpnmon-r3.d/vr3wgsvr1.txt | awk '{print substr($0, 1, 75) ">"}')
       echo -en "${InvGreen} ${CClear} Contents: "; echo $wglist
     else
@@ -1828,8 +1841,6 @@ do
 
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG2${CClear} ${CGreen}(7)${CClear}"
     if [ -f /jffs/addons/vpnmon-r3.d/vr3wgsvr2.txt ]; then
-      #wglist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3wgsvr2.txt | sed 's/,$/\n/')
-      #wglist=$(awk -F, '{print $1}' /jffs/addons/vpnmon-r3.d/vr3wgsvr2.txt | paste -s -d,)
       wglist=$(awk -F, '{printf "%s%s", sep, $1; sep=","} END {print ""}' /jffs/addons/vpnmon-r3.d/vr3wgsvr2.txt | awk '{print substr($0, 1, 75) ">"}')
       echo -en "${InvGreen} ${CClear} Contents: "; echo $wglist
     else
@@ -1839,8 +1850,6 @@ do
 
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG3${CClear} ${CGreen}(8)${CClear}"
     if [ -f /jffs/addons/vpnmon-r3.d/vr3wgsvr3.txt ]; then
-      #wglist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3wgsvr3.txt | sed 's/,$/\n/')
-      #wglist=$(awk -F, '{print $1}' /jffs/addons/vpnmon-r3.d/vr3wgsvr3.txt | paste -s -d,)
       wglist=$(awk -F, '{printf "%s%s", sep, $1; sep=","} END {print ""}' /jffs/addons/vpnmon-r3.d/vr3wgsvr3.txt | awk '{print substr($0, 1, 75) ">"}')
       echo -en "${InvGreen} ${CClear} Contents: "; echo $wglist
     else
@@ -1850,8 +1859,6 @@ do
 
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}wg4${CClear} ${CGreen}(9)${CClear}"
     if [ -f /jffs/addons/vpnmon-r3.d/vr3wgsvr4.txt ]; then
-      #wglist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3wgsvr4.txt | sed 's/,$/\n/')
-      #wglist=$(awk -F, '{print $1}' /jffs/addons/vpnmon-r3.d/vr3wgsvr4.txt | paste -s -d,)
       wglist=$(awk -F, '{printf "%s%s", sep, $1; sep=","} END {print ""}' /jffs/addons/vpnmon-r3.d/vr3wgsvr4.txt | awk '{print substr($0, 1, 75) ">"}')
       echo -en "${InvGreen} ${CClear} Contents: "; echo $wglist
     else
@@ -1861,8 +1868,6 @@ do
 
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG5${CClear} ${CGreen}(0)${CClear}"
     if [ -f /jffs/addons/vpnmon-r3.d/vr3wgsvr5.txt ]; then
-      #wglist=$(awk -vORS=, '{ print $1 }' /jffs/addons/vpnmon-r3.d/vr3wgsvr5.txt | sed 's/,$/\n/')
-      #wglist=$(awk -F, '{print $1}' /jffs/addons/vpnmon-r3.d/vr3wgsvr5.txt | paste -s -d,)
       wglist=$(awk -F, '{printf "%s%s", sep, $1; sep=","} END {print ""}' /jffs/addons/vpnmon-r3.d/vr3wgsvr5.txt | awk '{print substr($0, 1, 75) ">"}')
       echo -en "${InvGreen} ${CClear} Contents: "; echo $wglist
     else
