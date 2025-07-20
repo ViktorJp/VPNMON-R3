@@ -1,4 +1,4 @@
-v1.5.02  - (TBA)
+v1.5.03b - (TBA)
          - MINOR: Well, actually kinda major. Wireguard is now formally being supported! VPNMON-R3 will show all
            5 Wireguard slots for more modern routers. Those who can only physically support 2 VPN slots will
            unfortunately not be able to enjoy Wireguard at the moment. Major functionality for stopping/starting
@@ -18,6 +18,10 @@ v1.5.02  - (TBA)
            the vpndirector. Thanks for the corroboration by @SomeWhereOverTheRainBow on this!
          - PATCH: Based on feedback from @ZebMcKayhan, added this site2site ping workaround to other items that
            were causing lookup delays, such as the public IP and WG city resolution.
+         - PATCH: Fixed the numbering for the WG slots to reflect 6-0 to provide standardization across the script
+           when referring to the use of these slots. Thanks to @CaptainSTX!
+         - PATCH: Fixed the Skynet import logic and some of the on screen/log language to reflect "WG" terms 
+           instead of "VPN". 
 
 v1.4.1   - (June 29, 2025)
          - MINOR: Added the capability of optionally integrating with spdMerlin, and having it refresh it's list
