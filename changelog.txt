@@ -29,6 +29,11 @@ v1.5.03b - (TBA)
            slots at any given time, but also don't have any native WG capability without the help of 3rd party
            scripts. The (5) option provides capabilities for 5 x OVPN and 5 x WG client slots, as available on
            most (if not all) newer routers running the later versions of the Merlin FW.
+         - PATCH: Added another option (#7) under the configuration menu that allows you to enable/disable the
+           monitoring and view of either OVPN or WG slots on the main UI screen. This was inspired by none other
+           than @Stephen Harrington, who does not want his screen cluttered up with slots that are not being
+           used, and I can completely understand! Caveat: If you have tied unbound to one of your OVPN slots,
+           you will not be able to disable the OVPN slot view and will be forced to monitor those slots.
 
 v1.4.1   - (June 29, 2025)
          - MINOR: Added the capability of optionally integrating with spdMerlin, and having it refresh it's list
