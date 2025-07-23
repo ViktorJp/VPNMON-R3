@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.5.03b (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.5.04b (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
@@ -14,7 +14,7 @@
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.5.03b"                                               # Version tracker
+version="1.5.04b"                                               # Version tracker
 beta=1                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -34,6 +34,8 @@ ResolverTimer=1                                                 # Timer to give 
 vpnping=0                                                       # Tracking VPN Tunnel Pings
 refreshserverlists=0                                            # Tracking Automated Custom VPN Server List Reset
 monitorwan=0                                                    # Tracking WAN/Dual WAN Monitoring
+useovpn=1                                                       # Tracking OVPN Display/Monitoring
+usewg=1                                                         # Tracking WG Display/Monitoring
 lockactive=0                                                    # Check for active locks
 bypassscreentimer=0                                             # Check to see if screen timer can be bypassed
 pingreset=500                                                   # Maximum ping in ms before reset
@@ -874,6 +876,19 @@ do
      monitorwandisp="Enabled"
   fi
 
+  if [ "$useovpn" -eq 0 ] && [ "$usewg" -eq 0 ]; then
+     useovpnwgDisp="${CRed}OVPN/WG Disabled"
+  elif
+     [ "$useovpn" -eq 1 ] && [ "$usewg" -eq 0 ]; then
+     useovpnwgDisp="${CGreen}OVPN Only"
+  elif
+     [ "$useovpn" -eq 0 ] && [ "$usewg" -eq 1 ]; then
+     useovpnwgDisp="${CGreen}WG Only"
+  elif
+     [ "$useovpn" -eq 1 ] && [ "$usewg" -eq 1 ]; then
+     useovpnwgDisp="${CGreen}OVPN/WG Enabled"
+  fi
+
   if [ "$updateskynet" -eq 0 ]; then
      updateskynetdisp="Disabled"
   else
@@ -905,17 +920,18 @@ do
   echo -e "${InvGreen} ${CClear} customizable parameters that affect the operation of this script.${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(1)${CClear} : Number of VPN/WG Client Slots available      : ${CGreen}$availableslotsdisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(2)${CClear} : Custom PING host to determine VPN health     : ${CGreen}$PINGHOST"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(3)${CClear} : Custom Event Log size (rows)                 : ${CGreen}$logsize"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(4)${CClear} : Unbound DNS Lookups over VPN Integration     : ${CGreen}$unboundclientexp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(5)${CClear} : Refresh Custom Server Lists on -RESET Switch : ${CGreen}$refreshserverlistsdisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(6)${CClear} : Provide additional WAN/Dual WAN monitoring   : ${CGreen}$monitorwandisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(7)${CClear} : Whitelist VPN Server IP Lists in Skynet      : ${CGreen}$updateskynetdisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(8)${CClear} : AMTM Email Notifications on Success/Failure  : ${CGreen}$amtmemailsuccfaildisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(9)${CClear} : Reset spdMerlin Interfaces on VPN Reset      : ${CGreen}$rstspdmerlindisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} | ${CClear}"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(e)${CClear} : Exit${CClear}"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 1)${CClear} : Number of VPN/WG Client Slots available      : ${CGreen}$availableslotsdisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 2)${CClear} : Custom PING host to determine VPN health     : ${CGreen}$PINGHOST"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 3)${CClear} : Custom Event Log size (rows)                 : ${CGreen}$logsize"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 4)${CClear} : Unbound DNS Lookups over VPN Integration     : ${CGreen}$unboundclientexp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 5)${CClear} : Refresh Custom Server Lists on -RESET Switch : ${CGreen}$refreshserverlistsdisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 6)${CClear} : Provide additional WAN/Dual WAN monitoring   : ${CGreen}$monitorwandisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 7)${CClear} : Enable/Disable OPVN/WG Slot Monitoring       : $useovpnwgDisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 8)${CClear} : Whitelist VPN Server IP Lists in Skynet      : ${CGreen}$updateskynetdisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 9)${CClear} : AMTM Email Notifications on Success/Failure  : ${CGreen}$amtmemailsuccfaildisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(10)${CClear} : Reset spdMerlin Interfaces on VPN Reset      : ${CGreen}$rstspdmerlindisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  | ${CClear}"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( e)${CClear} : Exit${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo ""
@@ -1306,6 +1322,57 @@ do
       ;;
 
       7)
+        while true
+        do
+          clear
+          echo -e "${InvGreen} ${InvDkGray}${CWhite} Enable/Disable OVPN/WG Slot Monitoring and Display                                    ${CClear}"
+          echo -e "${InvGreen} ${CClear}"
+          echo -e "${InvGreen} ${CClear} Please indicate whether you want to enable or disable OVPN/WG Slots from being${CClear}"
+          echo -e "${InvGreen} ${CClear} .monitored and shown on the main VPNMON-R3 UI. This setting is meant for those${CClear}"
+          echo -e "${InvGreen} ${CClear} who are only running OVPN or only WG on their router, and do not want to display${CClear}"
+          echo -e "${InvGreen} ${CClear} one or the other to only show relevant info.${CClear}"
+          echo -e "${InvGreen} ${CClear}"
+          echo -e "${InvGreen} ${CClear} Use the corresponding ${CGreen}()${CClear} key to enable/disable monitoring for each.${CClear}"
+          echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+
+          if [ "$useovpn" = "1" ]; then useovpnDisp="${CGreen}Y${CCyan}"; else useovpn=0; useovpnDisp="${CRed}N${CCyan}"; fi
+          if [ "$usewg" = "1" ]; then usewgDisp="${CGreen}Y${CCyan}"; else usewg=0; usewgDisp="${CRed}N${CCyan}"; fi
+          echo -e "${InvGreen} ${CClear}"
+          echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  OpenVPN${CClear} ${CGreen}(1) -${CClear} $useovpnDisp${CClear}"
+          echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}Wireguard${CClear} ${CGreen}(2) -${CClear} $usewgDisp${CClear}"
+          echo ""
+          read -p "Please select? (1-2, e=Exit): " SelectSlot
+            case $SelectSlot in
+              1)
+                 if [ "$unboundclient" = "0" ]; then
+                   if [ "$useovpn" = "0" ]; then
+                    useovpn=1
+                    useovpnDisp="${CGreen}Y${CCyan}"
+                   elif [ "$useovpn" = "1" ]; then
+                    useovpn=0; useovpnDisp="${CRed}N${CCyan}"
+                   fi
+                 else
+                   echo -e "${CClear}\n[Unable to disable OVPN. Unbound Active on Slot VPN$unboundclient]"; sleep 3
+                 fi;;
+              2)
+                 if [ "$usewg" = "0" ]; then
+                  usewg=1
+                  usewgDisp="${CGreen}Y${CCyan}"
+                 elif [ "$usewg" = "1" ]; then
+                  usewg=0
+                  usewgDisp="${CRed}N${CCyan}"
+                 fi;;
+              [Ee])
+                 saveconfig
+                 echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: OVPN/WG Client Slot Monitoring/Display configuration saved" >> $logfile
+                 timer="$timerloop"
+                 break;;
+            esac
+        done
+
+      ;;
+
+      8)
         clear
         echo -e "${InvGreen} ${InvDkGray}${CWhite} Whitelist VPN Server IP Lists in Skynet                                               ${CClear}"
         echo -e "${InvGreen} ${CClear}"
@@ -1348,12 +1415,12 @@ do
 
       [Ee]) echo -e "${CClear}\n[Exiting]"; sleep 2; break ;;
 
-      8)
+      9)
         amtmevents
         source "$config"
       ;;
 
-      9)
+      10)
         clear
         echo -e "${InvGreen} ${InvDkGray}${CWhite} Reset spdMerlin Interfaces on VPN Reset                                               ${CClear}"
         echo -e "${InvGreen} ${CClear}"
@@ -3412,6 +3479,8 @@ saveconfig()
      echo 'refreshserverlists='$refreshserverlists
      echo 'unboundclient='$unboundclient
      echo 'monitorwan='$monitorwan
+     echo 'useovpn='$useovpn
+     echo 'usewg='$usewg
      echo 'updateskynet='$updateskynet
      echo 'amtmemailsuccess='$amtmemailsuccess
      echo 'amtmemailfailure='$amtmemailfailure
@@ -3852,7 +3921,7 @@ restartvpn()
   echo ""
 
   #Check the current connection state of vpn slot
-  currvpnstate="$(_VPN_GetClientState_ $1)"
+  currvpnstate="$(_VPN_GetClientState_ "$1")"
 
   if [ "$currvpnstate" -ne 0 ]; then
     printf "${CGreen}\r[Stopping VPN Client $1]"
@@ -5451,205 +5520,145 @@ do
     done
     echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
     echo ""
+  fi
+
+  if [ "$useovpn" = "1" ]
+  then
     echo -e "${InvDkGray} OpenVPN                                                                                                       ${CClear}"
     echo ""
-  fi
+    #Display VPN client slot grid
+    if [ "$unboundclient" != "0" ]; then
+       echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | City Exit / Time / UB"
+    else
+       echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | City Exit / Time"
+    fi
+    echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
 
-  #Display VPN client slot grid
-  if [ "$unboundclient" != "0" ]; then
-     echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | City Exit / Time / UB"
-  else
-     echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | City Exit / Time"
-  fi
-  echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
+    if "$firstDataCollection" ; then printf "\r\033[0K${InvYellow} ${CClear} Please wait..." ; sleep 1 ; fi
 
-  if "$firstDataCollection" ; then printf "\r\033[0K${InvYellow} ${CClear} Please wait..." ; sleep 1 ; fi
+    i=0
+    for i in $availableslots #loop through the VPN slots
+    do
+        #Set variables
+        citychange=""
 
-  i=0
-  for i in $availableslots #loop through the VPN slots
-  do
-      #Set variables
-      citychange=""
+        #determine if the slot is monitored#
+        if [ "$((VPN$i))" = "1" ]; then
+           monitored="${CGreen}[X]${CClear}"
+        else
+           monitored="[ ]"
+        fi
 
-      #determine if the slot is monitored#
-      if [ "$((VPN$i))" = "1" ]; then
-         monitored="${CGreen}[X]${CClear}"
-      else
-         monitored="[ ]"
-      fi
+        #determine the vpn state, and if connected, get vpn IP and city
+        vpnstate="$(_VPN_GetClientState_ "$i")"
 
-      #determine the vpn state, and if connected, get vpn IP and city
-      vpnstate="$(_VPN_GetClientState_ "$i")"
-
-      if [ "$vpnstate" = "0" ]
-      then
-         vpnstate="Disconnected"
-         vpnhealth="${CDkGray}[n/a ]${CClear}"
-         vpnindicator="${InvDkGray} ${CClear}"
-         vpnip="          ${CDkGray}[n/a]${CClear}"
-         vpncity="${CDkGray}[n/a]${CClear}"
-         svrping="     ${CDkGray}[n/a]${CClear}"
-      elif [ "$vpnstate" = "-1" ]
-      then
-         vpnstate="Error State "
-         vpnhealth="${CDkGray}[n/a ]${CClear}"
-         vpnindicator="${InvDkGray} ${CClear}"
-         vpnip="${CDkGray}          [n/a]${CClear}"
-         vpncity="${CDkGray}[n/a]${CClear}"
-         svrping="     ${CDkGray}[n/a]${CClear}"
-      elif [ "$vpnstate" = "1" ]
-      then
-         vpnstate="Connecting  "
-         vpnhealth="${CDkGray}[n/a ]${CClear}"
-         vpnindicator="${InvYellow} ${CClear}"
-         vpnip="          ${CDkGray}[n/a]${CClear}"
-         vpncity="${CDkGray}[n/a]${CClear}"
-         svrping="     ${CDkGray}[n/a]${CClear}"
-      elif [ "$vpnstate" = "2" ]
-      then
-         vpnstate="Connected   "
-         checkvpn "$i"
-         getvpnip "$i"
-         getvpncity "$i"
-         if [ -z "$vpnping" ]
-         then
-             svrping="${CRed}[PING ERR]${CClear}"
-             vpnhealth="${CYellow}[UNKN]${CClear}"
-             vpnindicator="${InvYellow} ${CClear}"
-         else
-             ## No need to do left-padding with zeros for alignment ##
-             svrping="$(printf "[%8.3f]" "$vpnping")"
-         fi
-      else
-         vpnstate="Unknown     "
-         vpnhealth="${CDkGray}[n/a ]${CClear}"
-         vpnindicator="${InvDkGray} ${CClear}"
-         vpnip="          ${CDkGray}[n/a]${CClear}"
-         vpncity="${CDkGray}[n/a]${CClear}"
-         svrping="     ${CDkGray}[n/a]${CClear}"
-      fi
-
-      #Determine how many server entries are in each of the vpn slot alternate server files#
-      if [ -s "/jffs/addons/vpnmon-r3.d/vr3svr$i.txt" ]
-      then
-          servercnt="$(cat "/jffs/addons/vpnmon-r3.d/vr3svr$i.txt" | wc -l)"
-          if [ -z "$servercnt" ] || [ "$servercnt" -lt 1 ]
-          then
-              servercnt="${CRed}[0000]${CClear}"
-          else
-              ## No need to do left-padding with zeros for alignment ##
-              servercnt="$(printf "[%4d]" "$servercnt")"
-          fi
-      else
-          servercnt="${CRed}[0000]${CClear}"
-      fi
-
-      #Calculate connected time for current VPN slot
-      if [ $((VPNTIMER$i)) = "0" ] || [ "$((VPN$i))" = "0" ]
-      then
-        sincelastreset=""
-      else
-        currtime=$(date +%s)
-        timediff=$((currtime-VPNTIMER$i))
-        sincelastreset=$(printf ': %dd %02dh:%02dm\n' $(($timediff/86400)) $(($timediff%86400/3600)) $(($timediff%3600/60)))
-      fi
-
-      if "$firstDataCollection" ; then printf "\r\033[0K" ; firstDataCollection=false ; fi
-
-      # Print the results of all data gathered sofar #
-      echo -e "$vpnindicator${InvDkGray}${CWhite} VPN$i${CClear} | $monitored | $servercnt | $vpnhealth | $vpnstate | $vpnip | $svrping | $vpncity$sincelastreset $citychange$ubsync"
-
-      #if a vpn is monitored and disconnected, try to restart it
-      if [ "$((VPN$i))" = "1" ] && [ "$vpnstate" = "Disconnected" ]
-      then #reconnect
-        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$i has disconnected" >> $logfile
-        echo ""
-        printf "\33[2K\r"
-
-        #Display a standard timer#
-        timer=0
-        while [ $timer -ne 5 ]
-        do
-          timer="$((timer+1))"
-          preparebar 46 "|"
-          progressbarpause $timer 5 "" "s" "Standard"
-        done
-        printf "\33[2K\r"
-
-        restartvpn $i
-        sendmessage 1 "VPN Tunnel Disconnected" $i
-        restartrouting
-        resetspdmerlin
-        exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
-      fi
-
-      #if a vpn is monitored and in error state, try to restart it
-      if [ "$((VPN$i))" = "1" ] && [ "$vpnstate" = "Error State " ]
-      then #reconnect
-        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$i is in an error state and being reconnected" >> $logfile
-        echo ""
-        printf "\33[2K\r"
-
-        #display a standard timer#
-        timer=0
-        while [ $timer -ne 5 ]
-        do
-          timer="$((timer+1))"
-          preparebar 46 "|"
-          progressbarpause $timer 5 "" "s" "Standard"
-          #sleep 1
-        done
-        printf "\33[2K\r"
-
-        restartvpn $i
-        sendmessage 1 "VPN Slot In Error State" $i
-        restartrouting
-        resetspdmerlin
-        exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
-      fi
-
-      #if a vpn is monitored and not responsive, try to restart it
-      if [ "$((VPN$i))" = "1" ] && [ "$resetvpn" != "0" ]
-      then #reconnect
-        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$i is non-responsive and being reconnected" >> $logfile
-        echo ""
-        printf "\33[2K\r"
-
-        #display a standard timer#
-        timer=0
-        while [ $timer -ne 5 ]
-        do
-          timer="$((timer+1))"
-          preparebar 46 "|"
-          progressbarpause $timer 5 "" "s" "Standard"
-          #sleep 1
-        done
-        printf "\33[2K\r"
-
-        restartvpn $resetvpn
-        sendmessage 1 "VPN Slot Is Non-Responsive" $resetvpn
-        restartrouting
-        resetspdmerlin
-        exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
-      fi
-
-      # if a vpn connection ping is greater than a certain amount, restart it
-      maxsvrping=$(awk "BEGIN {printf \"%3.0f\", ${vpnping}}") >/dev/null 2>&1
-      MP=$?
-      if [ $MP -ne 0 ]; then
-        maxsvrping=0
-        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: Invalid VPN PING information received." >> $logfile
-      fi
-
-      if [ "$pingreset" -gt 0 ]
-      then
-        if [ "$maxsvrping" -ge "$pingreset" ]
+        if [ "$vpnstate" = "0" ]
         then
+           vpnstate="Disconnected"
+           vpnhealth="${CDkGray}[n/a ]${CClear}"
+           vpnindicator="${InvDkGray} ${CClear}"
+           vpnip="          ${CDkGray}[n/a]${CClear}"
+           vpncity="${CDkGray}[n/a]${CClear}"
+           svrping="     ${CDkGray}[n/a]${CClear}"
+        elif [ "$vpnstate" = "-1" ]
+        then
+           vpnstate="Error State "
+           vpnhealth="${CDkGray}[n/a ]${CClear}"
+           vpnindicator="${InvDkGray} ${CClear}"
+           vpnip="${CDkGray}          [n/a]${CClear}"
+           vpncity="${CDkGray}[n/a]${CClear}"
+           svrping="     ${CDkGray}[n/a]${CClear}"
+        elif [ "$vpnstate" = "1" ]
+        then
+           vpnstate="Connecting  "
+           vpnhealth="${CDkGray}[n/a ]${CClear}"
+           vpnindicator="${InvYellow} ${CClear}"
+           vpnip="          ${CDkGray}[n/a]${CClear}"
+           vpncity="${CDkGray}[n/a]${CClear}"
+           svrping="     ${CDkGray}[n/a]${CClear}"
+        elif [ "$vpnstate" = "2" ]
+        then
+           vpnstate="Connected   "
+           checkvpn "$i"
+           getvpnip "$i"
+           getvpncity "$i"
+           if [ -z "$vpnping" ]
+           then
+               svrping="${CRed}[PING ERR]${CClear}"
+               vpnhealth="${CYellow}[UNKN]${CClear}"
+               vpnindicator="${InvYellow} ${CClear}"
+           else
+               ## No need to do left-padding with zeros for alignment ##
+               svrping="$(printf "[%8.3f]" "$vpnping")"
+           fi
+        else
+           vpnstate="Unknown     "
+           vpnhealth="${CDkGray}[n/a ]${CClear}"
+           vpnindicator="${InvDkGray} ${CClear}"
+           vpnip="          ${CDkGray}[n/a]${CClear}"
+           vpncity="${CDkGray}[n/a]${CClear}"
+           svrping="     ${CDkGray}[n/a]${CClear}"
+        fi
+
+        #Determine how many server entries are in each of the vpn slot alternate server files#
+        if [ -s "/jffs/addons/vpnmon-r3.d/vr3svr$i.txt" ]
+        then
+            servercnt="$(cat "/jffs/addons/vpnmon-r3.d/vr3svr$i.txt" | wc -l)"
+            if [ -z "$servercnt" ] || [ "$servercnt" -lt 1 ]
+            then
+                servercnt="${CRed}[0000]${CClear}"
+            else
+                ## No need to do left-padding with zeros for alignment ##
+                servercnt="$(printf "[%4d]" "$servercnt")"
+            fi
+        else
+            servercnt="${CRed}[0000]${CClear}"
+        fi
+
+        #Calculate connected time for current VPN slot
+        if [ $((VPNTIMER$i)) = "0" ] || [ "$((VPN$i))" = "0" ]
+        then
+          sincelastreset=""
+        else
+          currtime=$(date +%s)
+          timediff=$((currtime-VPNTIMER$i))
+          sincelastreset=$(printf ': %dd %02dh:%02dm\n' $(($timediff/86400)) $(($timediff%86400/3600)) $(($timediff%3600/60)))
+        fi
+
+        if "$firstDataCollection" ; then printf "\r\033[0K" ; firstDataCollection=false ; fi
+
+        # Print the results of all data gathered sofar #
+        echo -e "$vpnindicator${InvDkGray}${CWhite} VPN$i${CClear} | $monitored | $servercnt | $vpnhealth | $vpnstate | $vpnip | $svrping | $vpncity$sincelastreset $citychange$ubsync"
+
+        #if a vpn is monitored and disconnected, try to restart it
+        if [ "$((VPN$i))" = "1" ] && [ "$vpnstate" = "Disconnected" ]
+        then #reconnect
+          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$i has disconnected" >> $logfile
           echo ""
           printf "\33[2K\r"
-          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$i PING exceeds max allowed ($pingreset ms)" >> $logfile
-          printf "${CGreen}\r[Maximum PING Exceeded]"
-          sleep 3
+
+          #Display a standard timer#
+          timer=0
+          while [ $timer -ne 5 ]
+          do
+            timer="$((timer+1))"
+            preparebar 46 "|"
+            progressbarpause $timer 5 "" "s" "Standard"
+          done
+          printf "\33[2K\r"
+
+          restartvpn $i
+          sendmessage 1 "VPN Tunnel Disconnected" $i
+          restartrouting
+          resetspdmerlin
+          exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
+        fi
+
+        #if a vpn is monitored and in error state, try to restart it
+        if [ "$((VPN$i))" = "1" ] && [ "$vpnstate" = "Error State " ]
+        then #reconnect
+          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$i is in an error state and being reconnected" >> $logfile
+          echo ""
           printf "\33[2K\r"
 
           #display a standard timer#
@@ -5664,26 +5673,88 @@ do
           printf "\33[2K\r"
 
           restartvpn $i
-          sendmessage 1 "VPN Slot Exceeded Max Ping" $i
+          sendmessage 1 "VPN Slot In Error State" $i
           restartrouting
           resetspdmerlin
           exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
         fi
-      fi
 
-      #Reset variables
-      ubsync=""
-      sincelastreset=""
+        #if a vpn is monitored and not responsive, try to restart it
+        if [ "$((VPN$i))" = "1" ] && [ "$resetvpn" != "0" ]
+        then #reconnect
+          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$i is non-responsive and being reconnected" >> $logfile
+          echo ""
+          printf "\33[2K\r"
 
-  done
+          #display a standard timer#
+          timer=0
+          while [ $timer -ne 5 ]
+          do
+            timer="$((timer+1))"
+            preparebar 46 "|"
+            progressbarpause $timer 5 "" "s" "Standard"
+            #sleep 1
+          done
+          printf "\33[2K\r"
 
-  echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
-  echo ""
+          restartvpn $resetvpn
+          sendmessage 1 "VPN Slot Is Non-Responsive" $resetvpn
+          restartrouting
+          resetspdmerlin
+          exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
+        fi
 
+        # if a vpn connection ping is greater than a certain amount, restart it
+        maxsvrping=$(awk "BEGIN {printf \"%3.0f\", ${vpnping}}") >/dev/null 2>&1
+        MP=$?
+        if [ $MP -ne 0 ]; then
+          maxsvrping=0
+          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: Invalid VPN PING information received." >> $logfile
+        fi
+
+        if [ "$pingreset" -gt 0 ]
+        then
+          if [ "$maxsvrping" -ge "$pingreset" ]
+          then
+            echo ""
+            printf "\33[2K\r"
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$i PING exceeds max allowed ($pingreset ms)" >> $logfile
+            printf "${CGreen}\r[Maximum PING Exceeded]"
+            sleep 3
+            printf "\33[2K\r"
+
+            #display a standard timer#
+            timer=0
+            while [ $timer -ne 5 ]
+            do
+              timer="$((timer+1))"
+              preparebar 46 "|"
+              progressbarpause $timer 5 "" "s" "Standard"
+              #sleep 1
+            done
+            printf "\33[2K\r"
+
+            restartvpn $i
+            sendmessage 1 "VPN Slot Exceeded Max Ping" $i
+            restartrouting
+            resetspdmerlin
+            exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
+          fi
+        fi
+
+        #Reset variables
+        ubsync=""
+        sincelastreset=""
+
+    done
+
+    echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
+    echo ""
+  fi
 
 #-----------------Wireguard
 
-  if [ "$availableslots" = "1 2 3 4 5" ]; then
+  if [ "$availableslots" = "1 2 3 4 5" ] && [ "$usewg" = "1" ]; then
 
     echo -e "${InvDkGray} Wireguard                                                                                                     ${CClear}"
     echo ""
