@@ -4491,7 +4491,7 @@ getwgip()
   TUN="wgc$1"
 
   # Added ping workaround for site2site scenarios based on suggestion from @ZebMcKayhan
-  TUN_IP=$(nvram get "$TUN"_addr | cut -d '/' -f1)
+  TUN_IP=$($timeoutcmd$timeoutsec nvram get "$TUN"_addr | cut -d '/' -f1)
   ip rule add from $TUN_IP lookup $TUN prio 10
 
   icanhazwgip="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --fail --interface "$TUN" --request GET --url https://ipv4.icanhazip.com"
@@ -4613,7 +4613,7 @@ getwgcity()
   fi
 
   # Added ping workaround for site2site scenarios based on suggestion from @ZebMcKayhan
-  TUN_IP=$(nvram get "$TUN"_addr | cut -d '/' -f1)
+  TUN_IP=$($timeoutcmd$timeoutsec nvram get "$TUN"_addr | cut -d '/' -f1)
   ip rule add from $TUN_IP lookup $TUN prio 10
 
   if [ "$1" = "1" ]
@@ -4750,7 +4750,7 @@ checkwg()
   TUN="wgc$1"
 
   # Added ping workaround for site2site scenarios based on suggestion from @ZebMcKayhan
-  TUN_IP=$(nvram get "$TUN"_addr | cut -d '/' -f1)
+  TUN_IP=$($timeoutcmd$timeoutsec nvram get "$TUN"_addr | cut -d '/' -f1)
   ip rule add from $TUN_IP lookup $TUN prio 10
 
   while [ "$CNT" -lt "$TRIES" ]; do # Loop through number of tries
