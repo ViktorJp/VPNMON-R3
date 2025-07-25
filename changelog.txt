@@ -1,4 +1,4 @@
-v1.5.04b - (TBA)
+v1.5.05b - (TBA)
          - MINOR: Well, actually kinda major. Wireguard is now formally being supported! VPNMON-R3 will show all
            5 Wireguard slots for more modern routers. Those who can only physically support 2 VPN slots will
            unfortunately not be able to enjoy Wireguard at the moment. Major functionality for stopping/starting
@@ -34,6 +34,8 @@ v1.5.04b - (TBA)
            than @Stephen Harrington, who does not want his screen cluttered up with slots that are not being
            used, and I can completely understand! Caveat: If you have tied unbound to one of your OVPN slots,
            you will not be able to disable the OVPN slot view and will be forced to monitor those slots.
+         - PATCH: After noticing some stuck processes around WG, some fixes went into place to help protect other
+           'nvram get' commands from getting stuck.
 
 v1.4.1   - (June 29, 2025)
          - MINOR: Added the capability of optionally integrating with spdMerlin, and having it refresh it's list
