@@ -853,9 +853,9 @@ fi
 while true
 do
   if [ "$availableslots" = "1 2" ]; then
-     availableslotsdisp="2 x OVPN"
+     availableslotsdisp="2 x VPN"
   elif [ "$availableslots" = "1 2 3 4 5" ]; then
-     availableslotsdisp="5 x OVPN | 5 x WG"
+     availableslotsdisp="5 x VPN | 5 x WG"
   fi
 
   if [ "$unboundclient" -eq 0 ]; then
@@ -877,16 +877,16 @@ do
   fi
 
   if [ "$useovpn" -eq 0 ] && [ "$usewg" -eq 0 ]; then
-     useovpnwgDisp="${CRed}OVPN/WG Disabled"
+     useovpnwgDisp="${CRed}VPN/WG Disabled"
   elif
      [ "$useovpn" -eq 1 ] && [ "$usewg" -eq 0 ]; then
-     useovpnwgDisp="${CGreen}OVPN Only"
+     useovpnwgDisp="${CGreen}VPN Only"
   elif
      [ "$useovpn" -eq 0 ] && [ "$usewg" -eq 1 ]; then
      useovpnwgDisp="${CGreen}WG Only"
   elif
      [ "$useovpn" -eq 1 ] && [ "$usewg" -eq 1 ]; then
-     useovpnwgDisp="${CGreen}OVPN/WG Enabled"
+     useovpnwgDisp="${CGreen}VPN/WG Enabled"
   fi
 
   if [ "$updateskynet" -eq 0 ]; then
@@ -926,7 +926,7 @@ do
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 4)${CClear} : Unbound DNS Lookups over VPN Integration     : ${CGreen}$unboundclientexp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 5)${CClear} : Refresh Custom Server Lists on -RESET Switch : ${CGreen}$refreshserverlistsdisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 6)${CClear} : Provide additional WAN/Dual WAN monitoring   : ${CGreen}$monitorwandisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 7)${CClear} : Enable/Disable OPVN/WG Slot Monitoring       : $useovpnwgDisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 7)${CClear} : Enable/Disable VPN/WG Slot Monitoring        : $useovpnwgDisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 8)${CClear} : Whitelist VPN Server IP Lists in Skynet      : ${CGreen}$updateskynetdisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 9)${CClear} : AMTM Email Notifications on Success/Failure  : ${CGreen}$amtmemailsuccfaildisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(10)${CClear} : Reset spdMerlin Interfaces on VPN Reset      : ${CGreen}$rstspdmerlindisp"
@@ -942,14 +942,14 @@ do
         echo -e "${InvGreen} ${InvDkGray}${CWhite} Number of VPN/WG Client Slots Available on Router                                     ${CClear}"
         echo -e "${InvGreen} ${CClear}"
         echo -e "${InvGreen} ${CClear} Please indicate how many VPN/WG client slots your router is configured with. Certain${CClear}"
-        echo -e "${InvGreen} ${CClear} older model routers (RT-AC68U) can only handle a maximum of 2 OVPN client slots, and${CClear}"
+        echo -e "${InvGreen} ${CClear} older model routers (RT-AC68U) can only handle a maximum of 2 VPN client slots, and${CClear}"
         echo -e "${InvGreen} ${CClear} natively can't handle WG without some effort using 3rd party scripts, while the vast${CClear}"
-        echo -e "${InvGreen} ${CClear} majority of newer models can handle 5 OVPN and 5 WG slots. Easiest way to tell is by${CClear}"
+        echo -e "${InvGreen} ${CClear} majority of newer models can handle 5 VPN and 5 WG slots. Easiest way to tell is by${CClear}"
         echo -e "${InvGreen} ${CClear} looking at your VPN settings within the Merlin Web UI. Please choose below:"
         echo -e "${InvGreen} ${CClear}"
-        echo -e "${InvGreen} ${CClear} ${CGreen}(2)${CClear} = 2 x OVPN slots (Older router models)"
+        echo -e "${InvGreen} ${CClear} ${CGreen}(2)${CClear} = 2 x VPN slots (Older router models)"
         echo -e "${InvGreen} ${CClear}"
-        echo -e "${InvGreen} ${CClear} ${CGreen}(5)${CClear} = 5 x OVPN | 5 x WG slots (Newer router models)"
+        echo -e "${InvGreen} ${CClear} ${CGreen}(5)${CClear} = 5 x VPN | 5 x WG slots (Newer router models)"
         echo -e "${InvGreen} ${CClear}"
         echo -e "${InvGreen} ${CClear} (Default = 5 VPN/WG client slots)${CClear}"
         echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
@@ -959,7 +959,7 @@ do
         if [ "$newAvailableSlots" = "2" ]
         then
             availableslots="1 2"
-            availableslotsdisp="2 x OVPN"
+            availableslotsdisp="2 x VPN"
             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslotsdisp" >> $logfile
             rm -f /jffs/addons/vpnmon-r3.d/vr3clients.txt
             rm -f /jffs/addons/vpnmon-r3.d/vr3timers.txt
@@ -968,7 +968,7 @@ do
         elif [ "$newAvailableSlots" = "5" ]
         then
             availableslots="1 2 3 4 5"
-            availableslotsdisp="5 x OVPN | 5 x WG"
+            availableslotsdisp="5 x VPN | 5 x WG"
             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslotsdisp" >> $logfile
             rm -f /jffs/addons/vpnmon-r3.d/vr3clients.txt
             rm -f /jffs/addons/vpnmon-r3.d/vr3timers.txt
@@ -980,7 +980,7 @@ do
         else
             previousValue="$availableslots"
             availableslots="${availableslots:=1 2 3 4 5}"
-            availableslotsdisp="5 x OVPN | 5 x WG"
+            availableslotsdisp="5 x VPN | 5 x WG"
             [ "$availableslots" != "$previousValue" ] && \
             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Available VPN Client Slot Configuration saved as: $availableslotsdisp" >> $logfile
             rm -f /jffs/addons/vpnmon-r3.d/vr3clients.txt
@@ -1325,11 +1325,11 @@ do
         while true
         do
           clear
-          echo -e "${InvGreen} ${InvDkGray}${CWhite} Enable/Disable OVPN/WG Slot Monitoring and Display                                    ${CClear}"
+          echo -e "${InvGreen} ${InvDkGray}${CWhite} Enable/Disable VPN/WG Slot Monitoring and Display                                     ${CClear}"
           echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Please indicate whether you want to enable or disable OVPN/WG Slots from being${CClear}"
+          echo -e "${InvGreen} ${CClear} Please indicate whether you want to enable or disable VPN/WG Slots from being${CClear}"
           echo -e "${InvGreen} ${CClear} .monitored and shown on the main VPNMON-R3 UI. This setting is meant for those${CClear}"
-          echo -e "${InvGreen} ${CClear} who are only running OVPN or only WG on their router, and do not want to display${CClear}"
+          echo -e "${InvGreen} ${CClear} who are only running VPN or only WG on their router, and do not want to display${CClear}"
           echo -e "${InvGreen} ${CClear} one or the other to only show relevant info.${CClear}"
           echo -e "${InvGreen} ${CClear}"
           echo -e "${InvGreen} ${CClear} Use the corresponding ${CGreen}()${CClear} key to enable/disable monitoring for each.${CClear}"
@@ -1352,7 +1352,7 @@ do
                     useovpn=0; useovpnDisp="${CRed}N${CCyan}"
                    fi
                  else
-                   echo -e "${CClear}\n[Unable to disable OVPN. Unbound Active on Slot VPN$unboundclient]"; sleep 3
+                   echo -e "${CClear}\n[Unable to disable VPN. Unbound Active on Slot VPN$unboundclient]"; sleep 3
                  fi;;
               2)
                  if [ "$usewg" = "0" ]; then
@@ -1364,7 +1364,7 @@ do
                  fi;;
               [Ee])
                  saveconfig
-                 echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: OVPN/WG Client Slot Monitoring/Display configuration saved" >> $logfile
+                 echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN/WG Client Slot Monitoring/Display configuration saved" >> $logfile
                  timer="$timerloop"
                  break;;
             esac
@@ -5231,7 +5231,7 @@ displayopsmenu()
     then
       echo -e "${InvGreen} ${InvDkGray}${CWhite} Operations Menu                                                                                              ${CClear}"
       echo -e "${InvGreen} ${CClear} Reset/Reconnect VPN 1:${CGreen}(1)${CClear} 2:${CGreen}(2)${CClear}                      ${InvGreen} ${CClear} ${CGreen}(C)${CClear}onfiguration Menu / Main Setup Menu${CClear}"
-      echo -e "${InvGreen} ${CClear} Stop/Unmonitor  VPN 1:${CGreen}(!)${CClear} 2:${CGreen}(@)${CClear}                      ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN CRON Time Scheduler: $schedtime"
+      echo -e "${InvGreen} ${CClear} Stop/Unmonitor  VPN 1:${CGreen}(!)${CClear} 2:${CGreen}(@)${CClear}                      ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN/WG CRON Time Scheduler: $schedtime"
       echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN Slots                 ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim Log Size (rows): $logSizeStr"
       echo -e "${InvGreen} ${CClear} Update/Maintain ${CGreen}(V)${CClear}PN Server Lists                   ${InvGreen} ${CClear} ${CGreen}(A)${CClear}utostart VPNMON-R3 on Reboot: $rebootprot"
       echo -e "${InvGreen} ${CClear} Edit/R${CGreen}(U)${CClear}n Server List Automation                    ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer VPN Check Loop Interval: $timerLoopStr"
@@ -5242,7 +5242,7 @@ displayopsmenu()
     then
       echo -e "${InvGreen} ${InvDkGray}${CWhite} Operations Menu                                                                                              ${CClear}"
       echo -e "${InvGreen} ${CClear} Reset/Reconnect VPN 1:${CGreen}(1)${CClear} 2:${CGreen}(2)${CClear} 3:${CGreen}(3)${CClear} 4:${CGreen}(4)${CClear} 5:${CGreen}(5)${CClear}    ${InvGreen} ${CClear} ${CGreen}(C)${CClear}onfiguration Menu / Main Setup Menu${CClear}"
-      echo -e "${InvGreen} ${CClear} Stop/Unmonitor  VPN 1:${CGreen}(!)${CClear} 2:${CGreen}(@)${CClear} 3:${CGreen}(#)${CClear} 4:${CGreen}($)${CClear} 5:${CGreen}(%)${CClear}    ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN CRON Time Scheduler: $schedtime"
+      echo -e "${InvGreen} ${CClear} Stop/Unmonitor  VPN 1:${CGreen}(!)${CClear} 2:${CGreen}(@)${CClear} 3:${CGreen}(#)${CClear} 4:${CGreen}($)${CClear} 5:${CGreen}(%)${CClear}    ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN/WG CRON Time Scheduler: $schedtime"
       echo -e "${InvGreen} ${CClear} Reset/Reconnect  WG 1:${CGreen}(6)${CClear} 2:${CGreen}(7)${CClear} 3:${CGreen}(8)${CClear} 4:${CGreen}(9)${CClear} 5:${CGreen}(0)${CClear}    ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim Log Size (rows): $logSizeStr"
       echo -e "${InvGreen} ${CClear} Stop/Unmonitor   WG 1:${CGreen}(^)${CClear} 2:${CGreen}(&)${CClear} 3:${CGreen}(-)${CClear} 4:${CGreen}(+)${CClear} 5:${CGreen}(=)${CClear}    ${InvGreen} ${CClear} ${CGreen}(A)${CClear}utostart VPNMON-R3 on Reboot: $rebootprot"
       echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN/WG Slots              ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer VPN Check Loop Interval: $timerLoopStr"
