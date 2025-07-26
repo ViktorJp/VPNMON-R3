@@ -1328,7 +1328,7 @@ do
           echo -e "${InvGreen} ${InvDkGray}${CWhite} Enable/Disable VPN/WG Slot Monitoring and Display                                     ${CClear}"
           echo -e "${InvGreen} ${CClear}"
           echo -e "${InvGreen} ${CClear} Please indicate whether you want to enable or disable VPN/WG Slots from being${CClear}"
-          echo -e "${InvGreen} ${CClear} .monitored and shown on the main VPNMON-R3 UI. This setting is meant for those${CClear}"
+          echo -e "${InvGreen} ${CClear} monitored and shown on the main VPNMON-R3 UI. This setting is meant for those${CClear}"
           echo -e "${InvGreen} ${CClear} who are only running VPN or only WG on their router, and do not want to display${CClear}"
           echo -e "${InvGreen} ${CClear} one or the other to only show relevant info.${CClear}"
           echo -e "${InvGreen} ${CClear}"
