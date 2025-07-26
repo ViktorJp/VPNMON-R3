@@ -36,6 +36,9 @@ v1.5.05b - (TBA)
            you will not be able to disable the OVPN slot view and will be forced to monitor those slots.
          - PATCH: After noticing some stuck processes around WG, some fixes went into place to help protect other
            'nvram get' commands from getting stuck.
+         - PATCH: Added the necessary code to include WG in the "WAN down" scenario as well, where it kills all
+           VPN/WG connections while the WAN is down, so your router isn't wasting time trying to reconnect to
+           your provider during situations like this.
 
 v1.4.1   - (June 29, 2025)
          - MINOR: Added the capability of optionally integrating with spdMerlin, and having it refresh it's list
