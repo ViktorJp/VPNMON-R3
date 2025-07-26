@@ -1,20 +1,20 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.5.05b (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.5.06b (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2025-Jan-01
+# Last Modified: 2025-Jul-26
 ##########################################################################################
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.5.05b"                                               # Version tracker
+version="1.5.06b"                                               # Version tracker
 beta=1                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -4863,6 +4863,28 @@ checkwan()
               fi
           done
 
+          # Check the wireguard side and bring those down as well
+          if [ "$availableslots" = "1 2 3 4 5" ]
+          then
+            wgstate1="$(_WG_GetClientState_ 1)"
+            wgstate2="$(_WG_GetClientState_ 2)"
+            wgstate3="$(_WG_GetClientState_ 3)"
+            wgstate4="$(_WG_GetClientState_ 4)"
+            wgstate5="$(_WG_GetClientState_ 5)"
+            printf "\r${InvGreen} ${CClear} [Confirming WG Clients Disconnected]... 1:$wgstate1 2:$wgstate2 3:$wgstate3 4:$wgstate4 5:$wgstate5     "
+            sleep 3
+          fi
+
+          # Preemptively kill all the WG Clients incase they're trying to reconnect on their own
+          for slot in $availableslots
+          do
+              if [ $((wgstate$slot)) -ne 0 ]; then
+                printf "\r${InvGreen} ${CClear} [Retrying Kill Command on WG$slot Client Connection]...              "
+                service "stop_wgc $slot" >/dev/null 2>&1
+                sleep 3
+              fi
+          done
+
           # Continue to test for WAN connectivity while in this loop. If it comes back up, break out of the loop and reset VPN
           if [ "$($timeoutcmd$timeoutsec nvram get wan0_state_t)" -ne 2 ] && [ "$($timeoutcmd$timeoutsec nvram get wan1_state_t)" -ne 2 ]
           then
@@ -4896,7 +4918,7 @@ checkwan()
           echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 is currently recovering from a WAN Down Situation                           ${CClear}"
           echo -e "${InvGreen} ${CClear}"
           echo -e "${InvGreen} ${CClear} Router has detected a WAN Link/Modem and waiting 300 seconds for general network${CClear}"
-          echo -e "${InvGreen} ${CClear} connectivity to stabilize before re-establishing VPN connectivity.${CClear}"
+          echo -e "${InvGreen} ${CClear} connectivity to stabilize before re-establishing VPN/WG connectivity.${CClear}"
           echo -e "${InvGreen} ${CClear}"
           echo -e "${InvGreen} ${CClear} [Retrying to resume normal operations in 300 seconds...Please stand by!]${CClear}"
           echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
@@ -5999,7 +6021,7 @@ do
   prevHideOpts=X
 
   #if Unbound is active and out of sync, try to restart it
-  if [ "$unboundclient" != "0" ] && [ "$ResolverTimer" = "1" ]
+  if [ "$unboundclient" != "0" ] && [ "$ResolverTimer" = "1" ] && [ "$useovpn" = "1" ]
   then
     printf "\33[2K\r"
     echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$unboundreset is out of sync with Unbound DNS Resolver" >> $logfile
