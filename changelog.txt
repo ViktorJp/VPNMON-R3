@@ -1,4 +1,4 @@
-v1.5.05b - (TBA)
+v1.5.07b - (TBA)
          - MINOR: Well, actually kinda major. Wireguard is now formally being supported! VPNMON-R3 will show all
            5 Wireguard slots for more modern routers. Those who can only physically support 2 VPN slots will
            unfortunately not be able to enjoy Wireguard at the moment. Major functionality for stopping/starting
@@ -39,6 +39,9 @@ v1.5.05b - (TBA)
          - PATCH: Added the necessary code to include WG in the "WAN down" scenario as well, where it kills all
            VPN/WG connections while the WAN is down, so your router isn't wasting time trying to reconnect to
            your provider during situations like this.
+         - PATCH: Appended the Unbound resolver IP to the Unbound Resolver indicator, in order to give better
+           insight why the indicator might turn from yellow, to green, to yellow, to red, etc. over the course
+           of time. Thanks to @New2This for the inspiration! :)
 
 v1.4.1   - (June 29, 2025)
          - MINOR: Added the capability of optionally integrating with spdMerlin, and having it refresh it's list
