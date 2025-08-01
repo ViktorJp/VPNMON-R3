@@ -1,7 +1,7 @@
-# VPNMON-R3 v1.5.07 beta
+# VPNMON-R3 v1.5.08 beta
 Asus-Merlin VPN Monitor R3
 
-Updated on 2025-Jul-28
+Updated on 2025-Jul-31
 
 <img width="1009" height="789" alt="Screenshot 2025-07-13 201655" src="https://github.com/user-attachments/assets/0615348c-59d4-421a-8105-ebea453bfaaf" />
 
