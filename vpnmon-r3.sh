@@ -1924,7 +1924,7 @@ do
     fi
   echo -e "${InvGreen} ${CClear}"
 
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}wg4${CClear} ${CGreen}(9)${CClear}"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WG4${CClear} ${CGreen}(9)${CClear}"
     if [ -f /jffs/addons/vpnmon-r3.d/vr3wgsvr4.txt ]; then
       wglist=$(awk -F, '{printf "%s%s", sep, $1; sep=","} END {print ""}' /jffs/addons/vpnmon-r3.d/vr3wgsvr4.txt | awk '{print substr($0, 1, 75) ">"}')
       echo -en "${InvGreen} ${CClear} Contents: "; echo $wglist
