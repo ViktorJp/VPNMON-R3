@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.5.07b (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.5.08b (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
@@ -14,7 +14,7 @@
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.5.07b"                                               # Version tracker
+version="1.5.08b"                                               # Version tracker
 beta=1                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -4492,14 +4492,14 @@ getwgip()
 
   # Added ping workaround for site2site scenarios based on suggestion from @ZebMcKayhan
   TUN_IP=$($timeoutcmd$timeoutsec nvram get "$TUN"_addr | cut -d '/' -f1)
-  ip rule add from $TUN_IP lookup $TUN prio 10
+  ip rule add from $TUN_IP lookup $TUN prio 10 >/dev/null 2>&1
 
   icanhazwgip="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --fail --interface "$TUN" --request GET --url https://ipv4.icanhazip.com"
   icanhazwgip="$(eval $icanhazwgip)"
   if [ -z "$icanhazwgip" ] || echo "$icanhazwgip" | grep -qoE 'Internet|traffic|Error|error' ; then icanhazwgip="0.0.0.0" ; fi
 
   # Added based on suggestion from @ZebMcKayhan
-  ip rule del prio 10
+  ip rule del prio 10 >/dev/null 2>&1
 
   if [ -z "$icanhazwgip" ]
   then
@@ -4614,7 +4614,7 @@ getwgcity()
 
   # Added ping workaround for site2site scenarios based on suggestion from @ZebMcKayhan
   TUN_IP=$($timeoutcmd$timeoutsec nvram get "$TUN"_addr | cut -d '/' -f1)
-  ip rule add from $TUN_IP lookup $TUN prio 10
+  ip rule add from $TUN_IP lookup $TUN prio 10 >/dev/null 2>&1
 
   if [ "$1" = "1" ]
   then
@@ -4684,7 +4684,7 @@ getwgcity()
   fi
 
   # Added based on suggestion from @ZebMcKayhan
-  ip rule del prio 10
+  ip rule del prio 10 >/dev/null 2>&1
 
   # Insert bogus City if screenshotmode is on
   if [ "$screenshotmode" = "1" ]; then
@@ -4751,7 +4751,7 @@ checkwg()
 
   # Added ping workaround for site2site scenarios based on suggestion from @ZebMcKayhan
   TUN_IP=$($timeoutcmd$timeoutsec nvram get "$TUN"_addr | cut -d '/' -f1)
-  ip rule add from $TUN_IP lookup $TUN prio 10
+  ip rule add from $TUN_IP lookup $TUN prio 10 >/dev/null 2>&1
 
   while [ "$CNT" -lt "$TRIES" ]; do # Loop through number of tries
     ping -I $TUN -q -c 1 -W 2 $PINGHOST > /dev/null 2>&1 # First try pings
@@ -4792,7 +4792,7 @@ checkwg()
   done
 
   # Added based on suggestion from @ZebMcKayhan
-  ip rule del prio 10
+  ip rule del prio 10 >/dev/null 2>&1
 
 }
 
