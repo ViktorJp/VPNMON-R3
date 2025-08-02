@@ -1,20 +1,20 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.5.09b (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.5.10b (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2025-Jul-26
+# Last Modified: 2025-Aug-2
 ##########################################################################################
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.5.09b"                                               # Version tracker
+version="1.5.10b"                                               # Version tracker
 beta=1                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -31,6 +31,7 @@ schedulehrs=1                                                   # Scheduler hour
 schedulemin=0                                                   # Scheduler mins
 autostart=0                                                     # Auto start on router reboot y/n
 unboundclient=0                                                 # Unbound bound to VPN client slot#
+unboundshowip=0                                                 # Show expanded Unbound IP on UI
 ResolverTimer=1                                                 # Timer to give DNS resolver time to settle
 vpnping=0                                                       # Tracking VPN Tunnel Pings
 refreshserverlists=0                                            # Tracking Automated Custom VPN Server List Reset
@@ -865,7 +866,13 @@ do
   else
      unboundclientexp="Enabled, VPN$unboundclient"
   fi
-
+  
+  if [ "$unboundshowip" -eq 0 ]; then
+     unboundshowipdisp="Disabled"
+  else
+     unboundshowipdisp="Enabled"
+  fi
+  
   if [ "$refreshserverlists" -eq 0 ]; then
      refreshserverlistsdisp="Disabled"
   else
@@ -926,12 +933,17 @@ do
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 2)${CClear} : Custom PING host to determine VPN health     : ${CGreen}$PINGHOST"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 3)${CClear} : Custom Event Log size (rows)                 : ${CGreen}$logsize"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 4)${CClear} : Unbound DNS Lookups over VPN Integration     : ${CGreen}$unboundclientexp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 5)${CClear} : Refresh Custom Server Lists on -RESET Switch : ${CGreen}$refreshserverlistsdisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 6)${CClear} : Provide additional WAN/Dual WAN monitoring   : ${CGreen}$monitorwandisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 7)${CClear} : Enable/Disable VPN/WG Slot Monitoring        : $useovpnwgDisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 8)${CClear} : Whitelist VPN Server IP Lists in Skynet      : ${CGreen}$updateskynetdisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 9)${CClear} : AMTM Email Notifications on Success/Failure  : ${CGreen}$amtmemailsuccfaildisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(10)${CClear} : Reset spdMerlin Interfaces on VPN Reset      : ${CGreen}$rstspdmerlindisp"
+  if [ "$unboundclient" -eq 0 ]; then
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 5)${CClear} -- ${CDkGray}Show Expanded Unbound IP Info?              : $unboundshowipdisp"
+  else
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 5)${CClear} -- Show Expanded Unbound IP Info?              : ${CGreen}$unboundshowipdisp"
+  fi
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 6)${CClear} : Refresh Custom Server Lists on -RESET Switch : ${CGreen}$refreshserverlistsdisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 7)${CClear} : Provide additional WAN/Dual WAN monitoring   : ${CGreen}$monitorwandisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 8)${CClear} : Enable/Disable VPN/WG Slot Monitoring        : $useovpnwgDisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 9)${CClear} : Whitelist VPN Server IP Lists in Skynet      : ${CGreen}$updateskynetdisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(10)${CClear} : AMTM Email Notifications on Success/Failure  : ${CGreen}$amtmemailsuccfaildisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(11)${CClear} : Reset spdMerlin Interfaces on VPN Reset      : ${CGreen}$rstspdmerlindisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  | ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( e)${CClear} : Exit${CClear}"
   echo -e "${InvGreen} ${CClear}"
@@ -1246,6 +1258,44 @@ do
 
       5)
         clear
+        echo -e "${InvGreen} ${InvDkGray}${CWhite} Show Expanded Unbound IP Information                                                  ${CClear}"
+        echo -e "${InvGreen} ${CClear}"
+        echo -e "${InvGreen} ${CClear} Please indicate below if you would like to show your full Unbound DNS Resolver${CClear}"
+        echo -e "${InvGreen} ${CClear} IP on-screen, or just an abbreviated color-coded indicator. Showing a full IP${CClear}"
+        echo -e "${InvGreen} ${CClear} may in some cases help with troubleshooting.${CClear}"
+        echo -e "${InvGreen} ${CClear}"
+        echo -e "${InvGreen} ${CClear} Use 0 to Disable, 1 to Enable. (Default = 0)"
+        echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+        echo
+        echo -e "${CClear}Current: ${CGreen}$unboundshowipdisp${CClear}" ; echo
+        read -p "Please Choose? (Disable = 0, Enable = 1, e=Exit): " newunboundshowip
+        if [ "$newunboundshowip" = "0" ]
+        then
+            unboundshowip=0
+            unboundshowipdisp="Disabled"
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Expanded Unbound IP Information Disabled" >> $logfile
+            saveconfig
+        elif [ "$newunboundshowip" = "1" ]
+        then
+            unboundshowip=1
+            unboundshowipdisp="Enabled"
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Expanded Unbound IP Information Enabled" >> $logfile
+            saveconfig
+        elif [ "$newunboundshowip" = "e" ]
+        then
+            echo -e "\n[Exiting]"; sleep 2
+        else
+            previousValue="$unboundshowip"
+            unboundshowip="${unboundshowip:=0}"
+            unboundshowipdisp="$([ "$unboundshowip" = "0" ] && echo "Disabled" || echo "Enabled")"
+            [ "$unboundshowip" != "$previousValue" ] && \
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Expanded Unbound IP Information Disabled" >> $logfile
+            saveconfig
+        fi
+      ;;
+
+      6)
+        clear
         echo -e "${InvGreen} ${InvDkGray}${CWhite} Refresh Custom Server Lists on -RESET Switch                                          ${CClear}"
         echo -e "${InvGreen} ${CClear}"
         echo -e "${InvGreen} ${CClear} Please indicate below if you would like to automatically refresh your custom Server${CClear}"
@@ -1283,7 +1333,7 @@ do
         fi
       ;;
 
-      6)
+      7)
         clear
         echo -e "${InvGreen} ${InvDkGray}${CWhite} Provide WAN/Dual WAN Monitoring Functionality                                         ${CClear}"
         echo -e "${InvGreen} ${CClear}"
@@ -1323,7 +1373,7 @@ do
         fi
       ;;
 
-      7)
+      8)
         while true
         do
           clear
@@ -1374,7 +1424,7 @@ do
 
       ;;
 
-      8)
+      9)
         clear
         echo -e "${InvGreen} ${InvDkGray}${CWhite} Whitelist VPN Server IP Lists in Skynet                                               ${CClear}"
         echo -e "${InvGreen} ${CClear}"
@@ -1417,12 +1467,12 @@ do
 
       [Ee]) echo -e "${CClear}\n[Exiting]"; sleep 2; break ;;
 
-      9)
+      10)
         amtmevents
         source "$config"
       ;;
 
-      10)
+      11)
         clear
         echo -e "${InvGreen} ${InvDkGray}${CWhite} Reset spdMerlin Interfaces on VPN Reset                                               ${CClear}"
         echo -e "${InvGreen} ${CClear}"
@@ -3507,6 +3557,7 @@ saveconfig()
      echo 'wgautomation5="'"$wgautomation5"'"'
      echo 'refreshserverlists='$refreshserverlists
      echo 'unboundclient='$unboundclient
+     echo 'unboundshowip='$unboundshowip
      echo 'monitorwan='$monitorwan
      echo 'useovpn='$useovpn
      echo 'usewg='$usewg
@@ -4531,28 +4582,48 @@ getvpnip()
   then
     if [ "$ResolverTimer" -eq 1 ]; then
       ResolverTimer=0
-      ubsync="${CYellow}-?[UB:$DNSResolver]${CClear}"
+      if [ "$unboundshowip" -eq 0 ]; then
+        ubsync="${CYellow}-?[UB]${CClear}"
+      else
+        ubsync="${CYellow}-?[UB:Resolving]${CClear}"
+      fi
     else
       # Huge thanks to @SomewhereOverTheRainbow for his expertise in troublshooting and coming up with this DNS Resolver methodology!
       DNSResolver="$({ unbound-control flush whoami.akamai.net >/dev/null 2>&1; } && dig whoami.akamai.net +short @"$(netstat -nlp 2>/dev/null | awk '/.*(unbound){1}.*/{split($4, ip_addr, ":");if(substr($4,11) !~ /.*953.*/)print ip_addr[1];if(substr($4,11) !~ /.*953.*/)exit}')" -p "$(netstat -nlp 2>/dev/null | awk '/.*(unbound){1}.*/{if(substr($4,11) !~ /.*953.*/)print substr($4,11);if(substr($4,11) !~ /.*953.*/)exit}')" 2>/dev/null)"
 
       if [ -z "$DNSResolver" ]
       then
-        ubsync="${CRed}-X[UB:$DNSResolver]${CClear}"
+      	if [ "$unboundshowip" -eq 0 ]; then
+          ubsync="${CRed}-X[UB]${CClear}"
+        else
+          ubsync="${CRed}-X[UB:$DNSResolver]${CClear}"
+        fi
       # rudimentary check to make sure value coming back is in the format of an IP address... Don't care if it's more than 255.
       elif expr "$DNSResolver" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null
       then
         # If the DNS resolver and public VPN IP address don't match in our Unbound scenario, reset!
         if [ "$DNSResolver" != "$icanhazvpnip" ]
         then
-          ubsync="${CRed}-X[UB:$DNSResolver]${CClear}"
+        	if [ "$unboundshowip" -eq 0 ]; then
+            ubsync="${CRed}-X[UB]${CClear}"
+          else
+            ubsync="${CRed}-X[UB:$DNSResolver]${CClear}"
+          fi
           ResolverTimer=1
           unboundreset=$1
         else
-          ubsync="${CGreen}->[UB:$DNSResolver]${CClear}"
+          if [ "$unboundshowip" -eq 0 ]; then
+          	ubsync="${CGreen}->[UB]${CClear}"
+          else
+            ubsync="${CGreen}->[UB:$DNSResolver]${CClear}"
+          fi
         fi
       else
-        ubsync="${CYellow}-?[UB:$DNSResolver]${CClear}"
+        if [ "$unboundshowip" -eq 0 ]; then
+          ubsync="${CYellow}-?[UB]${CClear}"
+        else
+          ubsync="${CYellow}-?[UB:$DNSResolver]${CClear}"
+        fi
       fi
     fi
   else
@@ -4996,7 +5067,7 @@ checkwan()
       # If the WAN was down, and now it has just reset, then run a VPN Reset, and try to establish a new VPN connection
       if [ "$wandownbreakertrip" = "2" ]
       then
-          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING:  WAN Link Detected -- Trying to reconnect/Reset VPN" >> $logfile
+          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WAN Link Detected -- Trying to reconnect/Reset VPN" >> $logfile
           wandownbreakertrip=0
           clear
           echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 is currently recovering from a WAN Down Situation                           ${CClear}"
