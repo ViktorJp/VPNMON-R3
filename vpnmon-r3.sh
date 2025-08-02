@@ -949,7 +949,7 @@ do
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo ""
-  read -p "Please select? (1-9, e=Exit): " SelectSlot
+  read -p "Please select? (1-11, e=Exit): " SelectSlot
     case $SelectSlot in
       1)
         clear
@@ -1257,7 +1257,7 @@ do
       ;;
 
       5)
-        if [ "$unboundclient" -eq 1 ]; then
+        if [ "$unboundclient" != "0" ]; then
           clear
           echo -e "${InvGreen} ${InvDkGray}${CWhite} Show Expanded Unbound IP Information                                                  ${CClear}"
           echo -e "${InvGreen} ${CClear}"
