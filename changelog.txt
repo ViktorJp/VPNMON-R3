@@ -1,4 +1,4 @@
-v1.5.08b - (TBA)
+v1.5.09b - (TBA)
          - MINOR: Well, actually kinda major. Wireguard is now formally being supported! VPNMON-R3 will show all
            5 Wireguard slots for more modern routers. Those who can only physically support 2 VPN slots will
            unfortunately not be able to enjoy Wireguard at the moment. Major functionality for stopping/starting
@@ -44,6 +44,13 @@ v1.5.08b - (TBA)
            of time. Thanks to @New2This for the inspiration! :)
          - PATCH: Minor fixes and adding some more dev/nulls around certain commands to keep occasional messages
            from popping up in the main UI.
+         - PATCH: Implemented a formal email rate limiter function that controls a user-configurable allowed
+           number of emails to be sent per hour. This option is configured under AMTM Email Not(i)fications, and
+           allows you to choose a number between 1 and 9999, with 0 having this function disabled. When email
+           events fire off, you will see a system message on the bottom of your screen indicating how many emails
+           have been sent thusfar this past hour, and whether any rate limiting is in effect. An indicator is
+           displayed when the Operations Menu is displayed on the very top-right. RL (red) = disabled, and
+           RL:<number of emails>/h shows the number of emails allowed per hour.
 
 v1.4.1   - (June 29, 2025)
          - MINOR: Added the capability of optionally integrating with spdMerlin, and having it refresh it's list
