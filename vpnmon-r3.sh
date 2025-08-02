@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.5.08b (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.5.09b (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
@@ -14,7 +14,7 @@
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.5.08b"                                               # Version tracker
+version="1.5.09b"                                               # Version tracker
 beta=1                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -22,6 +22,7 @@ logfile="/jffs/addons/vpnmon-r3.d/vpnmon-r3.log"                # Static path to
 dlverpath="/jffs/addons/vpnmon-r3.d/version.txt"                # Static path to the version file
 config="/jffs/addons/vpnmon-r3.d/vpnmon-r3.cfg"                 # Static path to the config file
 lockfile="/jffs/addons/vpnmon-r3.d/resetlock.txt"               # Static path to the reset lock file
+vr3emails="/jffs/addons/vpnmon-r3.d/vr3emails.txt"              # Static path to email rate limit file
 availableslots="1 2 3 4 5"                                      # Available slots tracker
 logsize=2000                                                    # Log file size in rows
 timerloop=60                                                    # Timer loop in sec
@@ -47,6 +48,7 @@ timeoutcmd=""                                                   # For "timeout" 
 timeoutsec=""                                                   # For "timeout" cmd for "nvram" calls
 timeoutlng=""                                                   # For "timeout" cmd for "nvram" calls
 hideoptions=1                                                   # Hide/Show menu options flag
+ratelimit=0                                                     # Rate limiting number of emails/houre
 
 ##-------------------------------------##
 ## Added by Martinski W. [2024-Oct-05] ##
@@ -266,26 +268,26 @@ progressbaroverride()
   if [ "$key_press" ]
   then
       case "$key_press" in
-          [1]) echo ""; restartvpn 1; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [2]) echo ""; restartvpn 2; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [3]) echo ""; restartvpn 3; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [4]) echo ""; restartvpn 4; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [5]) echo ""; restartvpn 5; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [6]) echo ""; restartwg 1; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [7]) echo ""; restartwg 2; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [8]) echo ""; restartwg 3; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [9]) echo ""; restartwg 4; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [0]) echo ""; restartwg 5; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [\!]) echo ""; killunmonvpn 1; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [\@]) echo ""; killunmonvpn 2; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [\#]) echo ""; killunmonvpn 3; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [\$]) echo ""; killunmonvpn 4; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [\%]) echo ""; killunmonvpn 5; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [\^]) echo ""; killunmonwg 1; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [\&]) echo ""; killunmonwg 2; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [\-]) echo ""; killunmonwg 3; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [\+]) echo ""; killunmonwg 4; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [\=]) echo ""; killunmonwg 5; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [1]) echo ""; restartvpn 1; sendmessage 0 "VPN Reset" 1; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [2]) echo ""; restartvpn 2; sendmessage 0 "VPN Reset" 2; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [3]) echo ""; restartvpn 3; sendmessage 0 "VPN Reset" 3; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [4]) echo ""; restartvpn 4; sendmessage 0 "VPN Reset" 4; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [5]) echo ""; restartvpn 5; sendmessage 0 "VPN Reset" 5; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [6]) echo ""; restartwg 1; sendmessage 0 "WG Reset" 1; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [7]) echo ""; restartwg 2; sendmessage 0 "WG Reset" 2; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [8]) echo ""; restartwg 3; sendmessage 0 "WG Reset" 3; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [9]) echo ""; restartwg 4; sendmessage 0 "WG Reset" 4; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [0]) echo ""; restartwg 5; sendmessage 0 "WG Reset" 5; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [\!]) echo ""; killunmonvpn 1; sendmessage 0 "VPN Killed" 1; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [\@]) echo ""; killunmonvpn 2; sendmessage 0 "VPN Killed" 2; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [\#]) echo ""; killunmonvpn 3; sendmessage 0 "VPN Killed" 3; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [\$]) echo ""; killunmonvpn 4; sendmessage 0 "VPN Killed" 4; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [\%]) echo ""; killunmonvpn 5; sendmessage 0 "VPN Killed" 5; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [\^]) echo ""; killunmonwg 1; sendmessage 0 "WG Killed" 1; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [\&]) echo ""; killunmonwg 2; sendmessage 0 "WG Killed" 2; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [\-]) echo ""; killunmonwg 3; sendmessage 0 "WG Killed" 3; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [\+]) echo ""; killunmonwg 4; sendmessage 0 "WG Killed" 4; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [\=]) echo ""; killunmonwg 5; sendmessage 0 "WG Killed" 5; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
           [Aa]) autostart;;
           [Cc]) vsetup;;
           [Dd]) wgserverlistautomation;;
@@ -1725,16 +1727,22 @@ do
   echo -e "${InvGreen} ${CClear} download an AMTM email interface library courtesy of @Martinsky, and will be${CClear}"
   echo -e "${InvGreen} ${CClear} located under a new common shared library folder called: /jffs/addons/shared-libs.${CClear}"
   echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear} Secondarily, you can choose to rate limit the rate at which emails are sent to${CClear}"
+  echo -e "${InvGreen} ${CClear} your email account per hour. (0=Disabled, 1-9999)${CClear}"
+  echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} Use the corresponding ${CGreen}()${CClear} key to enable/disable email event notifications:${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
 
   if [ "$amtmemailsuccess" = "1" ]; then amtmemailsuccessdisp="${CGreen}Y${CCyan}"; else amtmemailsuccess=0; amtmemailsuccessdisp="${CRed}N${CCyan}"; fi
   if [ "$amtmemailfailure" = "1" ]; then amtmemailfailuredisp="${CGreen}Y${CCyan}"; else amtmemailfailure=0; amtmemailfailuredisp="${CRed}N${CCyan}"; fi
+  if [ "$ratelimit" = "0" ]; then ratelimitdisp="Disabled"; else ratelimitdisp=$ratelimit; fi
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN Success Event Notifications${CClear} ${CGreen}(1) -${CClear} $amtmemailsuccessdisp${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN Failure Event Notifications${CClear} ${CGreen}(2) -${CClear} $amtmemailfailuredisp${CClear}"
+  echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}Set Email Rate Limit (per hour)${CClear} ${CGreen}(r) - $ratelimitdisp${CClear}"
   echo ""
-  read -p "Please select? (1-2, e=Exit, t=Test Email): " SelectSlot
+  read -p "Please select? (1-2, r=Set Email Rate Limit, e=Exit, t=Test Email): " SelectSlot
     case $SelectSlot in
       1) if [ "$amtmemailsuccess" = "0" ]; then amtmemailsuccess=1; amtmemailsuccessdisp="${CGreen}Y${CCyan}"; elif [ "$amtmemailsuccess" = "1" ]; then amtmemailsuccess=0; amtmemailsuccessdisp="${CRed}N${CCyan}"; fi;;
       2) if [ "$amtmemailfailure" = "0" ]; then amtmemailfailure=1; amtmemailfailuredisp="${CGreen}Y${CCyan}"; elif [ "$amtmemailfailure" = "1" ]; then amtmemailfailure=0; amtmemailfailuredisp="${CRed}N${CCyan}"; fi;;
@@ -1766,6 +1774,27 @@ do
 
          echo ; echo
          read -rsp $'Press any key to acknowledge...\n' -n1 key
+         ;;
+
+      [Rr])
+         echo ""
+         read -p "Please enter new Email Rate Limit (per hour)? (0=disabled, 1-9999, e=Exit): " newratelimit
+         if [ "$newratelimit" = "e" ]
+         then
+             echo -e "\n[Exiting]"; sleep 2
+         elif echo "$newratelimit" | grep -qE "^(0|[1-9][0-9]{0,3})$" && \
+             [ "$newratelimit" -ge 0 ] && [ "$newratelimit" -le 9999 ]
+         then
+             ratelimit="$newratelimit"
+             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Email Rate Limit entered (per hour): $ratelimit" >> $logfile
+             saveconfig
+         else
+             previousValue="$ratelimit"
+             ratelimit="${ratelimit:=0}"
+             [ "$ratelimit" != "$previousValue" ] && \
+             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Email Rate Limit entered (per hour): $ratelimit" >> $logfile
+             saveconfig
+         fi
          ;;
 
       [Ee])
@@ -3485,6 +3514,7 @@ saveconfig()
      echo 'amtmemailsuccess='$amtmemailsuccess
      echo 'amtmemailfailure='$amtmemailfailure
      echo 'rstspdmerlin='$rstspdmerlin
+     echo 'ratelimit='$ratelimit
    } > "$config"
 
    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New vpnmon-r3.cfg File Saved" >> $logfile
@@ -3630,6 +3660,7 @@ _SendEMailNotification_()
 
 sendmessage()
 {
+
   #If AMTM email functionality is disabled, return back to the function call
   if [ "$amtmemailsuccess" = "0" ] && [ "$amtmemailfailure" = "0" ]; then
      return
@@ -3653,235 +3684,288 @@ sendmessage()
   cemIsVerboseMode=false
   tmpEMailBodyFile="/tmp/var/tmp/tmpEMailBody_${scriptFileNTag}.$$.TXT"
 
-  #Pick the scenario and send email
-  if [ "$1" = "1" ] && [ "$amtmemailfailure" = "1" ]; then
-    if [ "$2" = "Recovering from WAN Down" ]; then
-      emailSubject="ALERT: Router Recovering from WAN Down"
-      emailBodyTitle="ALERT: Router Recovering from WAN Down"
-      {
-      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-      printf "\n"
-      printf "<b>ALERT: VPNMON-R3</b> is currently recovering from a WAN Down Situation!\n"
-      printf "Router has detected a WAN Link/Modem and waited 300 seconds for general network.\n"
-      printf "connectivity to stabilize before re-establishing VPN connectivity.\n"
-      printf "\n"
-      } > "$tmpEMailBodyFile"
-    elif [ "$2" = "VPN Slot In Error State" ]; then
-      emailSubject="FAILURE: VPN Slot $3 in Error State"
-      emailBodyTitle="FAILURE: VPN Slot $3 in Error State"
-      {
-      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-      printf "\n"
-      printf "<b>FAILURE: VPNMON-R3</b> has detected that VPN Slot $3 is in an error state. VPN Slot $3 has been reset.\n"
-      printf "Please check your network environment and configuration if this error continues to persist."
-      printf "\n"
-      } > "$tmpEMailBodyFile"
-    elif [ "$2" = "VPN Tunnel Disconnected" ]; then
-      emailSubject="FAILURE: VPN Slot $3 has Disconnected"
-      emailBodyTitle="FAILURE: VPN Slot $3 has Disconnected"
-      {
-      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-      printf "\n"
-      printf "<b>FAILURE: VPNMON-R3</b> has detected that VPN Slot $3 has disconnected. VPN Slot $3 has been reset.\n"
-      printf "Please check your network environment and configuration if this error continues to persist."
-      printf "\n"
-      } > "$tmpEMailBodyFile"
-    elif [ "$2" = "VPN Slot Is Non-Responsive" ]; then
-      emailSubject="FAILURE: VPN Slot $3 is Non-Responsive"
-      emailBodyTitle="FAILURE: VPN Slot $3 is Non-Responsive"
-      {
-      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-      printf "\n"
-      printf "<b>FAILURE: VPNMON-R3</b> has detected that VPN Slot $3 is non-responsive. VPN Slot $3 has been reset.\n"
-      printf "Please check your network environment and configuration if this error continues to persist."
-      printf "\n"
-      } > "$tmpEMailBodyFile"
-    elif [ "$2" = "VPN Slot Exceeded Max Ping" ]; then
-      emailSubject="WARNING: VPN Slot $3 Exceeded Max Ping"
-      emailBodyTitle="WARNING: VPN Slot $3 Exceeded Max Ping"
-      {
-      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-      printf "\n"
-      printf "<b>WARNING: VPNMON-R3</b> has detected that VPN Slot $3 exceeded max ping. VPN Slot $3 has been reset.\n"
-      printf "Please check your network environment and configuration if this error continues to persist."
-      printf "\n"
-      } > "$tmpEMailBodyFile"
-    elif [ "$2" = "VPN Slot Not Synced With Unbound" ]; then
-      emailSubject="WARNING: VPN Slot $3 Not Synced with Unbound"
-      emailBodyTitle="WARNING: VPN Slot $3 Not Synced with Unbound"
-      {
-      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-      printf "\n"
-      printf "<b>WARNING: VPNMON-R3</b> has detected that VPN Slot $3 is not synced with Unbound. VPN Slot $3 has been reset.\n"
-      printf "Please check your network environment and configuration if this error continues to persist."
-      printf "\n"
-      } > "$tmpEMailBodyFile"
-    ##-------------------------------------##
-    ## Modified by Dan G. [2025-Jul-16]    ##
-    ##-------------------------------------##
-    elif [ "$2" = "VPN Server List Query Yielded 0 Rows" ]; then
-      emailSubject="WARNING: VPN Slot $3 Server List Query Yielded 0 Rows"
-      emailBodyTitle="WARNING: VPN Slot $3 Server List Query Yielded 0 Rows"
-      {
-      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-      printf "\n"
-      printf "<b>WARNING: VPNMON-R3</b> has detected that the Custom Server List Query for VPN Slot $3 yielded 0 results.\n"
-      printf "This may be due to an error in the query, or the VPN provider API service may be down or unreachable."
-      printf "Please check your network environment and configuration if this error continues to persist."
-      printf "\n"
-      } > "$tmpEMailBodyFile"
-    elif [ "$2" = "WG Server List Query Yielded 0 Rows" ]; then
-      emailSubject="WARNING: WG Slot $3 Server List Query Yielded 0 Rows"
-      emailBodyTitle="WARNING: WG Slot $3 Server List Query Yielded 0 Rows"
-      {
-      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-      printf "\n"
-      printf "<b>WARNING: VPNMON-R3</b> has detected that the Custom Server List Query for WG Slot $3 yielded 0 results.\n"
-      printf "This may be due to an error in the query, or the VPN provider API service may be down or unreachable."
-      printf "Please check your network environment and configuration if this error continues to persist."
-      printf "\n"
-      } > "$tmpEMailBodyFile"
-    elif [ "$2" = "WG Slot Exceeded Max Ping" ]; then
-      emailSubject="WARNING: WG Slot $3 Exceeded Max Ping"
-      emailBodyTitle="WARNING: WG Slot $3 Exceeded Max Ping"
-      {
-      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-      printf "\n"
-      printf "<b>WARNING: VPNMON-R3</b> has detected that WG Slot $3 exceeded max ping. WG Slot $3 has been reset.\n"
-      printf "Please check your network environment and configuration if this error continues to persist."
-      printf "\n"
-      } > "$tmpEMailBodyFile"
-    elif [ "$2" = "WG Handshake Exceeded" ]; then
-      emailSubject="WARNING: WG Slot $3 Exceeded Handshake"
-      emailBodyTitle="WARNING: WG Slot $3 Exceeded Handshake"
-      {
-      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-      printf "\n"
-      printf "<b>WARNING: VPNMON-R3</b> has detected that WG Slot $3 exceeded a 200s handshake. WG Slot $3 has been reset.\n"
-      printf "Please check your network environment and configuration if this error continues to persist."
-      printf "\n"
-      } > "$tmpEMailBodyFile"
-    elif [ "$2" = "WG Tunnel Disconnected" ]; then
-      emailSubject="WARNING: WG Slot $3 Tunnel Disconnected"
-      emailBodyTitle="WARNING: WG Slot $3 Tunnel Disconnected"
-      {
-      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-      printf "\n"
-      printf "<b>WARNING: VPNMON-R3</b> has detected that WG Slot $3 tunnel disconnected. WG Slot $3 has been reset.\n"
-      printf "Please check your network environment and configuration if this error continues to persist."
-      printf "\n"
-      } > "$tmpEMailBodyFile"
-    elif [ "$2" = "WG Slot Is Non-Responsive" ]; then
-      emailSubject="WARNING: WG Slot $3 is Non-Responsive"
-      emailBodyTitle="WARNING: WG Slot $3 is Non-Responsive"
-      {
-      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-      printf "\n"
-      printf "<b>WARNING: VPNMON-R3</b> has detected that WG Slot $3 is not responding. WG Slot $3 has been reset.\n"
-      printf "Please check your network environment and configuration if this error continues to persist."
-      printf "\n"
-      } > "$tmpEMailBodyFile"
-    fi
-    _SendEMailNotification_ "VPNMON-R3 v$version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
-  fi
+  ratelimiter
+  emaillimit="$?"
+  if [ "$emaillimit" -eq 0 ]
+    then
 
-  if [ "$1" = "0" ] && [ "$amtmemailsuccess" = "1" ]; then
-    if [ "$2" = "VPN Connection Scheduled Reset" ]; then
-      emailSubject="SUCCESS: VPN Slot $3 Manual/Scheduled Reset"
-      emailBodyTitle="SUCCESS: VPN Slot $3 Manual/Scheduled Reset"
-      {
-      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-      printf "\n"
-      printf "<b>SUCCESS: VPNMON-R3</b> completed a successful manual/scheduled reset on VPN Slot $3\n"
-      printf "\n"
-      } > "$tmpEMailBodyFile"
-    elif [ "$2" = "VPN Reset" ]; then
-      emailSubject="SUCCESS: VPN Slot $3 Manual Reset"
-      emailBodyTitle="SUCCESS: VPN Slot $3 Manual Reset"
-      {
-      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-      printf "\n"
-      printf "<b>SUCCESS: VPNMON-R3</b> completed a successful manual reset on VPN Slot $3\n"
-      printf "\n"
-      } > "$tmpEMailBodyFile"
-    elif [ "$2" = "VPN Killed" ]; then
-      emailSubject="SUCCESS: VPN Slot $3 Manually Stopped & Unmonitored"
-      emailBodyTitle="SUCCESS: VPN Slot $3 Manually Stopped & Unmonitored"
-      {
-      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-      printf "\n"
-      printf "<b>SUCCESS: VPNMON-R3</b> successfully manually stopped and unmonitored VPN Slot $3\n"
-      printf "\n"
-      } > "$tmpEMailBodyFile"
-    ##-------------------------------------##
-    ## Added by Dan G. [2025-Jul-16]       ##
-    ##-------------------------------------##
-    elif [ "$2" = "WG Connection Scheduled Reset" ]; then
-      emailSubject="SUCCESS: WG Slot $3 Manual/Scheduled Reset"
-      emailBodyTitle="SUCCESS: WG Slot $3 Manual/Scheduled Reset"
-      {
-      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-      printf "\n"
-      printf "<b>SUCCESS: VPNMON-R3</b> completed a successful manual/scheduled reset on WG Slot $3\n"
-      printf "\n"
-      } > "$tmpEMailBodyFile"
-    elif [ "$2" = "WG Reset" ]; then
-      emailSubject="SUCCESS: WG Slot $3 Manual Reset"
-      emailBodyTitle="SUCCESS: WG Slot $3 Manual Reset"
-      {
-      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-      printf "\n"
-      printf "<b>SUCCESS: VPNMON-R3</b> completed a successful manual reset on WG Slot $3\n"
-      printf "\n"
-      } > "$tmpEMailBodyFile"
-    elif [ "$2" = "WG Killed" ]; then
-      emailSubject="SUCCESS: WG Slot $3 Manually Stopped & Unmonitored"
-      emailBodyTitle="SUCCESS: WG Slot $3 Manually Stopped & Unmonitored"
-      {
-      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-      printf "\n"
-      printf "<b>SUCCESS: VPNMON-R3</b> successfully manually stopped and unmonitored WG Slot $3\n"
-      printf "\n"
-      } > "$tmpEMailBodyFile"
-    fi
-    _SendEMailNotification_ "VPNMON-R3 v$version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
+      #Pick the scenario and send email
+      if [ "$1" = "1" ] && [ "$amtmemailfailure" = "1" ]; then
+        if [ "$2" = "Recovering from WAN Down" ]; then
+          emailSubject="ALERT: Router Recovering from WAN Down"
+          emailBodyTitle="ALERT: Router Recovering from WAN Down"
+          {
+          printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+          printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+          printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+          printf "\n"
+          printf "<b>ALERT: VPNMON-R3</b> is currently recovering from a WAN Down Situation!\n"
+          printf "Router has detected a WAN Link/Modem and waited 300 seconds for general network.\n"
+          printf "connectivity to stabilize before re-establishing VPN connectivity.\n"
+          printf "\n"
+          } > "$tmpEMailBodyFile"
+        elif [ "$2" = "VPN Slot In Error State" ]; then
+          emailSubject="FAILURE: VPN Slot $3 in Error State"
+          emailBodyTitle="FAILURE: VPN Slot $3 in Error State"
+          {
+          printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+          printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+          printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+          printf "\n"
+          printf "<b>FAILURE: VPNMON-R3</b> has detected that VPN Slot $3 is in an error state. VPN Slot $3 has been reset.\n"
+          printf "Please check your network environment and configuration if this error continues to persist."
+          printf "\n"
+          } > "$tmpEMailBodyFile"
+        elif [ "$2" = "VPN Tunnel Disconnected" ]; then
+          emailSubject="FAILURE: VPN Slot $3 has Disconnected"
+          emailBodyTitle="FAILURE: VPN Slot $3 has Disconnected"
+          {
+          printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+          printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+          printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+          printf "\n"
+          printf "<b>FAILURE: VPNMON-R3</b> has detected that VPN Slot $3 has disconnected. VPN Slot $3 has been reset.\n"
+          printf "Please check your network environment and configuration if this error continues to persist."
+          printf "\n"
+          } > "$tmpEMailBodyFile"
+        elif [ "$2" = "VPN Slot Is Non-Responsive" ]; then
+          emailSubject="FAILURE: VPN Slot $3 is Non-Responsive"
+          emailBodyTitle="FAILURE: VPN Slot $3 is Non-Responsive"
+          {
+          printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+          printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+          printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+          printf "\n"
+          printf "<b>FAILURE: VPNMON-R3</b> has detected that VPN Slot $3 is non-responsive. VPN Slot $3 has been reset.\n"
+          printf "Please check your network environment and configuration if this error continues to persist."
+          printf "\n"
+          } > "$tmpEMailBodyFile"
+        elif [ "$2" = "VPN Slot Exceeded Max Ping" ]; then
+          emailSubject="WARNING: VPN Slot $3 Exceeded Max Ping"
+          emailBodyTitle="WARNING: VPN Slot $3 Exceeded Max Ping"
+          {
+          printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+          printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+          printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+          printf "\n"
+          printf "<b>WARNING: VPNMON-R3</b> has detected that VPN Slot $3 exceeded max ping. VPN Slot $3 has been reset.\n"
+          printf "Please check your network environment and configuration if this error continues to persist."
+          printf "\n"
+          } > "$tmpEMailBodyFile"
+        elif [ "$2" = "VPN Slot Not Synced With Unbound" ]; then
+          emailSubject="WARNING: VPN Slot $3 Not Synced with Unbound"
+          emailBodyTitle="WARNING: VPN Slot $3 Not Synced with Unbound"
+          {
+          printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+          printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+          printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+          printf "\n"
+          printf "<b>WARNING: VPNMON-R3</b> has detected that VPN Slot $3 is not synced with Unbound. VPN Slot $3 has been reset.\n"
+          printf "Please check your network environment and configuration if this error continues to persist."
+          printf "\n"
+          } > "$tmpEMailBodyFile"
+        ##-------------------------------------##
+        ## Modified by Dan G. [2025-Jul-16]    ##
+        ##-------------------------------------##
+        elif [ "$2" = "VPN Server List Query Yielded 0 Rows" ]; then
+          emailSubject="WARNING: VPN Slot $3 Server List Query Yielded 0 Rows"
+          emailBodyTitle="WARNING: VPN Slot $3 Server List Query Yielded 0 Rows"
+          {
+          printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+          printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+          printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+          printf "\n"
+          printf "<b>WARNING: VPNMON-R3</b> has detected that the Custom Server List Query for VPN Slot $3 yielded 0 results.\n"
+          printf "This may be due to an error in the query, or the VPN provider API service may be down or unreachable."
+          printf "Please check your network environment and configuration if this error continues to persist."
+          printf "\n"
+          } > "$tmpEMailBodyFile"
+        elif [ "$2" = "WG Server List Query Yielded 0 Rows" ]; then
+          emailSubject="WARNING: WG Slot $3 Server List Query Yielded 0 Rows"
+          emailBodyTitle="WARNING: WG Slot $3 Server List Query Yielded 0 Rows"
+          {
+          printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+          printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+          printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+          printf "\n"
+          printf "<b>WARNING: VPNMON-R3</b> has detected that the Custom Server List Query for WG Slot $3 yielded 0 results.\n"
+          printf "This may be due to an error in the query, or the VPN provider API service may be down or unreachable."
+          printf "Please check your network environment and configuration if this error continues to persist."
+          printf "\n"
+          } > "$tmpEMailBodyFile"
+        elif [ "$2" = "WG Slot Exceeded Max Ping" ]; then
+          emailSubject="WARNING: WG Slot $3 Exceeded Max Ping"
+          emailBodyTitle="WARNING: WG Slot $3 Exceeded Max Ping"
+          {
+          printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+          printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+          printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+          printf "\n"
+          printf "<b>WARNING: VPNMON-R3</b> has detected that WG Slot $3 exceeded max ping. WG Slot $3 has been reset.\n"
+          printf "Please check your network environment and configuration if this error continues to persist."
+          printf "\n"
+          } > "$tmpEMailBodyFile"
+        elif [ "$2" = "WG Handshake Exceeded" ]; then
+          emailSubject="WARNING: WG Slot $3 Exceeded Handshake"
+          emailBodyTitle="WARNING: WG Slot $3 Exceeded Handshake"
+          {
+          printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+          printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+          printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+          printf "\n"
+          printf "<b>WARNING: VPNMON-R3</b> has detected that WG Slot $3 exceeded a 200s handshake. WG Slot $3 has been reset.\n"
+          printf "Please check your network environment and configuration if this error continues to persist."
+          printf "\n"
+          } > "$tmpEMailBodyFile"
+        elif [ "$2" = "WG Tunnel Disconnected" ]; then
+          emailSubject="WARNING: WG Slot $3 Tunnel Disconnected"
+          emailBodyTitle="WARNING: WG Slot $3 Tunnel Disconnected"
+          {
+          printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+          printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+          printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+          printf "\n"
+          printf "<b>WARNING: VPNMON-R3</b> has detected that WG Slot $3 tunnel disconnected. WG Slot $3 has been reset.\n"
+          printf "Please check your network environment and configuration if this error continues to persist."
+          printf "\n"
+          } > "$tmpEMailBodyFile"
+        elif [ "$2" = "WG Slot Is Non-Responsive" ]; then
+          emailSubject="WARNING: WG Slot $3 is Non-Responsive"
+          emailBodyTitle="WARNING: WG Slot $3 is Non-Responsive"
+          {
+          printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+          printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+          printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+          printf "\n"
+          printf "<b>WARNING: VPNMON-R3</b> has detected that WG Slot $3 is not responding. WG Slot $3 has been reset.\n"
+          printf "Please check your network environment and configuration if this error continues to persist."
+          printf "\n"
+          } > "$tmpEMailBodyFile"
+        fi
+        _SendEMailNotification_ "VPNMON-R3 v$version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
+      fi
+
+      if [ "$1" = "0" ] && [ "$amtmemailsuccess" = "1" ]; then
+        if [ "$2" = "VPN Connection Scheduled Reset" ]; then
+          emailSubject="SUCCESS: VPN Slot $3 Manual/Scheduled Reset"
+          emailBodyTitle="SUCCESS: VPN Slot $3 Manual/Scheduled Reset"
+          {
+          printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+          printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+          printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+          printf "\n"
+          printf "<b>SUCCESS: VPNMON-R3</b> completed a successful manual/scheduled reset on VPN Slot $3\n"
+          printf "\n"
+          } > "$tmpEMailBodyFile"
+        elif [ "$2" = "VPN Reset" ]; then
+          emailSubject="SUCCESS: VPN Slot $3 Manual Reset"
+          emailBodyTitle="SUCCESS: VPN Slot $3 Manual Reset"
+          {
+          printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+          printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+          printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+          printf "\n"
+          printf "<b>SUCCESS: VPNMON-R3</b> completed a successful manual reset on VPN Slot $3\n"
+          printf "\n"
+          } > "$tmpEMailBodyFile"
+        elif [ "$2" = "VPN Killed" ]; then
+          emailSubject="SUCCESS: VPN Slot $3 Manually Stopped & Unmonitored"
+          emailBodyTitle="SUCCESS: VPN Slot $3 Manually Stopped & Unmonitored"
+          {
+          printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+          printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+          printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+          printf "\n"
+          printf "<b>SUCCESS: VPNMON-R3</b> successfully manually stopped and unmonitored VPN Slot $3\n"
+          printf "\n"
+          } > "$tmpEMailBodyFile"
+        ##-------------------------------------##
+        ## Added by Dan G. [2025-Jul-16]       ##
+        ##-------------------------------------##
+        elif [ "$2" = "WG Connection Scheduled Reset" ]; then
+          emailSubject="SUCCESS: WG Slot $3 Manual/Scheduled Reset"
+          emailBodyTitle="SUCCESS: WG Slot $3 Manual/Scheduled Reset"
+          {
+          printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+          printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+          printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+          printf "\n"
+          printf "<b>SUCCESS: VPNMON-R3</b> completed a successful manual/scheduled reset on WG Slot $3\n"
+          printf "\n"
+          } > "$tmpEMailBodyFile"
+        elif [ "$2" = "WG Reset" ]; then
+          emailSubject="SUCCESS: WG Slot $3 Manual Reset"
+          emailBodyTitle="SUCCESS: WG Slot $3 Manual Reset"
+          {
+          printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+          printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+          printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+          printf "\n"
+          printf "<b>SUCCESS: VPNMON-R3</b> completed a successful manual reset on WG Slot $3\n"
+          printf "\n"
+          } > "$tmpEMailBodyFile"
+        elif [ "$2" = "WG Killed" ]; then
+          emailSubject="SUCCESS: WG Slot $3 Manually Stopped & Unmonitored"
+          emailBodyTitle="SUCCESS: WG Slot $3 Manually Stopped & Unmonitored"
+          {
+          printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+          printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+          printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+          printf "\n"
+          printf "<b>SUCCESS: VPNMON-R3</b> successfully manually stopped and unmonitored WG Slot $3\n"
+          printf "\n"
+          } > "$tmpEMailBodyFile"
+        fi
+        _SendEMailNotification_ "VPNMON-R3 v$version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
+      fi
   fi
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+# Function to keep track of emails sent, and determine if they need to be rate-limited
+ratelimiter()
+{
+
+#if rate limiting is disabled, exit right away
+if [ "$ratelimit" = "0" ]; then
+  return 0
+fi
+
+#Make sure log file exists
+touch "$vr3emails"
+
+#check current time and 1h into the past
+current_time=$(date +%s)
+cutoff_time=$((current_time - 3600))
+
+#create a temp file where current data will get moved over into that is less than 1hr old
+vr3emailstemp="${vr3emails}.tmp"
+awk -v cutoff="$cutoff_time" '$1 > cutoff' "$vr3emails" > "$vr3emailstemp"
+
+#check to see how many emails have been sent in the last hour
+recent_email_count=$(wc -l < "$vr3emailstemp" | tr -d ' ')
+
+printf "\33[2K\r"
+printf "${CGreen}\r[Checking email rate limit... $recent_email_count/$ratelimit emails sent within the last hour]"
+sleep 2
+
+#logic to determine if rate limit has been hit
+if [ "$recent_email_count" -ge "$ratelimit" ]
+  then
+    printf "\33[2K\r"
+    printf "${CGreen}\r[Rate limit exceeded. Emails will be prevented from sending]"
+    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Email Rate limit exceeded ($ratelimit). Emails will be prevented from sending." >> $logfile
+    sleep 2
+    mv "$vr3emailstemp" "$vr3emails"
+    return 1
+  else
+    printf "\33[2K\r"
+    printf "${CGreen}\r[Rate within limits. Proceeding to send email]"
+    sleep 1
+    echo "$current_time" >> "$vr3emailstemp"
+    mv "$vr3emailstemp" "$vr3emails"
+    return 0
+fi
 
 }
 
@@ -3988,7 +4072,7 @@ restartvpn()
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-# Initiate a VPN restart - $1 = slot number
+# Initiate a WG restart - $1 = slot number
 
 restartwg()
 {
@@ -5226,11 +5310,17 @@ displayopsmenu()
        amtmdisp="${CDkGray}Disabled        "
     fi
 
+    if [ "$ratelimit" = "0" ]; then
+      rldisp="${CRed}RL"
+    else
+      rldisp="${CGreen}RL:$ratelimit/h"
+    fi
+
     #display operations menu
     if [ "$availableslots" = "1 2" ]
     then
       echo -e "${InvGreen} ${InvDkGray}${CWhite} Operations Menu                                                                                              ${CClear}"
-      echo -e "${InvGreen} ${CClear} Reset/Reconnect VPN 1:${CGreen}(1)${CClear} 2:${CGreen}(2)${CClear}                      ${InvGreen} ${CClear} ${CGreen}(C)${CClear}onfiguration Menu / Main Setup Menu${CClear}"
+      echo -e "${InvGreen} ${CClear} Reset/Reconnect VPN 1:${CGreen}(1)${CClear} 2:${CGreen}(2)${CClear}                      ${InvGreen} ${CClear} ${CGreen}(C)${CClear}onfiguration Menu / Main Setup Menu | $rldisp${CClear}"
       echo -e "${InvGreen} ${CClear} Stop/Unmonitor  VPN 1:${CGreen}(!)${CClear} 2:${CGreen}(@)${CClear}                      ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN/WG CRON Time Scheduler: $schedtime"
       echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN Slots                 ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim Log Size (rows): $logSizeStr"
       echo -e "${InvGreen} ${CClear} Update/Maintain ${CGreen}(V)${CClear}PN Server Lists                   ${InvGreen} ${CClear} ${CGreen}(A)${CClear}utostart VPNMON-R3 on Reboot: $rebootprot"
@@ -5241,7 +5331,7 @@ displayopsmenu()
     elif [ "$availableslots" = "1 2 3 4 5" ]
     then
       echo -e "${InvGreen} ${InvDkGray}${CWhite} Operations Menu                                                                                              ${CClear}"
-      echo -e "${InvGreen} ${CClear} Reset/Reconnect VPN 1:${CGreen}(1)${CClear} 2:${CGreen}(2)${CClear} 3:${CGreen}(3)${CClear} 4:${CGreen}(4)${CClear} 5:${CGreen}(5)${CClear}    ${InvGreen} ${CClear} ${CGreen}(C)${CClear}onfiguration Menu / Main Setup Menu${CClear}"
+      echo -e "${InvGreen} ${CClear} Reset/Reconnect VPN 1:${CGreen}(1)${CClear} 2:${CGreen}(2)${CClear} 3:${CGreen}(3)${CClear} 4:${CGreen}(4)${CClear} 5:${CGreen}(5)${CClear}    ${InvGreen} ${CClear} ${CGreen}(C)${CClear}onfiguration Menu / Main Setup Menu | $rldisp${CClear}"
       echo -e "${InvGreen} ${CClear} Stop/Unmonitor  VPN 1:${CGreen}(!)${CClear} 2:${CGreen}(@)${CClear} 3:${CGreen}(#)${CClear} 4:${CGreen}($)${CClear} 5:${CGreen}(%)${CClear}    ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN/WG CRON Time Scheduler: $schedtime"
       echo -e "${InvGreen} ${CClear} Reset/Reconnect  WG 1:${CGreen}(6)${CClear} 2:${CGreen}(7)${CClear} 3:${CGreen}(8)${CClear} 4:${CGreen}(9)${CClear} 5:${CGreen}(0)${CClear}    ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim Log Size (rows): $logSizeStr"
       echo -e "${InvGreen} ${CClear} Stop/Unmonitor   WG 1:${CGreen}(^)${CClear} 2:${CGreen}(&)${CClear} 3:${CGreen}(-)${CClear} 4:${CGreen}(+)${CClear} 5:${CGreen}(=)${CClear}    ${InvGreen} ${CClear} ${CGreen}(A)${CClear}utostart VPNMON-R3 on Reboot: $rebootprot"
