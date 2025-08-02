@@ -866,13 +866,13 @@ do
   else
      unboundclientexp="Enabled, VPN$unboundclient"
   fi
-  
+
   if [ "$unboundshowip" -eq 0 ]; then
      unboundshowipdisp="Disabled"
   else
      unboundshowipdisp="Enabled"
   fi
-  
+
   if [ "$refreshserverlists" -eq 0 ]; then
      refreshserverlistsdisp="Disabled"
   else
@@ -1257,40 +1257,42 @@ do
       ;;
 
       5)
-        clear
-        echo -e "${InvGreen} ${InvDkGray}${CWhite} Show Expanded Unbound IP Information                                                  ${CClear}"
-        echo -e "${InvGreen} ${CClear}"
-        echo -e "${InvGreen} ${CClear} Please indicate below if you would like to show your full Unbound DNS Resolver${CClear}"
-        echo -e "${InvGreen} ${CClear} IP on-screen, or just an abbreviated color-coded indicator. Showing a full IP${CClear}"
-        echo -e "${InvGreen} ${CClear} may in some cases help with troubleshooting.${CClear}"
-        echo -e "${InvGreen} ${CClear}"
-        echo -e "${InvGreen} ${CClear} Use 0 to Disable, 1 to Enable. (Default = 0)"
-        echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-        echo
-        echo -e "${CClear}Current: ${CGreen}$unboundshowipdisp${CClear}" ; echo
-        read -p "Please Choose? (Disable = 0, Enable = 1, e=Exit): " newunboundshowip
-        if [ "$newunboundshowip" = "0" ]
-        then
-            unboundshowip=0
-            unboundshowipdisp="Disabled"
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Expanded Unbound IP Information Disabled" >> $logfile
-            saveconfig
-        elif [ "$newunboundshowip" = "1" ]
-        then
-            unboundshowip=1
-            unboundshowipdisp="Enabled"
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Expanded Unbound IP Information Enabled" >> $logfile
-            saveconfig
-        elif [ "$newunboundshowip" = "e" ]
-        then
-            echo -e "\n[Exiting]"; sleep 2
-        else
-            previousValue="$unboundshowip"
-            unboundshowip="${unboundshowip:=0}"
-            unboundshowipdisp="$([ "$unboundshowip" = "0" ] && echo "Disabled" || echo "Enabled")"
-            [ "$unboundshowip" != "$previousValue" ] && \
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Expanded Unbound IP Information Disabled" >> $logfile
-            saveconfig
+        if [ "$unboundclient" -eq 1 ]; then
+          clear
+          echo -e "${InvGreen} ${InvDkGray}${CWhite} Show Expanded Unbound IP Information                                                  ${CClear}"
+          echo -e "${InvGreen} ${CClear}"
+          echo -e "${InvGreen} ${CClear} Please indicate below if you would like to show your full Unbound DNS Resolver IP on-${CClear}"
+          echo -e "${InvGreen} ${CClear} screen, or just an abbreviated color-coded indicator. Showing a full IP may in some${CClear}"
+          echo -e "${InvGreen} ${CClear} cases help with troubleshooting.${CClear}"
+          echo -e "${InvGreen} ${CClear}"
+          echo -e "${InvGreen} ${CClear} Use 0 to Disable, 1 to Enable. (Default = 0)"
+          echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+          echo
+          echo -e "${CClear}Current: ${CGreen}$unboundshowipdisp${CClear}" ; echo
+          read -p "Please Choose? (Disable = 0, Enable = 1, e=Exit): " newunboundshowip
+          if [ "$newunboundshowip" = "0" ]
+          then
+              unboundshowip=0
+              unboundshowipdisp="Disabled"
+              echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Expanded Unbound IP Information Disabled" >> $logfile
+              saveconfig
+          elif [ "$newunboundshowip" = "1" ]
+          then
+              unboundshowip=1
+              unboundshowipdisp="Enabled"
+              echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Expanded Unbound IP Information Enabled" >> $logfile
+              saveconfig
+          elif [ "$newunboundshowip" = "e" ]
+          then
+              echo -e "\n[Exiting]"; sleep 2
+          else
+              previousValue="$unboundshowip"
+              unboundshowip="${unboundshowip:=0}"
+              unboundshowipdisp="$([ "$unboundshowip" = "0" ] && echo "Disabled" || echo "Enabled")"
+              [ "$unboundshowip" != "$previousValue" ] && \
+              echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Expanded Unbound IP Information Disabled" >> $logfile
+              saveconfig
+          fi
         fi
       ;;
 
@@ -4593,7 +4595,7 @@ getvpnip()
 
       if [ -z "$DNSResolver" ]
       then
-      	if [ "$unboundshowip" -eq 0 ]; then
+        if [ "$unboundshowip" -eq 0 ]; then
           ubsync="${CRed}-X[UB]${CClear}"
         else
           ubsync="${CRed}-X[UB:$DNSResolver]${CClear}"
@@ -4604,7 +4606,7 @@ getvpnip()
         # If the DNS resolver and public VPN IP address don't match in our Unbound scenario, reset!
         if [ "$DNSResolver" != "$icanhazvpnip" ]
         then
-        	if [ "$unboundshowip" -eq 0 ]; then
+          if [ "$unboundshowip" -eq 0 ]; then
             ubsync="${CRed}-X[UB]${CClear}"
           else
             ubsync="${CRed}-X[UB:$DNSResolver]${CClear}"
@@ -4613,7 +4615,7 @@ getvpnip()
           unboundreset=$1
         else
           if [ "$unboundshowip" -eq 0 ]; then
-          	ubsync="${CGreen}->[UB]${CClear}"
+            ubsync="${CGreen}->[UB]${CClear}"
           else
             ubsync="${CGreen}->[UB:$DNSResolver]${CClear}"
           fi
