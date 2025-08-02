@@ -1742,7 +1742,7 @@ do
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}Set Email Rate Limit (per hour)${CClear} ${CGreen}(r) - $ratelimitdisp${CClear}"
   echo ""
-  read -p "Please select? (1-2, r=Set Email Rate Limit, e=Exit, t=Test Email): " SelectSlot
+  read -p "Please select? (1-2, r=Set Email Rate Limit, t=Test Email, e=Exit): " SelectSlot
     case $SelectSlot in
       1) if [ "$amtmemailsuccess" = "0" ]; then amtmemailsuccess=1; amtmemailsuccessdisp="${CGreen}Y${CCyan}"; elif [ "$amtmemailsuccess" = "1" ]; then amtmemailsuccess=0; amtmemailsuccessdisp="${CRed}N${CCyan}"; fi;;
       2) if [ "$amtmemailfailure" = "0" ]; then amtmemailfailure=1; amtmemailfailuredisp="${CGreen}Y${CCyan}"; elif [ "$amtmemailfailure" = "1" ]; then amtmemailfailure=0; amtmemailfailuredisp="${CRed}N${CCyan}"; fi;;
