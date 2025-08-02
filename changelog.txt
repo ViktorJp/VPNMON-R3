@@ -51,6 +51,9 @@ v1.5.09b - (TBA)
            have been sent thusfar this past hour, and whether any rate limiting is in effect. An indicator is
            displayed when the Operations Menu is displayed on the very top-right. RL (red) = disabled, and
            RL:<number of emails>/h shows the number of emails allowed per hour.
+         - PATCH: Decided to make the expanded Unbound DNS Resolver IP a configurable option under the config
+           menu to help save on screen realestate. Disabling (default) will just show an abbreviated color-coded
+           indicator, while Enabling will show the full DNS Resolver IP. @New2This
 
 v1.4.1   - (June 29, 2025)
          - MINOR: Added the capability of optionally integrating with spdMerlin, and having it refresh it's list
