@@ -1,4 +1,4 @@
-v1.5.10b - (TBA)
+v1.5.0   - (August 3, 2025)
          - MINOR: Well, actually kinda major. Wireguard is now formally being supported! VPNMON-R3 will show all
            5 Wireguard slots for more modern routers. Those who can only physically support 2 VPN slots will
            unfortunately not be able to enjoy Wireguard at the moment. Major functionality for stopping/starting
