@@ -3,6 +3,8 @@ Asus-Merlin OpenVPN/Wireguard Monitor R3
 
 Updated on 2025-Aug-03
 
+---
+
 <img width="1013" height="790" alt="image" src="https://github.com/user-attachments/assets/38482b93-137d-457b-bb12-e77129187d73" />
 
 ---
