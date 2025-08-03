@@ -1,3 +1,60 @@
+v1.5.0   - (August 3, 2025)
+         - MINOR: Well, actually kinda major. Wireguard is now formally being supported! VPNMON-R3 will show all
+           5 Wireguard slots for more modern routers. Those who can only physically support 2 VPN slots will
+           unfortunately not be able to enjoy Wireguard at the moment. Major functionality for stopping/starting
+           WG slots are visible under the (S)how Operations menu. As Wireguard is a bit more complex than an OVPN
+           connection, there are some more items needed than a single IP address for those who are managing server
+           lists for their individual slots. Each server list will require 5 fields, separated by a comma, namely:
+           (1) Connection Name, (2) Endpoint IP, (3) Endpoint Port, (4) Private Key, and (5) Public Key. Examples
+           of these are shared on snbforums.com. 
+         - PATCH: Fixed the "FAILOVER" message and corrected spacing thanks to @Stephen Harrington
+         - PATCH: Thanks to the huge contributions from @iTyPsIDg, not only has he figured out some automation
+           methods to pull WG info via API from NordVPN, but he added the entire framework for the custom WG server
+           list automation menu, along with multiple WG email events that were missing. I ended up combining both
+           the VPN and his WG server automation screens into one single pane of glass to reduce complexity.
+         - PATCH: Instead of displaying the WG Endpoint IP on screen, it is now resolving the actual Public IP, as
+           reported by @CaptainSTX. Thanks!
+         - PATCH: Added site2site ping workaround as discussed by @ZebMcKayhan that adds an ingenious ip rule to
+           the vpndirector. Thanks for the corroboration by @SomeWhereOverTheRainBow on this!
+         - PATCH: Based on feedback from @ZebMcKayhan, added this site2site ping workaround to other items that
+           were causing lookup delays, such as the public IP and WG city resolution.
+         - PATCH: Fixed the numbering for the WG slots to reflect 6-0 to provide standardization across the script
+           when referring to the use of these slots. Thanks to @CaptainSTX!
+         - PATCH: Fixed the Skynet import logic and some of the on screen/log language to reflect "WG" terms 
+           instead of "VPN". 
+         - PATCH: Fixed the WG Client Slot Server List Maintenance page to accurately display the first value
+           (Connection Description) in a comma-separated list.
+         - PATCH: Clarified the "Number of Available OVPN/WG Client Slots" menu item under the config, to bring
+           more understanding that (2) is strictly for older routers who can only have a max of 2 OVPN client
+           slots at any given time, but also don't have any native WG capability without the help of 3rd party
+           scripts. The (5) option provides capabilities for 5 x OVPN and 5 x WG client slots, as available on
+           most (if not all) newer routers running the later versions of the Merlin FW.
+         - PATCH: Added another option (#7) under the configuration menu that allows you to enable/disable the
+           monitoring and view of either OVPN or WG slots on the main UI screen. This was inspired by none other
+           than @Stephen Harrington, who does not want his screen cluttered up with slots that are not being
+           used, and I can completely understand! Caveat: If you have tied unbound to one of your OVPN slots,
+           you will not be able to disable the OVPN slot view and will be forced to monitor those slots.
+         - PATCH: After noticing some stuck processes around WG, some fixes went into place to help protect other
+           'nvram get' commands from getting stuck.
+         - PATCH: Added the necessary code to include WG in the "WAN down" scenario as well, where it kills all
+           VPN/WG connections while the WAN is down, so your router isn't wasting time trying to reconnect to
+           your provider during situations like this.
+         - PATCH: Appended the Unbound resolver IP to the Unbound Resolver indicator, in order to give better
+           insight why the indicator might turn from yellow, to green, to yellow, to red, etc. over the course
+           of time. Thanks to @New2This for the inspiration! :)
+         - PATCH: Minor fixes and adding some more dev/nulls around certain commands to keep occasional messages
+           from popping up in the main UI.
+         - PATCH: Implemented a formal email rate limiter function that controls a user-configurable allowed
+           number of emails to be sent per hour. This option is configured under AMTM Email Not(i)fications, and
+           allows you to choose a number between 1 and 9999, with 0 having this function disabled. When email
+           events fire off, you will see a system message on the bottom of your screen indicating how many emails
+           have been sent thusfar this past hour, and whether any rate limiting is in effect. An indicator is
+           displayed when the Operations Menu is displayed on the very top-right. RL (red) = disabled, and
+           RL:<number of emails>/h shows the number of emails allowed per hour.
+         - PATCH: Decided to make the expanded Unbound DNS Resolver IP a configurable option under the config
+           menu to help save on screen realestate. Disabling (default) will just show an abbreviated color-coded
+           indicator, while Enabling will show the full DNS Resolver IP. @New2This
+
 v1.4.1   - (June 29, 2025)
          - MINOR: Added the capability of optionally integrating with spdMerlin, and having it refresh it's list
            of interfaces whenever VPNMON-R3 resets. This will allow spdMerlin to know which VPN interfaces are
