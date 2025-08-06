@@ -1,5 +1,6 @@
 To-Do:
 - If the WAN doesn't respond after X minutes, issue a router reboot?
+- Remove RL tag if amtm email functionality is turned off completely
 
 Done:
 - Option to show/hide OVPN and WG sections. @Stephen Harrington
