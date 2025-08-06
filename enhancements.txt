@@ -1,6 +1,7 @@
 To-Do:
 - If the WAN doesn't respond after X minutes, issue a router reboot?
 - Remove RL tag if amtm email functionality is turned off completely
+- Specify how many times you want cycle to go before a reset occurs (right now it's every cycle, but could make it 2 or 3?)
 
 Done:
 - Option to show/hide OVPN and WG sections. @Stephen Harrington
