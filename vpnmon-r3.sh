@@ -1090,6 +1090,17 @@ do
       ;;
 
       4)
+      
+        if [ "$unboundwgclient" -ge 1 ]; then
+          echo ""
+          echo -e "${CRed}Unbound-over-WG is currently enabled. If you want to enable Unbound-over-VPN, please proceed to 'Disable'"
+          echo -e "the Unbound-over-WG option first, then choose to enable Unbound-over-VPN.${CClear}"
+          echo ""
+          sleep 3
+          read -rsp $'Press any key to continue...\n' -n1 key
+          continue
+        fi
+        
         while true; do
           clear
           echo -e "${InvGreen} ${InvDkGray}${CWhite} Unbound DNS Lookups over VPN Integration                                              ${CClear}"
@@ -1146,7 +1157,7 @@ do
             unboundclient=0
             saveconfig
             sleep 3
-            break
+            continue
           fi
 
           if [ "$unboundovervpn" = "0" ] || [ "$unboundovervpn" = "1" ] || [ "$unboundovervpn" = "2" ] || [ "$unboundovervpn" = "3" ] || [ "$unboundovervpn" = "4" ] || [ "$unboundovervpn" = "5" ] || [ "$unboundovervpn" = "e" ]; then
@@ -1183,7 +1194,7 @@ do
               unboundclient=0
               saveconfig
               sleep 3
-              break
+              continue
 
             elif [ "$unboundovervpn" = "1" ] || [ "$unboundovervpn" = "2" ] || [ "$unboundovervpn" = "3" ] || [ "$unboundovervpn" = "4" ] || [ "$unboundovervpn" = "5" ]; then
 
@@ -1195,7 +1206,7 @@ do
                 echo ""
                 echo -e "${CRed}When changing a VPN Client Slot (from Slot #$unboundclient to Slot #$unboundovervpn), please proceed to 'Disable'"
                 echo -e "first (option 0), then choose a new VPN Slot."
-                sleep 5; break
+                sleep 5; continue
               fi
 
               # Modify or create post-mount
@@ -1267,7 +1278,7 @@ do
               saveconfig
               echo "Please reboot your router now if this is your first time or re-enabled Unbound over VPN"
               read -rsp $'Press any key to continue...\n' -n1 key
-              break
+              continue
 
             elif [ "$unboundovervpn" = "e" ]; then
               echo -e "${CClear}\n[Exiting]"; sleep 2; break
@@ -1280,6 +1291,17 @@ do
       ;;
 
       5)
+      
+        if [ "$unboundclient" -ge 1 ]; then
+          echo ""
+          echo -e "${CRed}Unbound-over-VPN is currently enabled. If you want to enable Unbound-over-WG, please proceed to 'Disable'"
+          echo -e "the Unbound-over-VPN option first, then choose to enable Unbound-over-WG.${CClear}"
+          echo ""
+          sleep 3
+          read -rsp $'Press any key to continue...\n' -n1 key
+          continue
+        fi
+        
         while true; do
           clear
           echo -e "${InvGreen} ${InvDkGray}${CWhite} Unbound DNS Lookups over WG Integration                                               ${CClear}"
@@ -1335,7 +1357,7 @@ do
             unboundwgclient=0
             saveconfig
             sleep 3
-            break
+            continue
           fi
 
           if [ "$unboundoverwg" = "0" ] || [ "$unboundoverwg" = "1" ] || [ "$unboundoverwg" = "2" ] || [ "$unboundoverwg" = "3" ] || [ "$unboundoverwg" = "4" ] || [ "$unboundoverwg" = "5" ] || [ "$unboundoverwg" = "e" ]; then
@@ -1361,7 +1383,7 @@ do
 						    echo -e "${CRed}Error: Unbound Configuration file not found or not readable at ${UNBOUND_CONF}${CClear}"
                 echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Unbound Configuration file not found or not readable at ${UNBOUND_CONF}" >> $logfile
 						    sleep 3
-						    break
+						    continue
 							fi
               
               # Create a temp file to move unbound.conf contents into
@@ -1379,7 +1401,7 @@ do
 						    echo -e "${CRed}No changes have been made to ${UNBOUND_CONF}.${CClear}"
                 echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Failed to modify configuration. The temporary file is empty or was not created." >> $logfile
 						    sleep 3
-						    break
+						    continue
 							fi
 
 							# Move the temp file into the unbound.conf file
@@ -1427,7 +1449,7 @@ do
               unboundwgclient=0
               saveconfig
               sleep 3
-              break
+              continue
 
             elif [ "$unboundoverwg" = "1" ] || [ "$unboundoverwg" = "2" ] || [ "$unboundoverwg" = "3" ] || [ "$unboundoverwg" = "4" ] || [ "$unboundoverwg" = "5" ]; then
 
@@ -1442,7 +1464,7 @@ do
                 echo ""
                 sleep 3
                 read -rsp $'Press any key to continue...\n' -n1 key
-                break
+                continue
               fi
 
 							# ===============================================
@@ -1477,7 +1499,7 @@ do
 						    echo -e "${CRed}Error: Unbound Configuration file not found or not readable at ${UNBOUND_CONF}${CClear}"
                 echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Unbound Configuration file not found or not readable at ${UNBOUND_CONF}" >> $logfile
 						    sleep 3
-						    break
+						    continue
 							fi
               
               # Create a temp file to move unbound.conf contents into
@@ -1493,7 +1515,7 @@ do
 						    echo -e "${CRed}No changes have been made to ${UNBOUND_CONF}.${CClear}"
                 echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Failed to modify configuration. The temporary file is empty or was not created." >> $logfile
 						    sleep 3
-						    break
+						    continue
 							fi
 							
 							# Move the temp file into the unbound.conf file
@@ -1534,7 +1556,7 @@ do
               echo ""
               sleep 3
               read -rsp $'Press any key to continue...\n' -n1 key
-              break
+              continue
 
             elif [ "$unboundoverwg" = "e" ]; then
               echo -e "${CClear}\n[Exiting]"; sleep 2; break
