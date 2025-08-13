@@ -1,20 +1,20 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.6.0b1 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.6.0b2 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2025-Aug-11
+# Last Modified: 2025-Aug-12
 ##########################################################################################
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.6.0b1"                                               # Version tracker
+version="1.6.0b2"                                               # Version tracker
 beta=1                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -1445,10 +1445,31 @@ do
               echo -e "${CGreen}[Removed virtual br0 interface at 10.99.88.77]...${CClear}"
               sleep 1
 
+              # Remove Unbound failsafe in init-start
+              if [ -f /jffs/scripts/init-start ]; then
+                sed -i -e '/vpnmon-r3/d' /jffs/scripts/init-start
+              fi
+              echo ""
+              echo -e "${CGreen}[Unbound failsafe removed from init-start file]...${CClear}"
+              sleep 1
+              
+              # Remove Unbound failsafe in nat-start
+              if [ -f /jffs/scripts/nat-start ]; then
+                sed -i -e '/vpnmon-r3/d' /jffs/scripts/nat-start
+              fi
+              echo ""
+              echo -e "${CGreen}[Unbound failsafe removed from nat-start file]...${CClear}"
+              sleep 1
+
               echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Unbound-over-WG was removed from VPNMON-R3" >> $logfile
               unboundwgclient=0
               saveconfig
+              
+              echo ""
+              echo "Please consider rebooting your router now after major Unbound and system file changes."
+              echo ""
               sleep 3
+              read -rsp $'Press any key to continue...\n' -n1 key
               continue
 
             elif [ "$unboundoverwg" = "1" ] || [ "$unboundoverwg" = "2" ] || [ "$unboundoverwg" = "3" ] || [ "$unboundoverwg" = "4" ] || [ "$unboundoverwg" = "5" ]; then
@@ -1547,10 +1568,47 @@ do
 						    sleep 3
 							fi
 
+              echo ""
+              echo -e "${CGreen}[Adding Unbound Failsafe... Modifying init-start file]...${CClear}"
+              sleep 1
+
+              # Modify or create init-start to ensure survivability after a router reboot
+              if [ -f /jffs/scripts/init-start ]; then
+
+                if ! grep -q -F "sh /jffs/scripts/vpnmon-r3.sh -uowginitstart" /jffs/scripts/init-start; then
+                  echo "sh /jffs/scripts/vpnmon-r3.sh -uowginitstart # Added by vpnmon-r3" >> /jffs/scripts/init-start
+                fi
+
+              else
+                echo "#!/bin/sh" > /jffs/scripts/init-start
+                echo "" >> /jffs/scripts/init-start
+                echo "sh /jffs/scripts/vpnmon-r3.sh -uowginitstart # Added by vpnmon-r3" >> /jffs/scripts/init-start
+                chmod 755 /jffs/scripts/init-start
+              fi
+
+              echo ""
+              echo -e "${CGreen}[Adding Unbound Failsafe... Modifying nat-start file]...${CClear}"
+              sleep 1
+
+              # Modify or create nat-start to ensure survivability after a router reboot
+              if [ -f /jffs/scripts/nat-start ]; then
+
+                if ! grep -q -F "sh /jffs/scripts/vpnmon-r3.sh -uowgnatstart" /jffs/scripts/nat-start; then
+                  echo "sh /jffs/scripts/vpnmon-r3.sh -uowgnatstart # Added by vpnmon-r3" >> /jffs/scripts/nat-start
+                fi
+
+              else
+                echo "#!/bin/sh" > /jffs/scripts/nat-start
+                echo "" >> /jffs/scripts/nat-start
+                echo "sh /jffs/scripts/vpnmon-r3.sh -uowgnatstart # Added by vpnmon-r3" >> /jffs/scripts/nat-start
+                chmod 755 /jffs/scripts/nat-start
+              fi
+              
               echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Unbound-over-WG was enabled for VPNMON-R3" >> $logfile
               echo -e "${CClear}"
               unboundwgclient=$unboundoverwg
               saveconfig
+              
               echo ""
               echo "Please consider rebooting your router now if this is your first time or have re-enabled Unbound-over-WG"
               echo ""
@@ -1827,6 +1885,44 @@ do
 
     esac
 done
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+# uowginitstart is a function that initializes the virtual br0 interface when called from init-start
+
+uowginitstart()
+{
+
+ if [ -f "$config" ]
+   then
+    source "$config"
+		
+		# Remove added virtual br0 interface if it already exists
+		ifconfig br0:UnboundWG down >/dev/null 2>&1
+		
+		# Addvirtual br0 interface
+		ifconfig br0:UnboundWG 10.99.88.77 netmask 255.255.255.255 up >/dev/null 2>&1
+ fi
+
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+# uowgnatstart is a function that ties the virtual br0 interface to the assigned wgc slot
+
+uowgnatstart()
+{
+
+ if [ -f "$config" ]
+   then
+    source "$config"
+    
+		# Remove ip rule if it already exists
+		ip rule del prio 11 >/dev/null 2>&1
+		
+		# Add ip rule to tie br0 interface with assigned wgc slot
+		ip rule add from 10.99.88.77 lookup wgc$unboundwgclient prio 11 >/dev/null 2>&1
+ fi
+
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -5848,7 +5944,7 @@ then
 fi
 
 # Check and see if an invalid commandline option is being used
-if [ "$1" = "-h" ] || [ "$1" = "-help" ] || [ "$1" = "-setup" ] || [ "$1" = "-reset" ] || [ "$1" = "-bw" ] || [ "$1" = "-noswitch" ] || [ "$1" = "-screen" ] || [ "$1" = "-now" ]
+if [ "$1" = "-h" ] || [ "$1" = "-help" ] || [ "$1" = "-setup" ] || [ "$1" = "-reset" ] || [ "$1" = "-bw" ] || [ "$1" = "-noswitch" ] || [ "$1" = "-screen" ] || [ "$1" = "-now" ] || [ "$1" = "-uowginitstart" ] || [ "$1" = "-uowgnatstart" ]
 then
     clear
 else
@@ -5886,6 +5982,20 @@ then
   echo ""
   echo -e "${CClear}"
   exit 0
+fi
+
+# Check to see if the Unbound-over-WG init-start action is being called
+if [ "$1" = "-uowginitstart" ]
+then
+    uowginitstart
+    exit 0
+fi
+
+# Check to see if the Unbound-over-WG nat-start action is being called
+if [ "$1" = "-uowgnatstart" ]
+then
+    uowgnatstart
+    exit 0
 fi
 
 # Check to see if a second command is being passed to remove color
