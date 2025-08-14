@@ -1,4 +1,4 @@
-v1.6.0b2 - (TBA)
+v1.6.0b3 - (TBA)
          - MINOR: Very happy to announce that "Unbound-over-Wireguard" has actually become a reality! With huge
            help and guidance from @ZebMcKayhan, a methodology was developed that is easier, simpler and much more
            elegant than it's Unbound-over-VPN twin. In essence, VPNMON-R3 creates a new virtual br0 interface,
@@ -11,6 +11,14 @@ v1.6.0b2 - (TBA)
            addressed. This version adds those failsafes. If you're coming from Beta 1, please make sure you
            (1) update your script to Beta 2, (2) Disable Unbound over WG, (3) Re-enable Unbound over WG. This
            process will then write the appropriate commands to your init-start and nat-start files.
+         - PATCH: Implemented Recovery Timeout Opportunities, they're kind of like second chances to allow your
+           connection to recover before issuing a restart. By default, connections will restart after your timer
+           loop finishes (default: 60 sec). The Recovery Timeout would extend the number of loops before it
+           would issue a reset, and hopefully within that time, would recover the connection on its own. For
+           example, your timer loop = 60 seconds. Your Recovery Timeout is set to 3x. This would mean if your
+           connection doesn't recover in 3 minutes, then it will issue a reset. This option might help bring
+           down the amount of times your connection resets throughout the day, but then there's also a greater
+           chance your connection might become unusable for a slighly longer amount of time. 
 
 v1.5.0   - (August 3, 2025)
          - MINOR: Well, actually kinda major. Wireguard is now formally being supported! VPNMON-R3 will show all
