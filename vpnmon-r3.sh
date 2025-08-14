@@ -7,7 +7,7 @@
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2025-Aug-13
+# Last Modified: 2025-Aug-14
 ##########################################################################################
 
 #Preferred standard router binaries path
@@ -3593,21 +3593,21 @@ do
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} Current: Timer Loop = ${CGreen}$timerloop sec ${CClear}| Recovery Timeouts: ${CGreen}${recover}x${CClear}"
   echo
-  read -p "Please enter new Timer Loop value in seconds [5-999] (e=Exit): " newTimerLoop
+  read -p "Please enter new Timer Loop value in seconds [10-999] (e=Exit): " newTimerLoop
   if [ -z "$newTimerLoop" ] || echo "$newTimerLoop" | grep -qE "^(e|E)$"
   then
       if echo "$timerloop" | grep -qE "^([1-9][0-9]{0,2})$" && \
-         [ "$timerloop" -ge 5 ] && [ "$timerloop" -le 999 ]
+         [ "$timerloop" -ge 10 ] && [ "$timerloop" -le 999 ]
       then
           timer="$timerloop"
           printf "\n${CClear}[Exiting]\n"
           sleep 1 ; break
       else
-          printf "\n${CRed}*ERROR*: Please enter a valid number between 5 and 999.${CClear}\n"
+          printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
           sleep 3
       fi
   elif echo "$newTimerLoop" | grep -qE "^([1-9][0-9]{0,2})$" && \
-       [ "$newTimerLoop" -ge 5 ] && [ "$newTimerLoop" -le 999 ]
+       [ "$newTimerLoop" -ge 10 ] && [ "$newTimerLoop" -le 999 ]
   then
       timerloop="$newTimerLoop"
       echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Timer Loop configuration saved" >> $logfile
@@ -3616,7 +3616,7 @@ do
       printf "\n${CClear}[OK]\n"
       sleep 1
   else
-      printf "\n${CRed}*ERROR*: Please enter a valid number between 5 and 999.${CClear}\n"
+      printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
       sleep 3
   fi
 
@@ -5935,7 +5935,7 @@ displayopsmenu()
         fi
     fi
 
-    recoverdisp="${CGreen}Recovery:${recover}x${CClear}"
+    recoverdisp="${CClear}Recovery: ${CGreen}${recover}x${CClear}"
 
     #display operations menu
     if [ "$availableslots" = "1 2" ]
