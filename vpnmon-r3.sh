@@ -3582,16 +3582,16 @@ do
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} Recovery Timeout Opportunities are simply the number of chances the script will${CClear}"
   echo -e "${InvGreen} ${CClear} give the connection to recover on its own before intervening. With this value${CClear}"
-  echo -e "${InvGreen} ${CClear} defaulting to 1, if connectivity issues occur within the default 60 second Timer${CClear}"
+  echo -e "${InvGreen} ${CClear} defaulting to 1x, if connectivity issues occur within the default 60 second Timer${CClear}"
   echo -e "${InvGreen} ${CClear} Loop, the connectivity will be reset after those 60 seconds."
   echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} Example: 60 Second Timer Loops with 3 Recovery Timeouts would reset the connection${CClear}"
+  echo -e "${InvGreen} ${CClear} Example: 60 Second Timer Loops with 3x Recovery Timeouts would reset the connection${CClear}"
   echo -e "${InvGreen} ${CClear} after 3 minutes."
   echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} (Defaults: Timer Loop = 60 seconds | Recovery Timeouts = 1)${CClear}"
+  echo -e "${InvGreen} ${CClear} (Defaults: Timer Loop = 60 seconds | Recovery Timeouts = 1x)${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} Current: Timer Loop = ${CGreen}$timerloop sec ${CClear}| Recovery Timeouts: ${CGreen}$recover${CClear}"
+  echo -e "${InvGreen} ${CClear} Current: Timer Loop = ${CGreen}$timerloop sec ${CClear}| Recovery Timeouts: ${CGreen}${recover}x${CClear}"
   echo
   read -p "Please enter new Timer Loop value in seconds [5-999] (e=Exit): " newTimerLoop
   if [ -z "$newTimerLoop" ] || echo "$newTimerLoop" | grep -qE "^(e|E)$"
@@ -5935,7 +5935,7 @@ displayopsmenu()
         fi
     fi
 
-    recoverdisp="${CGreen}R:$recover${CClear}"
+    recoverdisp="${CGreen}Recovery:${recover}x${CClear}"
 
     #display operations menu
     if [ "$availableslots" = "1 2" ]
