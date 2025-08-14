@@ -5390,6 +5390,7 @@ checkvpn()
       if [ "$VP" -eq 0 ]; then
         vpnhealth="${CGreen}[ OK ]${CClear}"
         vpnindicator="${InvGreen} ${CClear}"
+        vrcnt=0
       else
         vpnping=0
         vpnhealth="${CYellow}[UNKN]${CClear}"
@@ -5417,7 +5418,7 @@ checkvpn()
           monitored="${CRed}[$vrcnt]${CClear}"
         fi
         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$1 attempt $vrcnt of $recover to allow connection to recover" >> $logfile
-        if [ "$rcnt" -eq "$recover" ]; then
+        if [ "$vrcnt" -eq "$recover" ]; then
           if [ "$((VPN$1))" = "1" ]; then
             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$1 failed to respond after $recover attempt(s)" >> $logfile
             resetvpn=$1
@@ -5453,6 +5454,7 @@ checkwg()
       if [ "$VP" -eq 0 ]; then
         wghealth="${CGreen}[ OK ]${CClear}"
         wgindicator="${InvGreen} ${CClear}"
+        wrcnt=0
       else
         wgping=0
         wghealth="${CYellow}[UNKN]${CClear}"
