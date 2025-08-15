@@ -2,6 +2,7 @@ To-Do:
 - If the WAN doesn't respond after X minutes, issue a router reboot?
 - Invalid ping response values in log
 - "Time Connected" in UI
+- Router Uptime on WAN entry in UI
 
 Done:
 - Remove RL tag if amtm email functionality is turned off completely, and show some info in the config menu on the AMTM email item.
