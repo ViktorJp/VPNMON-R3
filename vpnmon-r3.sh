@@ -5933,7 +5933,7 @@ displayopsmenu()
         if [ "$ratelimit" = "0" ]; then
           rldisp="| ${CRed}RL"
         else
-          rldisp="| ${CGreen}RL:$ratelimit/h"
+          rldisp="| RL: ${CGreen}$ratelimit/h"
         fi
     fi
 
