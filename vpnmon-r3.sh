@@ -7,7 +7,7 @@
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2025-Aug-14
+# Last Modified: 2025-Aug-16
 ##########################################################################################
 
 #Preferred standard router binaries path
@@ -6460,8 +6460,8 @@ do
         maxsvrping=$(awk "BEGIN {printf \"%3.0f\", ${vpnping}}") >/dev/null 2>&1
         MP=$?
         if [ $MP -ne 0 ]; then
-          if [ -z "$MP" ] || [ "$MP" = "" ]; then
-          	maxsvrping="Null"
+          if [ -z "$maxsvrping" ] || [ "$maxsvrping" = "" ]; then
+            maxsvrping="Null"
           fi
           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: Invalid VPN PING information received. Contents: $maxsvrping" >> $logfile
           maxsvrping=0
@@ -6662,8 +6662,8 @@ do
         maxsvrping=$(awk "BEGIN {printf \"%3.0f\", ${wgping}}") >/dev/null 2>&1
         MP=$?
         if [ $MP -ne 0 ]; then
-          if [ -z "$MP" ] || [ "$MP" = "" ]; then
-          	maxsvrping="Null"
+          if [ -z "$maxsvrping" ] || [ "$maxsvrping" = "" ]; then
+            maxsvrping="Null"
           fi
           echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: Invalid WG PING information received. Contents: $maxsvrping" >> $logfile
           maxsvrping=0
