@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.6.0b3 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.6.0b4 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
@@ -14,7 +14,7 @@
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.6.0b3"                                               # Version tracker
+version="1.6.0b4"                                               # Version tracker
 beta=1                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -5642,6 +5642,9 @@ wancheck()
   WANIFNAME="$(get_wan_setting ifname)"
   DUALWANMODE="$($timeoutcmd$timeoutsec nvram get wans_mode)"
 
+  # Uptime calc #
+  uptimeStr="$(awk '{printf("%dd %02dh:%02dm\n",($1/60/60/24),($1/60/60%24),($1/60%60),($1%60))}' /proc/uptime)"
+
   # If WAN 0 or 1 is connected, then proceed, else display that it's inactive
   if [ "$WANIF" = "0" ]
   then
@@ -5684,11 +5687,11 @@ wancheck()
         then
            echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN0${CClear} | ${CGreen}[X]${CClear} | "
            printf "%-6s" "$WAN0IFNAME"
-           echo -e " | ${CGreen}[ OK ]${CClear} | Failover     | $WAN0IP | $WAN0PING | $WAN0CITY"
+           echo -e " | ${CGreen}[ OK ]${CClear} | Failover     | $WAN0IP | $WAN0PING | $WAN0CITY: $uptimeStr"
         else
            echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN0${CClear} | ${CGreen}[X]${CClear} | "
            printf "%-6s" "$WAN0IFNAME"
-           echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN0IP | $WAN0PING | $WAN0CITY"
+           echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN0IP | $WAN0PING | $WAN0CITY: $uptimeStr"
         fi
      else
         echo -e "${InvDkGray}${CWhite}  WAN0${CClear} | ${CGreen}[X]${CClear} | ${CDkGray}[n/a]${CClear}  | ${CDkGray}[n/a ]${CClear} | Inactive     |           ${CDkGray}[n/a]${CClear} |      ${CDkGray}[n/a]${CClear} | ${CDkGray}[n/a]${CClear}"
@@ -5729,11 +5732,11 @@ wancheck()
         then
            echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN1${CClear} | ${CGreen}[X]${CClear} | "
            printf "%-6s" "$WAN1IFNAME"
-           echo -e " | ${CGreen}[ OK ]${CClear} | Failover     | $WAN1IP | $WAN1PING | $WAN1CITY"
+           echo -e " | ${CGreen}[ OK ]${CClear} | Failover     | $WAN1IP | $WAN1PING | $WAN1CITY: $uptimeStr"
         else
            echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN1${CClear} | ${CGreen}[X]${CClear} | "
            printf "%-6s" "$WAN1IFNAME"
-           echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN1IP | $WAN1PING | $WAN1CITY"
+           echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN1IP | $WAN1PING | $WAN1CITY: $uptimeStr"
         fi
      else
         echo -e "${InvDkGray}${CWhite}  WAN1${CClear} | ${CGreen}[X]${CClear} | ${CDkGray}[n/a]${CClear}  | ${CDkGray}[n/a ]${CClear} | Inactive     |           ${CDkGray}[n/a]${CClear} |      ${CDkGray}[n/a]${CClear} | ${CDkGray}[n/a]${CClear}"
@@ -6258,7 +6261,7 @@ do
   if [ "$monitorwan" = "1" ] && [ "$firstrun" = "0" ]
   then
     #Display WAN ports grid
-    echo -e "${CClear}  Port | Mon | IFace  | Health | WAN State    | Public WAN IP   | Ping-->WAN | City Exit"
+    echo -e "${CClear}  Port | Mon | IFace  | Health | WAN State    | Public WAN IP   | Ping-->WAN | City Exit / Uptime"
     echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
 
     #Cycle through the WANCheck connection function to display ping/city info
@@ -6277,9 +6280,9 @@ do
     echo ""
     #Display VPN client slot grid
     if [ "$unboundclient" != "0" ]; then
-       echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | City Exit / Time / UB"
+       echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | City Exit / Time Connected / UB"
     else
-       echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | City Exit / Time"
+       echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | City Exit / Time Connected"
     fi
     echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
 
@@ -6457,8 +6460,11 @@ do
         maxsvrping=$(awk "BEGIN {printf \"%3.0f\", ${vpnping}}") >/dev/null 2>&1
         MP=$?
         if [ $MP -ne 0 ]; then
+          if [ -z "$MP" ] || [ "$MP" = "" ]; then
+          	maxsvrping="Null"
+          fi
+          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: Invalid VPN PING information received. Contents: $maxsvrping" >> $logfile
           maxsvrping=0
-          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: Invalid VPN PING information received." >> $logfile
         fi
 
         if [ "$pingreset" -gt 0 ]
@@ -6509,7 +6515,12 @@ do
     echo ""
 
     #Display WG client slot grid
-    echo -e "  Slot | Mon |  Svrs  | Health | WG State     | Public WG IP    | Ping--->WG | City Exit / Time"
+    if [ "$unboundwgclient" != "0" ]; then
+      echo -e "  Slot | Mon |  Svrs  | Health | WG State     | Public WG IP    | Ping--->WG | City Exit / Time Connected / UB"
+    else
+      echo -e "  Slot | Mon |  Svrs  | Health | WG State     | Public WG IP    | Ping--->WG | City Exit / Time Connected"
+    fi
+
     echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
 
     i=0
@@ -6651,8 +6662,11 @@ do
         maxsvrping=$(awk "BEGIN {printf \"%3.0f\", ${wgping}}") >/dev/null 2>&1
         MP=$?
         if [ $MP -ne 0 ]; then
+          if [ -z "$MP" ] || [ "$MP" = "" ]; then
+          	maxsvrping="Null"
+          fi
+          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: Invalid WG PING information received. Contents: $maxsvrping" >> $logfile
           maxsvrping=0
-          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: Invalid WG PING information received." >> $logfile
         fi
 
         if [ "$pingreset" -gt 0 ]
