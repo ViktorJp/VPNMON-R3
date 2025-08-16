@@ -15,7 +15,7 @@ export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
 version="1.6.0b4"                                               # Version tracker
-beta=1                                                          # Beta switch
+beta=0                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
 logfile="/jffs/addons/vpnmon-r3.d/vpnmon-r3.log"                # Static path to the log
@@ -5113,6 +5113,7 @@ getvpnip()
 # Find the WG IP
 getwgip()
 {
+	ubsync=""
   TUN="wgc$1"
 
   # Added ping workaround for site2site scenarios based on suggestion from @ZebMcKayhan
