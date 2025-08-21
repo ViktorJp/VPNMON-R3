@@ -1,4 +1,4 @@
-v1.6.0b4 - (TBA)
+v1.6.0b5 - (TBA)
          - MINOR: Very happy to announce that "Unbound-over-Wireguard" has actually become a reality! With huge
            help and guidance from @ZebMcKayhan, a methodology was developed that is easier, simpler and much more
            elegant than it's Unbound-over-VPN twin. In essence, VPNMON-R3 creates a new virtual br0 interface,
@@ -23,6 +23,11 @@ v1.6.0b4 - (TBA)
          - PATCH: Added the router uptime value under the WAN monitoring section, some visual enhancements to
            the main UI, and providing content values in the logs when you get "invalid ping response received"
            messages, showing exactly what it was coming back with.
+         - PATCH: Added compatibility for AirVPN WG, which not only requires a Public Key, a Private Key, but
+           also a Preshared Key. A 6th field is now an optional requirement for AirVPN or vpn providers like
+           them who require this field. Both the Update/Maintain WG server lists and Run Server List
+           Automation screens have updated language, while code in charge of resetting the WG connection will
+           insert this Preshared Key into the appropriate NVRAM value for the WGC slot.
 
 v1.5.0   - (August 3, 2025)
          - MINOR: Well, actually kinda major. Wireguard is now formally being supported! VPNMON-R3 will show all
