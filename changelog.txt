@@ -1,4 +1,4 @@
-v1.6.0b5 - (TBA)
+v1.6.0   - (August 21, 2025)
          - MINOR: Very happy to announce that "Unbound-over-Wireguard" has actually become a reality! With huge
            help and guidance from @ZebMcKayhan, a methodology was developed that is easier, simpler and much more
            elegant than it's Unbound-over-VPN twin. In essence, VPNMON-R3 creates a new virtual br0 interface,
