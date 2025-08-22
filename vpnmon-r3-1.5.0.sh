@@ -1,20 +1,20 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.6.0 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.5.0 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2025-Aug-21
+# Last Modified: 2025-Aug-3
 ##########################################################################################
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.6.0"                                                 # Version tracker
+version="1.5.0"                                                 # Version tracker
 beta=0                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -26,14 +26,12 @@ vr3emails="/jffs/addons/vpnmon-r3.d/vr3emails.txt"              # Static path to
 availableslots="1 2 3 4 5"                                      # Available slots tracker
 logsize=2000                                                    # Log file size in rows
 timerloop=60                                                    # Timer loop in sec
-recover=3                                                       # Number of loops to allow for connection recovery
 schedule=0                                                      # Scheduler enable y/n
 schedulehrs=1                                                   # Scheduler hours
 schedulemin=0                                                   # Scheduler mins
 autostart=0                                                     # Auto start on router reboot y/n
 unboundclient=0                                                 # Unbound bound to VPN client slot#
-unboundwgclient=0                                               # Unbound bound to WG client slot#
-unboundshowip=0                                                 # Show expanded Unbound VPN IP on UI
+unboundshowip=0                                                 # Show expanded Unbound IP on UI
 ResolverTimer=1                                                 # Timer to give DNS resolver time to settle
 vpnping=0                                                       # Tracking VPN Tunnel Pings
 refreshserverlists=0                                            # Tracking Automated Custom VPN Server List Reset
@@ -52,9 +50,6 @@ timeoutsec=""                                                   # For "timeout" 
 timeoutlng=""                                                   # For "timeout" cmd for "nvram" calls
 hideoptions=1                                                   # Hide/Show menu options flag
 ratelimit=0                                                     # Rate limiting number of emails/houre
-vrcnt=0                                                         # Counter for VPN connection recovery
-wrcnt=0                                                         # Counter for WG connection recovery
-
 
 ##-------------------------------------##
 ## Added by Martinski W. [2024-Oct-05] ##
@@ -872,17 +867,6 @@ do
      unboundclientexp="Enabled, VPN$unboundclient"
   fi
 
-  if [ "$unboundwgclient" -eq 0 ]; then
-     unboundwgclientexp="Disabled"
-  else
-     unboundwgclientexp="Enabled, WGC$unboundwgclient"
-  fi
-
-  if [ "$unboundclient" -eq 0 ] && [ "$unboundwgclient" -eq 0 ]; then
-    unboundshowip=0
-    saveconfig
-  fi
-
   if [ "$unboundshowip" -eq 0 ]; then
      unboundshowipdisp="Disabled"
   else
@@ -932,16 +916,6 @@ do
      amtmemailsuccfaildisp="Disabled"
   fi
 
-  rldisp=""
-  if [ "$amtmemailsuccess" = "1" ] || [ "$amtmemailfailure" = "1" ]
-    then
-      if [ "$ratelimit" = "0" ]; then
-        rldisp="| ${CRed}RL"
-      else
-        rldisp="| ${CGreen}RL:$ratelimit/h"
-      fi
-  fi
-
   if [ "$rstspdmerlin" -eq 0 ]; then
      rstspdmerlindisp="Disabled"
   else
@@ -959,24 +933,23 @@ do
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 2)${CClear} : Custom PING host to determine VPN health     : ${CGreen}$PINGHOST"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 3)${CClear} : Custom Event Log size (rows)                 : ${CGreen}$logsize"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 4)${CClear} : Unbound DNS Lookups over VPN Integration     : ${CGreen}$unboundclientexp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 5)${CClear} : Unbound DNS Lookups over WG Integration      : ${CGreen}$unboundwgclientexp"
-  if [ "$unboundclient" -ge 1 ] || [ "$unboundwgclient" -ge 1 ]; then
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 6)${CClear} -- Show Expanded Unbound IP Info?              : ${CGreen}$unboundshowipdisp"
+  if [ "$unboundclient" -eq 0 ]; then
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 5)${CClear} -- ${CDkGray}Show Expanded Unbound IP Info?              : $unboundshowipdisp"
   else
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 6)${CClear} -- ${CDkGray}Show Expanded Unbound IP Info?              : $unboundshowipdisp"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 5)${CClear} -- Show Expanded Unbound IP Info?              : ${CGreen}$unboundshowipdisp"
   fi
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 7)${CClear} : Refresh Custom Server Lists on -RESET Switch : ${CGreen}$refreshserverlistsdisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 8)${CClear} : Provide additional WAN/Dual WAN monitoring   : ${CGreen}$monitorwandisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 9)${CClear} : Enable/Disable VPN/WG Slot Monitoring        : $useovpnwgDisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(10)${CClear} : Whitelist VPN Server IP Lists in Skynet      : ${CGreen}$updateskynetdisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(11)${CClear} : AMTM Email Notifications / Rate Limiting     : ${CGreen}$amtmemailsuccfaildisp $rldisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(12)${CClear} : Reset spdMerlin Interfaces on VPN Reset      : ${CGreen}$rstspdmerlindisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 6)${CClear} : Refresh Custom Server Lists on -RESET Switch : ${CGreen}$refreshserverlistsdisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 7)${CClear} : Provide additional WAN/Dual WAN monitoring   : ${CGreen}$monitorwandisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 8)${CClear} : Enable/Disable VPN/WG Slot Monitoring        : $useovpnwgDisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 9)${CClear} : Whitelist VPN Server IP Lists in Skynet      : ${CGreen}$updateskynetdisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(10)${CClear} : AMTM Email Notifications on Success/Failure  : ${CGreen}$amtmemailsuccfaildisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(11)${CClear} : Reset spdMerlin Interfaces on VPN Reset      : ${CGreen}$rstspdmerlindisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  | ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( e)${CClear} : Exit${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo ""
-  read -p "Please select? (1-12, e=Exit): " SelectSlot
+  read -p "Please select? (1-11, e=Exit): " SelectSlot
     case $SelectSlot in
       1)
         clear
@@ -1094,17 +1067,6 @@ do
       ;;
 
       4)
-
-        if [ "$unboundwgclient" -ge 1 ]; then
-          echo ""
-          echo -e "${CRed}Unbound-over-WG is currently enabled. If you want to enable Unbound-over-VPN, please proceed to 'Disable'"
-          echo -e "the Unbound-over-WG option first, then choose to enable Unbound-over-VPN.${CClear}"
-          echo ""
-          sleep 3
-          read -rsp $'Press any key to continue...\n' -n1 key
-          continue
-        fi
-
         while true; do
           clear
           echo -e "${InvGreen} ${InvDkGray}${CWhite} Unbound DNS Lookups over VPN Integration                                              ${CClear}"
@@ -1161,7 +1123,7 @@ do
             unboundclient=0
             saveconfig
             sleep 3
-            continue
+            break
           fi
 
           if [ "$unboundovervpn" = "0" ] || [ "$unboundovervpn" = "1" ] || [ "$unboundovervpn" = "2" ] || [ "$unboundovervpn" = "3" ] || [ "$unboundovervpn" = "4" ] || [ "$unboundovervpn" = "5" ] || [ "$unboundovervpn" = "e" ]; then
@@ -1198,7 +1160,7 @@ do
               unboundclient=0
               saveconfig
               sleep 3
-              continue
+              break
 
             elif [ "$unboundovervpn" = "1" ] || [ "$unboundovervpn" = "2" ] || [ "$unboundovervpn" = "3" ] || [ "$unboundovervpn" = "4" ] || [ "$unboundovervpn" = "5" ]; then
 
@@ -1210,7 +1172,7 @@ do
                 echo ""
                 echo -e "${CRed}When changing a VPN Client Slot (from Slot #$unboundclient to Slot #$unboundovervpn), please proceed to 'Disable'"
                 echo -e "first (option 0), then choose a new VPN Slot."
-                sleep 5; continue
+                sleep 5; break
               fi
 
               # Modify or create post-mount
@@ -1282,7 +1244,7 @@ do
               saveconfig
               echo "Please reboot your router now if this is your first time or re-enabled Unbound over VPN"
               read -rsp $'Press any key to continue...\n' -n1 key
-              continue
+              break
 
             elif [ "$unboundovervpn" = "e" ]; then
               echo -e "${CClear}\n[Exiting]"; sleep 2; break
@@ -1295,343 +1257,7 @@ do
       ;;
 
       5)
-
-        if [ "$unboundclient" -ge 1 ]; then
-          echo ""
-          echo -e "${CRed}Unbound-over-VPN is currently enabled. If you want to enable Unbound-over-WG, please proceed to 'Disable'"
-          echo -e "the Unbound-over-VPN option first, then choose to enable Unbound-over-WG.${CClear}"
-          echo ""
-          sleep 3
-          read -rsp $'Press any key to continue...\n' -n1 key
-          continue
-        fi
-
-        while true; do
-          clear
-          echo -e "${InvGreen} ${InvDkGray}${CWhite} Unbound DNS Lookups over WG Integration                                               ${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Please indicate if you would like to enable an integration with Unbound which allows${CClear}"
-          echo -e "${InvGreen} ${CClear} you to force any DNS lookups that Unbound would normally handle, but over your WG${CClear}"
-          echo -e "${InvGreen} ${CClear} connection, essentially allowing you to appear as your own DNS resolver. DNS resolver${CClear}"
-          echo -e "${InvGreen} ${CClear} traffic generated by Unbound is unencrypted as it queries DNS Root Servers by default.${CClear}"
-          echo -e "${InvGreen} ${CClear} This integration encrypts your DNS Resolver traffic up to your Public WG IP address,${CClear}"
-          echo -e "${InvGreen} ${CClear} after which it goes unencrypted to the DNS Root Servers, preventing any ISP or other${CClear}"
-          echo -e "${InvGreen} ${CClear} traffic inspection snooping when sending this across your WAN connection.${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} IMPORTANT: This integration will only work with 1 primary WG connection that is${CClear}"
-          echo -e "${InvGreen} ${CClear} designated as the connection that will carry DNS resolution traffic. This integration${CClear}"
-          echo -e "${InvGreen} ${CClear} will work when multiple WG connections are running, but the other WG connections may${CClear}"
-          echo -e "${InvGreen} ${CClear} not be able to utilize the Unbound functionality, and considered standalone. You will${CClear}"
-          echo -e "${InvGreen} ${CClear} need to identify one WG Client Slot that will remain on at all times. This integration${CClear}"
-          echo -e "${InvGreen} ${CClear} is much more elegant and simple when it compares to the Unbound over VPN integration.${CClear}"
-          echo -e "${InvGreen} ${CClear} Should your WG connection go down, browsing/DNS resolution will continue to function${CClear}"
-          echo -e "${InvGreen} ${CClear} by traversing directly out over the WAN.${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} ${CRed}WARNING: As of around March 1 2024, the Unbound integration no longer works with the${CClear}"
-          echo -e "${InvGreen} ${CClear} ${CRed}NordVPN Service due to possible blocking on their end. This service continues to work${CClear}"
-          echo -e "${InvGreen} ${CClear} ${CRed}as advertised with other VPN Providers, like AirVPN. Use at your own risk.${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} ${CGreen}Requirements:"
-          echo -e "${InvGreen} ${CClear} ${CGreen}1. Unbound must already be installed and functioning (AMTM)"
-          echo -e "${InvGreen} ${CClear} ${CGreen}2. One static WG Slot must be designated for Unbound-over-WG use"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} ${CGreen}The following will be added/modified:"
-          echo -e "${InvGreen} ${CClear} ${CGreen}1. A new virtual br0 interface will be created on 10.99.88.77 (added)"
-          echo -e "${InvGreen} ${CClear} ${CGreen}2. A new ip rule will be added to point your WG Slot to this new br0 interface (added)"
-          echo -e "${InvGreen} ${CClear} ${CGreen}3. The unbound.conf will have its outgoing-interface modified to 10.99.88.77 (modified)"
-          echo -e "${InvGreen} ${CClear} ${CGreen}4. Unbound service will be restarted.${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} (Default = 0 / Disabled)${CClear}"
-          echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-          echo ""
-          if [ $unboundwgclient -eq 0 ]; then
-            unboundwgclientexp="Disabled"
-          else
-            unboundwgclientexp="Enabled, WGC$unboundwgclient"
-          fi
-
-          echo -e "${CClear}Current: ${CGreen}$unboundwgclientexp${CClear}"
-          echo ""
-          read -p "Please enter value (Disabled=0, WG Client=1-5)? (e=Exit): " unboundoverwg
-
-          if [ ! -d "/jffs/addons/unbound" ]; then
-            echo ""
-            echo -e "${CRed}[Unbound was not detected on this system. Exiting...]${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: Unbound was not detected on this system." >> $logfile
-            unboundwgclient=0
-            saveconfig
-            sleep 3
-            continue
-          fi
-
-          if [ "$unboundoverwg" = "0" ] || [ "$unboundoverwg" = "1" ] || [ "$unboundoverwg" = "2" ] || [ "$unboundoverwg" = "3" ] || [ "$unboundoverwg" = "4" ] || [ "$unboundoverwg" = "5" ] || [ "$unboundoverwg" = "e" ]; then
-            if [ "$unboundoverwg" = "0" ]; then
-
-              # Delete all additions made to files to enable Unbound over VPN functionality
-              echo ""
-              echo -e "${CGreen}[Disabling Unbound over WG]...${CClear}"
-              sleep 2
-
-              # ===============================================
-              # === Disable Unbound-over-WG Integration     ===
-              # === Methodology engineered by @ZebMcKayhan  ===
-              # ===============================================
-
-              # Modify unbound.conf file - set major variables
-              UNBOUND_CONF="/opt/var/lib/unbound/unbound.conf"
-              DISABLED_LINE="#outgoing-interface: 10.0.20.1              # v1.08 Martineau Use VPN tunnel to hide Root server queries from ISP (or force WAN ONLY)"
-
-              # Check if the unbound.conf file exists and is readable.
-              if [ ! -r "${UNBOUND_CONF}" ]; then
-                echo ""
-                echo -e "${CRed}Error: Unbound Configuration file not found or not readable at ${UNBOUND_CONF}${CClear}"
-                echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Unbound Configuration file not found or not readable at ${UNBOUND_CONF}" >> $logfile
-                sleep 3
-                continue
-              fi
-
-              # Create a temp file to move unbound.conf contents into
-              TMP_FILE="${UNBOUND_CONF}.$$"
-
-              # Remove outgoing-interface contents and replace with a dummy line
-              sed "s/^[[:space:]]*#*[[:space:]]*outgoing-interface:.*/${DISABLED_LINE}/g" "${UNBOUND_CONF}" > "${TMP_FILE}"
-              echo ""
-              echo -e "${CGreen}[Disabled 'outgoing-interface' and set back to default]...${CClear}"
-              sleep 1
-
-              # Ensure the temporary file was created and is not empty before overwriting the original
-              if [ ! -s "${TMP_FILE}" ]; then
-                echo -e "${CRed}Error: Failed to modify configuration. The temporary file is empty or was not created.${CClear}"
-                echo -e "${CRed}No changes have been made to ${UNBOUND_CONF}.${CClear}"
-                echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Failed to modify configuration. The temporary file is empty or was not created." >> $logfile
-                sleep 3
-                continue
-              fi
-
-              # Move the temp file into the unbound.conf file
-              mv "${TMP_FILE}" "${UNBOUND_CONF}" >/dev/null 2>&1
-              echo ""
-              echo -e "${CGreen}[Modified unbound.conf file back to defaults]...${CClear}"
-              sleep 1
-
-              # Restart unbound service
-              if [ -f "/jffs/addons/unbound/unbound_manager.sh" ]; then
-                unbound_manager restart >/dev/null 2>&1
-                RESTART_STATUS=$?
-                if [ ${RESTART_STATUS} -eq 0 ]; then
-                  echo ""
-                  echo -e "${CGreen}[Unbound service restarted successfully]...${CClear}"
-                  echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Unbound service restarted successfully" >> $logfile
-                  sleep 1
-                else
-                  echo ""
-                  echo -e "${CRed}[Warning: 'unbound_manager restart' command failed with status ${RESTART_STATUS}]...${CClear}"
-                  echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: 'unbound_manager restart' command failed with status ${RESTART_STATUS}" >> $logfile
-                  sleep 3
-                fi
-              else
-                echo ""
-                echo -e "${CRed}[Warning: 'unbound_manager.sh' script not found. Could not restart service]...${CClear}"
-                echo -e "${CRed}[Please restart the unbound service manually]...${CClear}"
-                echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: 'unbound_manager.sh' script not found. Could not restart service" >> $logfile
-                sleep 3
-              fi
-
-              # Remove the IP rule from VPN Director
-              ip rule del prio 11 >/dev/null 2>&1
-              echo ""
-              echo -e "${CGreen}[Removed IP rule for virtual br0 interface at 10.99.88.77]...${CClear}"
-              sleep 1
-
-              # Remove added virtual br0 interface
-              ifconfig br0:UnboundWG down >/dev/null 2>&1
-              echo ""
-              echo -e "${CGreen}[Removed virtual br0 interface at 10.99.88.77]...${CClear}"
-              sleep 1
-
-              # Remove Unbound failsafe in init-start
-              if [ -f /jffs/scripts/init-start ]; then
-                sed -i -e '/vpnmon-r3/d' /jffs/scripts/init-start
-              fi
-              echo ""
-              echo -e "${CGreen}[Unbound failsafe removed from init-start file]...${CClear}"
-              sleep 1
-
-              # Remove Unbound failsafe in nat-start
-              if [ -f /jffs/scripts/nat-start ]; then
-                sed -i -e '/vpnmon-r3/d' /jffs/scripts/nat-start
-              fi
-              echo ""
-              echo -e "${CGreen}[Unbound failsafe removed from nat-start file]...${CClear}"
-              sleep 1
-
-              echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Unbound-over-WG was removed from VPNMON-R3" >> $logfile
-              unboundwgclient=0
-              saveconfig
-
-              echo ""
-              echo "Please consider rebooting your router now after major Unbound and system file changes."
-              echo ""
-              sleep 3
-              read -rsp $'Press any key to continue...\n' -n1 key
-              continue
-
-            elif [ "$unboundoverwg" = "1" ] || [ "$unboundoverwg" = "2" ] || [ "$unboundoverwg" = "3" ] || [ "$unboundoverwg" = "4" ] || [ "$unboundoverwg" = "5" ]; then
-
-              if [ "$unboundoverwg" = "$unboundwgclient" ]; then
-                echo -e "${CClear}\n[Unbound over WGC$unboundoverwg Already Active]"; sleep 3; break
-              fi
-
-              if [ "$unboundoverwg" = "1" ] || [ "$unboundoverwg" = "2" ] || [ "$unboundoverwg" = "3" ] || [ "$unboundoverwg" = "4" ] || [ "$unboundoverwg" = "5" ] && [ $unboundwgclient -ge 1 ]; then
-                echo ""
-                echo -e "${CRed}When changing a WG Client Slot (from WGC #$unboundwgclient to WGC #$unboundoverwg), please proceed to 'Disable'"
-                echo -e "first (option 0), then choose a new WG Slot.${CClear}"
-                echo ""
-                sleep 3
-                read -rsp $'Press any key to continue...\n' -n1 key
-                continue
-              fi
-
-              # ===============================================
-              # === Create Unbound-over-WG Integration      ===
-              # === Methodology engineered by @ZebMcKayhan  ===
-              # ===============================================
-
-              echo ""
-              echo -e "${CGreen}[Enabling Unbound over WG]...${CClear}"
-              sleep 2
-
-              # Create new virtual br0 interface
-              ifconfig br0:UnboundWG 10.99.88.77 netmask 255.255.255.255 up >/dev/null 2>&1
-              echo ""
-              echo -e "${CGreen}[Added virtual br0 interface at 10.99.88.77]...${CClear}"
-              sleep 1
-
-              # Point WG slot to new br0 interface for VPN Director
-              ip rule add from 10.99.88.77 lookup wgc$unboundoverwg prio 11 >/dev/null 2>&1
-              echo ""
-              echo -e "${CGreen}[Pointed wgc$unboundoverwg to virtual br0 interface at 10.99.88.77]...${CClear}"
-              sleep 1
-
-              # Modify unbound.conf file - set major variables
-              UNBOUND_CONF="/opt/var/lib/unbound/unbound.conf"
-              ENABLED_IP="10.99.88.77"
-              COMMENT="# v1.08 Martineau Use VPN tunnel to hide Root server queries from ISP (or force WAN ONLY)"
-
-              # Check if the unbound.conf file exists and is readable.
-              if [ ! -r "${UNBOUND_CONF}" ]; then
-                echo ""
-                echo -e "${CRed}Error: Unbound Configuration file not found or not readable at ${UNBOUND_CONF}${CClear}"
-                echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Unbound Configuration file not found or not readable at ${UNBOUND_CONF}" >> $logfile
-                sleep 3
-                continue
-              fi
-
-              # Create a temp file to move unbound.conf contents into
-              TMP_FILE="${UNBOUND_CONF}.$$"
-
-              # Create new outgoing-interface contents
-              ENABLED_LINE="outgoing-interface: ${ENABLED_IP}             ${COMMENT}"
-              sed "s/^[[:space:]]*#*[[:space:]]*outgoing-interface:.*/${ENABLED_LINE}/g" "${UNBOUND_CONF}" > "${TMP_FILE}"
-
-              # Ensure the temporary file was created and is not empty before overwriting the original
-              if [ ! -s "${TMP_FILE}" ]; then
-                echo -e "${CRed}Error: Failed to modify configuration. The temporary file is empty or was not created.${CClear}"
-                echo -e "${CRed}No changes have been made to ${UNBOUND_CONF}.${CClear}"
-                echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: Failed to modify configuration. The temporary file is empty or was not created." >> $logfile
-                sleep 3
-                continue
-              fi
-
-              # Move the temp file into the unbound.conf file
-              mv "${TMP_FILE}" "${UNBOUND_CONF}" >/dev/null 2>&1
-              echo ""
-              echo -e "${CGreen}[Modified unbound.conf file 'outgoing-interface: 10.99.88.77']...${CClear}"
-              sleep 1
-
-              # Restart unbound service
-              if [ -f "/jffs/addons/unbound/unbound_manager.sh" ]; then
-                unbound_manager restart >/dev/null 2>&1
-                RESTART_STATUS=$?
-                if [ ${RESTART_STATUS} -eq 0 ]; then
-                  echo ""
-                  echo -e "${CGreen}[Unbound service restarted successfully]...${CClear}"
-                  echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Unbound service restarted successfully" >> $logfile
-                  sleep 1
-                else
-                  echo ""
-                  echo -e "${CRed}[Warning: 'unbound_manager restart' command failed with status ${RESTART_STATUS}]...${CClear}"
-                  echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: 'unbound_manager restart' command failed with status ${RESTART_STATUS}" >> $logfile
-                  sleep 3
-                fi
-              else
-                echo ""
-                echo -e "${CRed}[Warning: 'unbound_manager.sh' script not found. Could not restart service]...${CClear}"
-                echo -e "${CRed}[Please restart the unbound service manually]...${CClear}"
-                echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: 'unbound_manager.sh' script not found. Could not restart service" >> $logfile
-                sleep 3
-              fi
-
-              echo ""
-              echo -e "${CGreen}[Adding Unbound Failsafe... Modifying init-start file]...${CClear}"
-              sleep 1
-
-              # Modify or create init-start to ensure survivability after a router reboot
-              if [ -f /jffs/scripts/init-start ]; then
-
-                if ! grep -q -F "sh /jffs/scripts/vpnmon-r3.sh -uowginitstart" /jffs/scripts/init-start; then
-                  echo "sh /jffs/scripts/vpnmon-r3.sh -uowginitstart # Added by vpnmon-r3" >> /jffs/scripts/init-start
-                fi
-
-              else
-                echo "#!/bin/sh" > /jffs/scripts/init-start
-                echo "" >> /jffs/scripts/init-start
-                echo "sh /jffs/scripts/vpnmon-r3.sh -uowginitstart # Added by vpnmon-r3" >> /jffs/scripts/init-start
-                chmod 755 /jffs/scripts/init-start
-              fi
-
-              echo ""
-              echo -e "${CGreen}[Adding Unbound Failsafe... Modifying nat-start file]...${CClear}"
-              sleep 1
-
-              # Modify or create nat-start to ensure survivability after a router reboot
-              if [ -f /jffs/scripts/nat-start ]; then
-
-                if ! grep -q -F "sh /jffs/scripts/vpnmon-r3.sh -uowgnatstart" /jffs/scripts/nat-start; then
-                  echo "sh /jffs/scripts/vpnmon-r3.sh -uowgnatstart # Added by vpnmon-r3" >> /jffs/scripts/nat-start
-                fi
-
-              else
-                echo "#!/bin/sh" > /jffs/scripts/nat-start
-                echo "" >> /jffs/scripts/nat-start
-                echo "sh /jffs/scripts/vpnmon-r3.sh -uowgnatstart # Added by vpnmon-r3" >> /jffs/scripts/nat-start
-                chmod 755 /jffs/scripts/nat-start
-              fi
-
-              echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Unbound-over-WG was enabled for VPNMON-R3" >> $logfile
-              echo -e "${CClear}"
-              unboundwgclient=$unboundoverwg
-              saveconfig
-
-              echo ""
-              echo "Please consider rebooting your router now if this is your first time or have re-enabled Unbound-over-WG"
-              echo ""
-              sleep 3
-              read -rsp $'Press any key to continue...\n' -n1 key
-              continue
-
-            elif [ "$unboundoverwg" = "e" ]; then
-              echo -e "${CClear}\n[Exiting]"; sleep 2; break
-            fi
-
-          else
-            echo -e "${CClear}\n[Exiting]"; sleep 2; break
-          fi
-        done
-      ;;
-
-      6)
-        if [ "$unboundclient" != "0" ] || [ "$unboundwgclient" != "0" ]; then
+        if [ "$unboundclient" != "0" ]; then
           clear
           echo -e "${InvGreen} ${InvDkGray}${CWhite} Show Expanded Unbound IP Information                                                  ${CClear}"
           echo -e "${InvGreen} ${CClear}"
@@ -1670,7 +1296,7 @@ do
         fi
       ;;
 
-      7)
+      6)
         clear
         echo -e "${InvGreen} ${InvDkGray}${CWhite} Refresh Custom Server Lists on -RESET Switch                                          ${CClear}"
         echo -e "${InvGreen} ${CClear}"
@@ -1709,7 +1335,7 @@ do
         fi
       ;;
 
-      8)
+      7)
         clear
         echo -e "${InvGreen} ${InvDkGray}${CWhite} Provide WAN/Dual WAN Monitoring Functionality                                         ${CClear}"
         echo -e "${InvGreen} ${CClear}"
@@ -1749,7 +1375,7 @@ do
         fi
       ;;
 
-      9)
+      8)
         while true
         do
           clear
@@ -1800,7 +1426,7 @@ do
 
       ;;
 
-      10)
+      9)
         clear
         echo -e "${InvGreen} ${InvDkGray}${CWhite} Whitelist VPN Server IP Lists in Skynet                                               ${CClear}"
         echo -e "${InvGreen} ${CClear}"
@@ -1843,12 +1469,12 @@ do
 
       [Ee]) echo -e "${CClear}\n[Exiting]"; sleep 2; break ;;
 
-      11)
+      10)
         amtmevents
         source "$config"
       ;;
 
-      12)
+      11)
         clear
         echo -e "${InvGreen} ${InvDkGray}${CWhite} Reset spdMerlin Interfaces on VPN Reset                                               ${CClear}"
         echo -e "${InvGreen} ${CClear}"
@@ -1889,44 +1515,6 @@ do
 
     esac
 done
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# uowginitstart is a function that initializes the virtual br0 interface when called from init-start
-
-uowginitstart()
-{
-
- if [ -f "$config" ]
-   then
-    source "$config"
-
-    # Remove added virtual br0 interface if it already exists
-    ifconfig br0:UnboundWG down >/dev/null 2>&1
-
-    # Addvirtual br0 interface
-    ifconfig br0:UnboundWG 10.99.88.77 netmask 255.255.255.255 up >/dev/null 2>&1
- fi
-
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# uowgnatstart is a function that ties the virtual br0 interface to the assigned wgc slot
-
-uowgnatstart()
-{
-
- if [ -f "$config" ]
-   then
-    source "$config"
-
-    # Remove ip rule if it already exists
-    ip rule del prio 11 >/dev/null 2>&1
-
-    # Add ip rule to tie br0 interface with assigned wgc slot
-    ip rule add from 10.99.88.77 lookup wgc$unboundwgclient prio 11 >/dev/null 2>&1
- fi
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -2197,8 +1785,8 @@ do
   echo -e "${InvGreen} ${CClear} Use the corresponding ${CGreen}()${CClear} key to enable/disable email event notifications:${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
 
-  if [ "$amtmemailsuccess" = "1" ]; then amtmemailsuccessdisp="${CGreen}Y${CCyan}"; else amtmemailsuccess=0; amtmemailsuccessdisp="${CRed}N${CCyan}"; saveconfig; fi
-  if [ "$amtmemailfailure" = "1" ]; then amtmemailfailuredisp="${CGreen}Y${CCyan}"; else amtmemailfailure=0; amtmemailfailuredisp="${CRed}N${CCyan}"; saveconfig; fi
+  if [ "$amtmemailsuccess" = "1" ]; then amtmemailsuccessdisp="${CGreen}Y${CCyan}"; else amtmemailsuccess=0; amtmemailsuccessdisp="${CRed}N${CCyan}"; fi
+  if [ "$amtmemailfailure" = "1" ]; then amtmemailfailuredisp="${CGreen}Y${CCyan}"; else amtmemailfailure=0; amtmemailfailuredisp="${CRed}N${CCyan}"; fi
   if [ "$ratelimit" = "0" ]; then ratelimitdisp="Disabled"; else ratelimitdisp=$ratelimit; fi
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN Success Event Notifications${CClear} ${CGreen}(1) -${CClear} $amtmemailsuccessdisp${CClear}"
@@ -2383,9 +1971,9 @@ do
   echo -e "${InvGreen} ${CClear} Please indicate which WG Slot Server List you would like to edit/maintain.${CClear}"
   echo -e "${InvGreen} ${CClear} Use the corresponding ${CGreen}()${CClear} key to launch and edit the list with the NANO text editor${CClear}"
   echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} WG INSTRUCTIONS: Enter a 6-field comma-delimited row of WG Connections${CClear}"
-  echo -e "${InvGreen} ${CClear} Format: ConnectionName,EndpointIP,EndpointPort,PrivateKey,PublicKey,PreSharedKey(Opt)${CClear}"
-  echo -e "${InvGreen} ${CClear} Example: ${CGreen}City WG,143.32.55.23,34334,fasdkaffkasdjfj=,221t949as2323kf=,23fj39fffjdaf=${CClear}"
+  echo -e "${InvGreen} ${CClear} WG INSTRUCTIONS: Enter a 5-field comma-delimited row of WG Connections${CClear}"
+  echo -e "${InvGreen} ${CClear} Format: ConnectionName,EndpointIP,EndpointPort,PrivateKey,PublicKey${CClear}"
+  echo -e "${InvGreen} ${CClear} Example: ${CGreen}City WG,143.32.55.23,34334,fasdkkfj44j38affkasdjfj=,221t949asas42dfj32323kf=${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} NANO INSTRUCTIONS: CTRL-O + Enter (save), CTRL-X (exit)${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
@@ -2466,9 +2054,8 @@ do
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} VPN INSTRUCTIONS: Insert CURL statement that outputs a single-column Server IP list${CClear}"
   echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} WG INSTRUCTIONS: Insert CURL statement that outputs a 6-field comma-separated list${CClear}"
-  echo -e "${InvGreen} ${CClear} Format: ConnectionName,EndpointIP,EndpointPort,PrivateKey,PublicKey,PreSharedKey(Opt)${CClear}"
-  echo -e "${InvGreen} ${CClear} Example: ${CGreen}City WG,143.32.55.23,34334,fasdkaffkasdjfj=,221t949as2323kf=,23fj39fffjdaf=${CClear}"
+  echo -e "${InvGreen} ${CClear} WG INSTRUCTIONS: Insert CURL statement that outputs a 5-field comma-separated list${CClear}"
+  echo -e "${InvGreen} ${CClear} in this format: ConnectionName,EndpointIP,EndpointPort,PrivateKey,PublicKey${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN1${CClear} ${CGreen}(e1)${CClear} View/Edit | ${CGreen}(x1)${CClear} Execute | ${CGreen}(s1)${CClear} Skynet WL Import${CClear}"
@@ -3575,75 +3162,38 @@ timerloopconfig()
 while true
 do
   clear
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} Timer Loop Configuration / Recovery Timeout Opportunities                             ${CClear}"
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} Timer Loop Configuration                                                              ${CClear}"
   echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} Please indicate how long the timer cycle should take between Connectivity checks,${CClear}"
-  echo -e "${InvGreen} ${CClear} as well as the number of Recovery Timeout Opportunities the loop should complete${CClear}"
-  echo -e "${InvGreen} ${CClear} before issuing a connection reset.${CClear}"
-  echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} Recovery Timeout Opportunities are simply the number of chances the script will${CClear}"
-  echo -e "${InvGreen} ${CClear} give the connection to recover on its own before intervening. With this value${CClear}"
-  echo -e "${InvGreen} ${CClear} defaulting to 1x, if connectivity issues occur within the default 60 second Timer${CClear}"
-  echo -e "${InvGreen} ${CClear} Loop, the connectivity will be reset after those 60 seconds."
-  echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} Example: 60 Second Timer Loops with 3x Recovery Timeouts would reset the connection${CClear}"
-  echo -e "${InvGreen} ${CClear} after 3 minutes."
-  echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} (Defaults: Timer Loop = 60 seconds | Recovery Timeouts = 1x)${CClear}"
+  echo -e "${InvGreen} ${CClear} Please indicate how long the timer cycle should take between VPN Connection checks.${CClear}"
+  echo -e "${InvGreen} ${CClear} (Default = 60 seconds)${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} Current: Timer Loop = ${CGreen}$timerloop sec ${CClear}| Recovery Timeouts: ${CGreen}${recover}x${CClear}"
+  echo -e "${InvGreen} ${CClear} Current: ${CGreen}$timerloop sec${CClear}"
   echo
-  read -p "Please enter new Timer Loop value in seconds [10-999] (e=Exit): " newTimerLoop
+  read -p "Please enter value in seconds [5-999] (e=Exit): " newTimerLoop
   if [ -z "$newTimerLoop" ] || echo "$newTimerLoop" | grep -qE "^(e|E)$"
   then
       if echo "$timerloop" | grep -qE "^([1-9][0-9]{0,2})$" && \
-         [ "$timerloop" -ge 10 ] && [ "$timerloop" -le 999 ]
+         [ "$timerloop" -ge 5 ] && [ "$timerloop" -le 999 ]
       then
           timer="$timerloop"
           printf "\n${CClear}[Exiting]\n"
           sleep 1 ; break
       else
-          printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
+          printf "\n${CRed}*ERROR*: Please enter a valid number between 5 and 999.${CClear}\n"
           sleep 3
       fi
   elif echo "$newTimerLoop" | grep -qE "^([1-9][0-9]{0,2})$" && \
-       [ "$newTimerLoop" -ge 10 ] && [ "$newTimerLoop" -le 999 ]
+       [ "$newTimerLoop" -ge 5 ] && [ "$newTimerLoop" -le 999 ]
   then
       timerloop="$newTimerLoop"
-      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Timer Loop configuration saved" >> $logfile
+      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Timer Loop Configuration saved" >> $logfile
       saveconfig
       timer="$timerloop"
       printf "\n${CClear}[OK]\n"
-      sleep 1
-  else
-      printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
-      sleep 3
-  fi
-
-  echo ""
-  read -p "Please enter new Recovery Timeout value [1-9] (e=Exit): " newRecoveryTimeout
-  if [ -z "$newRecoveryTimeout" ] || echo "$newRecoveryTimeout" | grep -qE "^(e|E)$"
-  then
-      if echo "$recover" | grep -qE "^([1-9])$" && \
-         [ "$recover" -ge 1 ] && [ "$recover" -le 9 ]
-      then
-          printf "\n${CClear}[Exiting]\n"
-          sleep 1 ; break
-      else
-          printf "\n${CRed}*ERROR*: Please enter a valid number between 1 and 9.${CClear}\n"
-          sleep 3
-      fi
-  elif echo "$newRecoveryTimeout" | grep -qE "^([1-9])$" && \
-       [ "$newRecoveryTimeout" -ge 1 ] && [ "$newRecoveryTimeout" -le 9 ]
-  then
-      recover="$newRecoveryTimeout"
-      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Recovery Timeout Opportunity configuration saved" >> $logfile
-      saveconfig
-      printf "\n${CClear}[OK]\n"
       sleep 1 ; break
   else
-      printf "\n${CRed}*ERROR*: Please enter a valid number between 1 and 9.${CClear}\n"
+      printf "\n${CRed}*ERROR*: Please enter a valid number between 5 and 999.${CClear}\n"
       sleep 3
   fi
 done
@@ -3992,7 +3542,6 @@ saveconfig()
      echo 'PINGHOST="'"$PINGHOST"'"'
      echo 'logsize='$logsize
      echo 'timerloop='$timerloop
-     echo 'recovery='$recovery
      echo 'schedule='$schedule
      echo 'schedulehrs='$schedulehrs
      echo 'schedulemin='$schedulemin
@@ -4010,7 +3559,6 @@ saveconfig()
      echo 'wgautomation5="'"$wgautomation5"'"'
      echo 'refreshserverlists='$refreshserverlists
      echo 'unboundclient='$unboundclient
-     echo 'unboundwgclient='$unboundwgclient
      echo 'unboundshowip='$unboundshowip
      echo 'monitorwan='$monitorwan
      echo 'useovpn='$useovpn
@@ -4023,11 +3571,6 @@ saveconfig()
    } > "$config"
 
    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New vpnmon-r3.cfg File Saved" >> $logfile
-
-   if [ -f "$config" ]
-     then
-       source "$config"
-   fi
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -4271,18 +3814,6 @@ sendmessage()
           printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
           printf "\n"
           printf "<b>WARNING: VPNMON-R3</b> has detected that VPN Slot $3 is not synced with Unbound. VPN Slot $3 has been reset.\n"
-          printf "Please check your network environment and configuration if this error continues to persist."
-          printf "\n"
-          } > "$tmpEMailBodyFile"
-        elif [ "$2" = "WG Slot Not Synced With Unbound" ]; then
-          emailSubject="WARNING: WG Slot $3 Not Synced with Unbound"
-          emailBodyTitle="WARNING: WG Slot $3 Not Synced with Unbound"
-          {
-          printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-          printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-          printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-          printf "\n"
-          printf "<b>WARNING: VPNMON-R3</b> has detected that WG Slot $3 is not synced with Unbound. WG Slot $3 has been reset.\n"
           printf "Please check your network environment and configuration if this error continues to persist."
           printf "\n"
           } > "$tmpEMailBodyFile"
@@ -4624,11 +4155,11 @@ restartwg()
       printf "\33[2K\r"
       printf "${CGreen}\r[Starting WG Client $1]"
       service "start_wgc $1" >/dev/null 2>&1
-      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WGC$1 Connection Restarted - Current Server: $currwghostname | $currwghost" >> $logfile
+      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WG$1 Connection Restarted - Current Server: $currwghostname | $currwghost" >> $logfile
       resettimer $1 "WG"
       sleep 10
       printf "\33[2K\r"
-      printf "${CGreen}\r[Letting WGC$1 Settle]"
+      printf "${CGreen}\r[Letting WG$1 Settle]"
       sleep 10
     else
       #Pick a random server from the alternate servers file, populate in wg client slot, and restart
@@ -4645,14 +4176,12 @@ restartwg()
       endpointport=$(echo "$WGLINE" | cut -d ',' -f 3)
       privatekey=$(echo "$WGLINE" | cut -d ',' -f 4)
       publickey=$(echo "$WGLINE" | cut -d ',' -f 5)
-      presharedkey=$(echo "$WGLINE" | cut -d ',' -f 6) #Optional, required by AirVPN
       nvram set wgc"$1"_desc="$wgdescription"
       nvram set wgc"$1"_ep_addr="$endpointip"
       nvram set wgc"$1"_ep_addr_r="$endpointip"
       nvram set wgc"$1"_ep_port="$endpointport"
       nvram set wgc"$1"_priv="${privatekey}"
       nvram set wgc"$1"_ppub="${publickey}"
-      nvram set wgc"$1"_psk="${presharedkey}" #Optional, required by AirVPN
       sleep 2
 
       #---------WG-specific nvram values
@@ -4661,11 +4190,11 @@ restartwg()
       printf "\33[2K\r"
       printf "${CGreen}\r[Starting WG Client $1]"
       service "start_wgc $1" >/dev/null 2>&1
-      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WGC$1 Connection Restarted - New Server: $wgdescription | $endpointip" >> $logfile
+      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WG$1 Connection Restarted - New Server: $wgdescription | $endpointip" >> $logfile
       resettimer $1 "WG"
       sleep 10
       printf "\33[2K\r"
-      printf "${CGreen}\r[Letting WGC$1 Settle]"
+      printf "${CGreen}\r[Letting WG$1 Settle]"
       sleep 10
     fi
   else
@@ -4674,11 +4203,11 @@ restartwg()
     printf "${CGreen}\r[Starting WG Client $1]"
     currwghost="$($timeoutcmd$timeoutsec nvram get wgc$1_ep_addr)"
     service "start_wgc $1" >/dev/null 2>&1
-    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WGC$1 Connection Restarted - Current Server: $currwghost" >> $logfile
+    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WG$1 Connection Restarted - Current Server: $currwghost" >> $logfile
     resettimer $1 "WG"
     sleep 10
     printf "\33[2K\r"
-    printf "${CGreen}\r[Letting WGC$1 Settle]"
+    printf "${CGreen}\r[Letting WG$1 Settle]"
     sleep 10
   fi
 
@@ -4753,7 +4282,7 @@ killunmonwg()
   echo ""
   printf "${CGreen}\r[Stopping WG Client $1]"
   service "stop_wgc $1" >/dev/null 2>&1
-  echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WGC$1 has been stopped and no longer being monitored" >> $logfile
+  echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WG$1 has been stopped and no longer being monitored" >> $logfile
   sleep 15
   printf "\33[2K\r"
   printf "${CGreen}\r[Unmonitoring WG Client $1]"
@@ -5116,7 +4645,6 @@ getvpnip()
 # Find the WG IP
 getwgip()
 {
-	ubsync=""
   TUN="wgc$1"
 
   # Added ping workaround for site2site scenarios based on suggestion from @ZebMcKayhan
@@ -5127,6 +4655,9 @@ getwgip()
   icanhazwgip="$(eval $icanhazwgip)"
   if [ -z "$icanhazwgip" ] || echo "$icanhazwgip" | grep -qoE 'Internet|traffic|Error|error' ; then icanhazwgip="0.0.0.0" ; fi
 
+  # Added based on suggestion from @ZebMcKayhan
+  ip rule del prio 10 >/dev/null 2>&1
+
   if [ -z "$icanhazwgip" ]
   then
       wgip="000.000.000.000"
@@ -5134,61 +4665,6 @@ getwgip()
   else
       wgip="$(printf '%15s' "$icanhazwgip")"
   fi
-
-  if [ "$unboundwgclient" -ne 0 ] && [ "$unboundwgclient" -eq "$1" ]
-  then
-    if [ "$ResolverTimer" -eq 1 ]; then
-      ResolverTimer=0
-      if [ "$unboundshowip" -eq 0 ]; then
-        ubsync="${CYellow}-?[UB]${CClear}"
-      else
-        ubsync="${CYellow}-?[UB:Resolving]${CClear}"
-      fi
-    else
-      # Huge thanks to @SomewhereOverTheRainbow for his expertise in troublshooting and coming up with this DNS Resolver methodology!
-      DNSResolver="$({ unbound-control flush whoami.akamai.net >/dev/null 2>&1; } && dig whoami.akamai.net +short @"$(netstat -nlp 2>/dev/null | awk '/.*(unbound){1}.*/{split($4, ip_addr, ":");if(substr($4,11) !~ /.*953.*/)print ip_addr[1];if(substr($4,11) !~ /.*953.*/)exit}')" -p "$(netstat -nlp 2>/dev/null | awk '/.*(unbound){1}.*/{if(substr($4,11) !~ /.*953.*/)print substr($4,11);if(substr($4,11) !~ /.*953.*/)exit}')" 2>/dev/null)"
-
-      if [ -z "$DNSResolver" ]
-      then
-        if [ "$unboundshowip" -eq 0 ]; then
-          ubsync="${CRed}-X[UB]${CClear}"
-        else
-          ubsync="${CRed}-X[UB:$DNSResolver]${CClear}"
-        fi
-      # rudimentary check to make sure value coming back is in the format of an IP address... Don't care if it's more than 255.
-      elif expr "$DNSResolver" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null
-      then
-        # If the DNS resolver and public VPN IP address don't match in our Unbound scenario, reset!
-        if [ "$DNSResolver" != "$icanhazwgip" ]
-        then
-          if [ "$unboundshowip" -eq 0 ]; then
-            ubsync="${CRed}-X[UB]${CClear}"
-          else
-            ubsync="${CRed}-X[UB:$DNSResolver]${CClear}"
-          fi
-          ResolverTimer=1
-          unboundreset=$1
-        else
-          if [ "$unboundshowip" -eq 0 ]; then
-            ubsync="${CGreen}->[UB]${CClear}"
-          else
-            ubsync="${CGreen}->[UB:$DNSResolver]${CClear}"
-          fi
-        fi
-      else
-        if [ "$unboundshowip" -eq 0 ]; then
-          ubsync="${CYellow}-?[UB]${CClear}"
-        else
-          ubsync="${CYellow}-?[UB:$DNSResolver]${CClear}"
-        fi
-      fi
-    fi
-  else
-    ubsync=""
-  fi
-
-  # Added based on suggestion from @ZebMcKayhan
-  ip rule del prio 10 >/dev/null 2>&1
 
   # Insert bogus IP if screenshotmode is on #
   if [ "$screenshotmode" = "1" ]; then
@@ -5394,7 +4870,6 @@ checkvpn()
       if [ "$VP" -eq 0 ]; then
         vpnhealth="${CGreen}[ OK ]${CClear}"
         vpnindicator="${InvGreen} ${CClear}"
-        vrcnt=0
       else
         vpnping=0
         vpnhealth="${CYellow}[UNKN]${CClear}"
@@ -5414,19 +4889,8 @@ checkvpn()
         vpnhealth="${CRed}[FAIL]${CClear}"
         vpnindicator="${InvRed} ${CClear}"
         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$1 failed to respond" >> $logfile
-
-        vrcnt="$((vrcnt+1))"
-        if [ "$vrcnt" -ge 10 ]; then
-          monitored="${CRed}[!]${CClear}"
-        else
-          monitored="${CRed}[$vrcnt]${CClear}"
-        fi
-        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$1 attempt $vrcnt of $recover to allow connection to recover" >> $logfile
-        if [ "$vrcnt" -eq "$recover" ]; then
-          if [ "$((VPN$1))" = "1" ]; then
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$1 failed to respond after $recover attempt(s)" >> $logfile
-            resetvpn=$1
-          fi
+        if [ "$((VPN$1))" = "1" ]; then
+          resetvpn=$1
         fi
       fi
     fi
@@ -5458,7 +4922,6 @@ checkwg()
       if [ "$VP" -eq 0 ]; then
         wghealth="${CGreen}[ OK ]${CClear}"
         wgindicator="${InvGreen} ${CClear}"
-        wrcnt=0
       else
         wgping=0
         wghealth="${CYellow}[UNKN]${CClear}"
@@ -5469,28 +4932,17 @@ checkwg()
     else
       CNT="$((CNT+1))"
       printf "\33[2K\r"
-      printf "\r${InvDkGray} ${CWhite} WGC$1${CClear} [Attempt $CNT]"
+      printf "\r${InvDkGray} ${CWhite} WG$1${CClear} [Attempt $CNT]"
       sleep 1 # Giving the VPN a chance to recover a certain number of times
 
-      if [ "$CNT" -eq "$TRIES" ]; then # But if it fails, report back that we have an issue requiring a VPN reset
+      if [ "$CNT" -eq "$TRIES" ];then # But if it fails, report back that we have an issue requiring a VPN reset
         printf "\33[2K\r"
         wgping=0
         wghealth="${CRed}[FAIL]${CClear}"
         wgindicator="${InvRed} ${CClear}"
-        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WGC$1 failed to respond" >> $logfile
-
-        wrcnt="$((wrcnt+1))"
-        if [ "$wrcnt" -ge 10 ]; then
-          wgmonitored="${CRed}[!]${CClear}"
-        else
-          wgmonitored="${CRed}[$wrcnt]${CClear}"
-        fi
-        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WGC$1 attempt $wrcnt of $recover to allow connection to recover" >> $logfile
-        if [ "$wrcnt" -eq "$recover" ]; then
-          if [ "$((WG$1))" = "1" ]; then
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WGC$1 failed to respond after $recover attempt(s)" >> $logfile
-            resetwg=$1
-          fi
+        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WG$1 failed to respond" >> $logfile
+        if [ "$((WG$1))" = "1" ]; then
+          resetwg=$1
         fi
       fi
     fi
@@ -5584,7 +5036,7 @@ checkwan()
           for slot in $availableslots
           do
               if [ $((wgstate$slot)) -ne 0 ]; then
-                printf "\r${InvGreen} ${CClear} [Retrying Kill Command on WGC$slot Client Connection]...              "
+                printf "\r${InvGreen} ${CClear} [Retrying Kill Command on WG$slot Client Connection]...              "
                 service "stop_wgc $slot" >/dev/null 2>&1
                 sleep 3
               fi
@@ -5646,9 +5098,6 @@ wancheck()
   WANIFNAME="$(get_wan_setting ifname)"
   DUALWANMODE="$($timeoutcmd$timeoutsec nvram get wans_mode)"
 
-  # Uptime calc #
-  uptimeStr="$(awk '{printf("%dd %02dh:%02dm\n",($1/60/60/24),($1/60/60%24),($1/60%60),($1%60))}' /proc/uptime)"
-
   # If WAN 0 or 1 is connected, then proceed, else display that it's inactive
   if [ "$WANIF" = "0" ]
   then
@@ -5691,11 +5140,11 @@ wancheck()
         then
            echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN0${CClear} | ${CGreen}[X]${CClear} | "
            printf "%-6s" "$WAN0IFNAME"
-           echo -e " | ${CGreen}[ OK ]${CClear} | Failover     | $WAN0IP | $WAN0PING | $WAN0CITY: $uptimeStr"
+           echo -e " | ${CGreen}[ OK ]${CClear} | Failover     | $WAN0IP | $WAN0PING | $WAN0CITY"
         else
            echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN0${CClear} | ${CGreen}[X]${CClear} | "
            printf "%-6s" "$WAN0IFNAME"
-           echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN0IP | $WAN0PING | $WAN0CITY: $uptimeStr"
+           echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN0IP | $WAN0PING | $WAN0CITY"
         fi
      else
         echo -e "${InvDkGray}${CWhite}  WAN0${CClear} | ${CGreen}[X]${CClear} | ${CDkGray}[n/a]${CClear}  | ${CDkGray}[n/a ]${CClear} | Inactive     |           ${CDkGray}[n/a]${CClear} |      ${CDkGray}[n/a]${CClear} | ${CDkGray}[n/a]${CClear}"
@@ -5736,11 +5185,11 @@ wancheck()
         then
            echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN1${CClear} | ${CGreen}[X]${CClear} | "
            printf "%-6s" "$WAN1IFNAME"
-           echo -e " | ${CGreen}[ OK ]${CClear} | Failover     | $WAN1IP | $WAN1PING | $WAN1CITY: $uptimeStr"
+           echo -e " | ${CGreen}[ OK ]${CClear} | Failover     | $WAN1IP | $WAN1PING | $WAN1CITY"
         else
            echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN1${CClear} | ${CGreen}[X]${CClear} | "
            printf "%-6s" "$WAN1IFNAME"
-           echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN1IP | $WAN1PING | $WAN1CITY: $uptimeStr"
+           echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN1IP | $WAN1PING | $WAN1CITY"
         fi
      else
         echo -e "${InvDkGray}${CWhite}  WAN1${CClear} | ${CGreen}[X]${CClear} | ${CDkGray}[n/a]${CClear}  | ${CDkGray}[n/a ]${CClear} | Inactive     |           ${CDkGray}[n/a]${CClear} |      ${CDkGray}[n/a]${CClear} | ${CDkGray}[n/a]${CClear}"
@@ -5934,38 +5383,32 @@ displayopsmenu()
        amtmdisp="${CDkGray}Disabled        "
     fi
 
-    rldisp=""
-    if [ "$amtmemailsuccess" = "1" ] || [ "$amtmemailfailure" = "1" ]
-      then
-        if [ "$ratelimit" = "0" ]; then
-          rldisp="| ${CRed}RL"
-        else
-          rldisp="| RL: ${CGreen}$ratelimit/h"
-        fi
+    if [ "$ratelimit" = "0" ]; then
+      rldisp="${CRed}RL"
+    else
+      rldisp="${CGreen}RL:$ratelimit/h"
     fi
-
-    recoverdisp="${CClear}Recovery: ${CGreen}${recover}x${CClear}"
 
     #display operations menu
     if [ "$availableslots" = "1 2" ]
     then
       echo -e "${InvGreen} ${InvDkGray}${CWhite} Operations Menu                                                                                              ${CClear}"
-      echo -e "${InvGreen} ${CClear} Reset/Reconnect VPN 1:${CGreen}(1)${CClear} 2:${CGreen}(2)${CClear}                      ${InvGreen} ${CClear} ${CGreen}(C)${CClear}onfiguration Menu / Main Setup Menu $rldisp${CClear}"
+      echo -e "${InvGreen} ${CClear} Reset/Reconnect VPN 1:${CGreen}(1)${CClear} 2:${CGreen}(2)${CClear}                      ${InvGreen} ${CClear} ${CGreen}(C)${CClear}onfiguration Menu / Main Setup Menu | $rldisp${CClear}"
       echo -e "${InvGreen} ${CClear} Stop/Unmonitor  VPN 1:${CGreen}(!)${CClear} 2:${CGreen}(@)${CClear}                      ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN/WG CRON Time Scheduler: $schedtime"
       echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN Slots                 ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim Log Size (rows): $logSizeStr"
       echo -e "${InvGreen} ${CClear} Update/Maintain ${CGreen}(V)${CClear}PN Server Lists                   ${InvGreen} ${CClear} ${CGreen}(A)${CClear}utostart VPNMON-R3 on Reboot: $rebootprot"
-      echo -e "${InvGreen} ${CClear} Edit/R${CGreen}(U)${CClear}n Server List Automation                    ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer Loop Check Interval: $timerLoopStr | $recoverdisp"
+      echo -e "${InvGreen} ${CClear} Edit/R${CGreen}(U)${CClear}n Server List Automation                    ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer VPN Check Loop Interval: $timerLoopStr"
       echo -e "${InvGreen} ${CClear} AMTM Email Not${CGreen}(I)${CClear}fications: $amtmdisp         ${InvGreen} ${CClear} ${CGreen}(P)${CClear}ing Maximum Before Reset in ms: $pingResetStr"
       echo -e "${InvGreen} ${CClear}${CDkGray}--------------------------------------------------------------------------------------------------------------${CClear}"
       echo ""
     elif [ "$availableslots" = "1 2 3 4 5" ]
     then
       echo -e "${InvGreen} ${InvDkGray}${CWhite} Operations Menu                                                                                              ${CClear}"
-      echo -e "${InvGreen} ${CClear} Reset/Reconnect VPN 1:${CGreen}(1)${CClear} 2:${CGreen}(2)${CClear} 3:${CGreen}(3)${CClear} 4:${CGreen}(4)${CClear} 5:${CGreen}(5)${CClear}    ${InvGreen} ${CClear} ${CGreen}(C)${CClear}onfiguration Menu / Main Setup Menu $rldisp${CClear}"
+      echo -e "${InvGreen} ${CClear} Reset/Reconnect VPN 1:${CGreen}(1)${CClear} 2:${CGreen}(2)${CClear} 3:${CGreen}(3)${CClear} 4:${CGreen}(4)${CClear} 5:${CGreen}(5)${CClear}    ${InvGreen} ${CClear} ${CGreen}(C)${CClear}onfiguration Menu / Main Setup Menu | $rldisp${CClear}"
       echo -e "${InvGreen} ${CClear} Stop/Unmonitor  VPN 1:${CGreen}(!)${CClear} 2:${CGreen}(@)${CClear} 3:${CGreen}(#)${CClear} 4:${CGreen}($)${CClear} 5:${CGreen}(%)${CClear}    ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN/WG CRON Time Scheduler: $schedtime"
       echo -e "${InvGreen} ${CClear} Reset/Reconnect  WG 1:${CGreen}(6)${CClear} 2:${CGreen}(7)${CClear} 3:${CGreen}(8)${CClear} 4:${CGreen}(9)${CClear} 5:${CGreen}(0)${CClear}    ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim Log Size (rows): $logSizeStr"
       echo -e "${InvGreen} ${CClear} Stop/Unmonitor   WG 1:${CGreen}(^)${CClear} 2:${CGreen}(&)${CClear} 3:${CGreen}(-)${CClear} 4:${CGreen}(+)${CClear} 5:${CGreen}(=)${CClear}    ${InvGreen} ${CClear} ${CGreen}(A)${CClear}utostart VPNMON-R3 on Reboot: $rebootprot"
-      echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN/WG Slots              ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer Loop Check Interval: $timerLoopStr | $recoverdisp"
+      echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN/WG Slots              ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer VPN Check Loop Interval: $timerLoopStr"
       echo -e "${InvGreen} ${CClear} Update/Maintain ${CGreen}(V)${CClear}PN/${CGreen}(W)${CClear}G Server Lists              ${InvGreen} ${CClear} ${CGreen}(P)${CClear}ing Maximum Before Reset in ms: $pingResetStr"
       echo -e "${InvGreen} ${CClear} Edit/R${CGreen}(U)${CClear}n Server List Automation                    ${InvGreen} ${CClear} AMTM Email Not${CGreen}(I)${CClear}fications: $amtmdisp"
       echo -e "${InvGreen} ${CClear}${CDkGray}--------------------------------------------------------------------------------------------------------------${CClear}"
@@ -6019,7 +5462,7 @@ then
 fi
 
 # Check and see if an invalid commandline option is being used
-if [ "$1" = "-h" ] || [ "$1" = "-help" ] || [ "$1" = "-setup" ] || [ "$1" = "-reset" ] || [ "$1" = "-bw" ] || [ "$1" = "-noswitch" ] || [ "$1" = "-screen" ] || [ "$1" = "-now" ] || [ "$1" = "-uowginitstart" ] || [ "$1" = "-uowgnatstart" ]
+if [ "$1" = "-h" ] || [ "$1" = "-help" ] || [ "$1" = "-setup" ] || [ "$1" = "-reset" ] || [ "$1" = "-bw" ] || [ "$1" = "-noswitch" ] || [ "$1" = "-screen" ] || [ "$1" = "-now" ]
 then
     clear
 else
@@ -6057,20 +5500,6 @@ then
   echo ""
   echo -e "${CClear}"
   exit 0
-fi
-
-# Check to see if the Unbound-over-WG init-start action is being called
-if [ "$1" = "-uowginitstart" ]
-then
-    uowginitstart
-    exit 0
-fi
-
-# Check to see if the Unbound-over-WG nat-start action is being called
-if [ "$1" = "-uowgnatstart" ]
-then
-    uowgnatstart
-    exit 0
 fi
 
 # Check to see if a second command is being passed to remove color
@@ -6265,7 +5694,7 @@ do
   if [ "$monitorwan" = "1" ] && [ "$firstrun" = "0" ]
   then
     #Display WAN ports grid
-    echo -e "${CClear}  Port | Mon | IFace  | Health | WAN State    | Public WAN IP   | Ping-->WAN | City Exit / Uptime"
+    echo -e "${CClear}  Port | Mon | IFace  | Health | WAN State    | Public WAN IP   | Ping-->WAN | City Exit"
     echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
 
     #Cycle through the WANCheck connection function to display ping/city info
@@ -6284,9 +5713,9 @@ do
     echo ""
     #Display VPN client slot grid
     if [ "$unboundclient" != "0" ]; then
-       echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | City Exit / Time Connected / UB"
+       echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | City Exit / Time / UB"
     else
-       echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | City Exit / Time Connected"
+       echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | City Exit / Time"
     fi
     echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
 
@@ -6464,11 +5893,8 @@ do
         maxsvrping=$(awk "BEGIN {printf \"%3.0f\", ${vpnping}}") >/dev/null 2>&1
         MP=$?
         if [ $MP -ne 0 ]; then
-          if [ -z "$maxsvrping" ] || [ "$maxsvrping" = "" ]; then
-            maxsvrping="Null"
-          fi
-          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: Invalid VPN PING information received. Contents: $maxsvrping" >> $logfile
           maxsvrping=0
+          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: Invalid VPN PING information received." >> $logfile
         fi
 
         if [ "$pingreset" -gt 0 ]
@@ -6519,12 +5945,7 @@ do
     echo ""
 
     #Display WG client slot grid
-    if [ "$unboundwgclient" != "0" ]; then
-      echo -e "  Slot | Mon |  Svrs  | Health | WG State     | Public WG IP    | Ping--->WG | City Exit / Time Connected / UB"
-    else
-      echo -e "  Slot | Mon |  Svrs  | Health | WG State     | Public WG IP    | Ping--->WG | City Exit / Time Connected"
-    fi
-
+    echo -e "  Slot | Mon |  Svrs  | Health | WG State     | Public WG IP    | Ping--->WG | City Exit / Time"
     echo -e "-------|-----|--------|--------|--------------|-----------------|------------|---------------------------------"
 
     i=0
@@ -6603,12 +6024,12 @@ do
         #if "$firstDataCollection" ; then printf "\r\033[0K" ; firstDataCollection=false ; fi
 
         # Print the results of all data gathered sofar #
-        echo -e "$wgindicator${InvDkGray}${CWhite}  WG$i${CClear} | $wgmonitored | $wgservercnt | $wghealth | $wgstate | $wgip | $wgsvrping | $wgcity$wgsincelastreset $wgcitychange$ubsync"
+        echo -e "$wgindicator${InvDkGray}${CWhite}  WG$i${CClear} | $wgmonitored | $wgservercnt | $wghealth | $wgstate | $wgip | $wgsvrping | $wgcity$wgsincelastreset $wgcitychange"
 
         #if a wg connection is monitored and disconnected, try to restart it
         if [ "$((WG$i))" = "1" ] && [ "$wgstate" = "Disconnected" ]
         then #reconnect
-          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WGC$i has disconnected" >> $logfile
+          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WG$i has disconnected" >> $logfile
           echo ""
           printf "\33[2K\r"
 
@@ -6639,7 +6060,7 @@ do
               idle_seconds=$((`date +%s`-${last_handshake}))
               if [ "$idle_seconds" -gt "200" ]
               then #reconnect
-                echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WGC$i handshake exceeded 200s" >> $logfile
+                echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WG$i handshake exceeded 200s" >> $logfile
                 echo ""
                 printf "\33[2K\r"
 
@@ -6666,11 +6087,8 @@ do
         maxsvrping=$(awk "BEGIN {printf \"%3.0f\", ${wgping}}") >/dev/null 2>&1
         MP=$?
         if [ $MP -ne 0 ]; then
-          if [ -z "$maxsvrping" ] || [ "$maxsvrping" = "" ]; then
-            maxsvrping="Null"
-          fi
-          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: Invalid WG PING information received. Contents: $maxsvrping" >> $logfile
           maxsvrping=0
+          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: Invalid WG PING information received." >> $logfile
         fi
 
         if [ "$pingreset" -gt 0 ]
@@ -6679,7 +6097,7 @@ do
           then
             echo ""
             printf "\33[2K\r"
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WGC$i PING exceeds max allowed ($pingreset ms)" >> $logfile
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WG$i PING exceeds max allowed ($pingreset ms)" >> $logfile
             printf "${CGreen}\r[Maximum PING Exceeded]"
             sleep 3
             printf "\33[2K\r"
@@ -6706,7 +6124,7 @@ do
         #if a wg is monitored and not responsive, try to restart it
         if [ "$((WG$i))" = "1" ] && [ "$resetwg" != "0" ]
         then #reconnect
-          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WGC$i is non-responsive and being reconnected" >> $logfile
+          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WG$i is non-responsive and being reconnected" >> $logfile
           echo ""
           printf "\33[2K\r"
 
@@ -6766,61 +6184,29 @@ do
   prevHideOpts=X
 
   #if Unbound is active and out of sync, try to restart it
-  if [ "$unboundclient" != "0" ] && [ "$ResolverTimer" = "1" ]
+  if [ "$unboundclient" != "0" ] && [ "$ResolverTimer" = "1" ] && [ "$useovpn" = "1" ]
   then
+    printf "\33[2K\r"
+    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$unboundreset is out of sync with Unbound DNS Resolver" >> $logfile
+    printf "${CGreen}\r[Unbound is out of sync]"
+    sleep 3
+    printf "\33[2K\r"
 
-    if [ "$useovpn" = "1" ]
-      then
-        printf "\33[2K\r"
-        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$unboundreset is out of sync with Unbound DNS Resolver" >> $logfile
-        printf "${CGreen}\r[Unbound is out of sync]"
-        sleep 3
-        printf "\33[2K\r"
+    #display a standard timer
+    timer=0
+    while [ $timer -ne 5 ]
+    do
+      timer="$((timer+1))"
+      preparebar 46 "|"
+      progressbarpause $timer 5 "" "s" "Standard"
+    done
+    printf "\33[2K\r"
 
-        #display a standard timer
-        timer=0
-        while [ $timer -ne 5 ]
-        do
-          timer="$((timer+1))"
-          preparebar 46 "|"
-          progressbarpause $timer 5 "" "s" "Standard"
-        done
-        printf "\33[2K\r"
-
-        restartvpn $unboundreset
-        sendmessage 1 "VPN Slot Not Synced With Unbound" $unboundreset
-        restartrouting
-        resetspdmerlin
-        exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
-    fi
-  fi
-
-  if [ "$unboundwgclient" != "0" ] && [ "$ResolverTimer" = "1" ]
-  then
-    if [ "$usewg" = "1" ]
-      then
-        printf "\33[2K\r"
-        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WGC$unboundreset is out of sync with Unbound DNS Resolver" >> $logfile
-        printf "${CGreen}\r[Unbound is out of sync]"
-        sleep 3
-        printf "\33[2K\r"
-
-        #display a standard timer
-        timer=0
-        while [ $timer -ne 5 ]
-        do
-          timer="$((timer+1))"
-          preparebar 46 "|"
-          progressbarpause $timer 5 "" "s" "Standard"
-        done
-        printf "\33[2K\r"
-
-        restartwg $unboundreset
-        sendmessage 1 "WG Slot Not Synced With Unbound" $unboundreset
-        restartrouting
-        resetspdmerlin
-        exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
-    fi
+    restartvpn $unboundreset
+    sendmessage 1 "VPN Slot Not Synced With Unbound" $unboundreset
+    restartrouting
+    resetspdmerlin
+    exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
   fi
 
   #Check to see if the WAN is up

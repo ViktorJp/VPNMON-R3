@@ -2,6 +2,12 @@ To-Do:
 - If the WAN doesn't respond after X minutes, issue a router reboot?
 
 Done:
+- Invalid ping response values in log
+- "Time Connected" in UI
+- Router Uptime on WAN entry in UI
+- Remove RL tag if amtm email functionality is turned off completely, and show some info in the config menu on the AMTM email item.
+- Get unbound over WG working
+- Specify how many times you want cycle to go before a reset occurs (right now it's every cycle, but could make it 2 or 3?)
 - Option to show/hide OVPN and WG sections. @Stephen Harrington
 - Wireguard compatibility
 - *** if downloaded list = 0, then dont save list and preserve, and email
