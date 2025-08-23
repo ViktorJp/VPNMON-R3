@@ -1,20 +1,20 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.6.1 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.6.0 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2025-Aug-23
+# Last Modified: 2025-Aug-21
 ##########################################################################################
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.6.1"                                                 # Version tracker
+version="1.6.0"                                                 # Version tracker
 beta=0                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -5116,7 +5116,7 @@ getvpnip()
 # Find the WG IP
 getwgip()
 {
-  ubsync=""
+	ubsync=""
   TUN="wgc$1"
 
   # Added ping workaround for site2site scenarios based on suggestion from @ZebMcKayhan
@@ -6460,18 +6460,14 @@ do
           exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
         fi
 
-        if [ "$((VPN$i))" = "1" ]; then
-          # if a vpn connection ping is greater than a certain amount, restart it
-          maxsvrping=$(awk "BEGIN {printf \"%3.0f\", ${vpnping}}") >/dev/null 2>&1
-          MP=$?
-          if [ $MP -ne 0 ]; then
-            if [ -z "$maxsvrping" ] || [ "$maxsvrping" = "" ]; then
-              maxsvrping="Null"
-            fi
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: Invalid VPN PING information received. Contents: $maxsvrping" >> $logfile
-            maxsvrping=0
+        # if a vpn connection ping is greater than a certain amount, restart it
+        maxsvrping=$(awk "BEGIN {printf \"%3.0f\", ${vpnping}}") >/dev/null 2>&1
+        MP=$?
+        if [ $MP -ne 0 ]; then
+          if [ -z "$maxsvrping" ] || [ "$maxsvrping" = "" ]; then
+            maxsvrping="Null"
           fi
-        else
+          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: Invalid VPN PING information received. Contents: $maxsvrping" >> $logfile
           maxsvrping=0
         fi
 
@@ -6666,18 +6662,14 @@ do
           fi
         fi
 
-        if [ "$((WG$i))" = "1" ]; then
-          # if a wg connection ping is greater than a certain amount, restart it
-          maxsvrping=$(awk "BEGIN {printf \"%3.0f\", ${wgping}}") >/dev/null 2>&1
-          MP=$?
-          if [ $MP -ne 0 ]; then
-            if [ -z "$maxsvrping" ] || [ "$maxsvrping" = "" ]; then
-              maxsvrping="Null"
-            fi
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: Invalid WG PING information received. Contents: $maxsvrping" >> $logfile
-            maxsvrping=0
+        # if a wg connection ping is greater than a certain amount, restart it
+        maxsvrping=$(awk "BEGIN {printf \"%3.0f\", ${wgping}}") >/dev/null 2>&1
+        MP=$?
+        if [ $MP -ne 0 ]; then
+          if [ -z "$maxsvrping" ] || [ "$maxsvrping" = "" ]; then
+            maxsvrping="Null"
           fi
-        else
+          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: Invalid WG PING information received. Contents: $maxsvrping" >> $logfile
           maxsvrping=0
         fi
 
