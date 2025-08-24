@@ -1,3 +1,8 @@
+v1.6.2   - (August 24, 2025)
+         - PATCH: Apologies for the successive bug fix patches, but found another one stemming from an Unbound
+           variable that was not being reset, and causing the [UB] indicator to show up on slots that weren't
+           designated as Unbound slots.
+
 v1.6.1   - (August 23, 2025)
          - PATCH: Small bug fix to prevent "Invalid WG PING Information" log errors from coming through even if
            WG functionality was not enabled. Thanks much to @scootertramp for reporting this issue!
