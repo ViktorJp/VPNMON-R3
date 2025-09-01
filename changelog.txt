@@ -1,3 +1,15 @@
+v1.6.3   - (September 1, 2025)
+         - PATCH: As discovered by @Ventola, Windscribe HAD to be different, and issues a different Interface
+           IP for each of their server connections. This has now forced another required WG Server List field,
+           as I could see other providers using similar tactics down the road. These are now the required
+           fields in a comma delimited row: ConnectionName,InterfaceIP/Sub,EndpointIP,EndpointPort,PrivateKey,
+           PublicKey, PreSharedKey(Opt) -- Example: City WG,10.50.0.2/32,143.32.55.23,34334,fasdkaffkasdjfj=,
+           221t949as2323kf=,23fj39fffjdaf=
+           **PLEASE NOTE**: for Wireguard users using server list automation, this update will require you to
+           add this InterfaceIP/Sub information to your current WG Server Lists. Not doing so will break the
+           ability for VPNMON-R3 to insert the correct information into your WG slots. Sorry for the extra
+           work. Hopefully this will be the last time we need any updates to this format.
+
 v1.6.2   - (August 24, 2025)
          - PATCH: Apologies for the successive bug fix patches, but found another one stemming from an Unbound
            variable that was not being reset, and causing the [UB] indicator to show up on slots that weren't
