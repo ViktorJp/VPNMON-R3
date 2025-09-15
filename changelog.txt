@@ -1,3 +1,10 @@
+v1.6.4   - (September 14, 2025)
+         - PATCH: Bug fix around the Recovery Timeout Opportunities(tm) functionality. In certain situations,
+           like if you're running multiple Wireguard connections, the timer would keep resetting itself as
+           each loop checked for a valid connection, and would never reset a slot that was experiencing issues
+           with its connectivity. Also, if you set a custom timer value other than 3, that value was not being
+           saved. This has now been fixed, tested, and functioning as advertised.
+
 v1.6.3   - (September 1, 2025)
          - PATCH: As discovered by @Ventola, Windscribe HAD to be different, and issues a different Interface
            IP for each of their server connections. This has now forced another required WG Server List field,
