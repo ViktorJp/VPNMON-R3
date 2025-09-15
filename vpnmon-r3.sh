@@ -54,7 +54,8 @@ hideoptions=1                                                   # Hide/Show menu
 ratelimit=0                                                     # Rate limiting number of emails/houre
 vrcnt=0                                                         # Counter for VPN connection recovery
 wrcnt=0                                                         # Counter for WG connection recovery
-
+problemvpnslot=0                                                # Temporary holder for problem VPN slot
+problemwgslot=0                                                 # Temporary holder for problem WG slot
 
 ##-------------------------------------##
 ## Added by Martinski W. [2024-Oct-05] ##
@@ -5396,6 +5397,10 @@ checkvpn()
       if [ "$VP" -eq 0 ]; then
         vpnhealth="${CGreen}[ OK ]${CClear}"
         vpnindicator="${InvGreen} ${CClear}"
+        if [ "$problemvpnslot" -eq "$1" ]; then
+          vrcnt=0
+          problemvpnslot=0
+        fi
       else
         vpnping=0
         vpnhealth="${CYellow}[UNKN]${CClear}"
@@ -5417,6 +5422,7 @@ checkvpn()
         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$1 failed to respond" >> $logfile
 
         vrcnt="$((vrcnt+1))"
+        problemvpnslot="$1"
         if [ "$vrcnt" -ge 10 ]; then
           monitored="${CRed}[!]${CClear}"
         else
@@ -5459,6 +5465,10 @@ checkwg()
       if [ "$VP" -eq 0 ]; then
         wghealth="${CGreen}[ OK ]${CClear}"
         wgindicator="${InvGreen} ${CClear}"
+        if [ "$problemwgslot" -eq "$1" ]; then
+          wrcnt=0
+          problemwgslot=0
+        fi
       else
         wgping=0
         wghealth="${CYellow}[UNKN]${CClear}"
@@ -5480,6 +5490,7 @@ checkwg()
         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WGC$1 failed to respond" >> $logfile
 
         wrcnt="$((wrcnt+1))"
+        problemwgslot="$1"
         if [ "$wrcnt" -ge 10 ]; then
           wgmonitored="${CRed}[!]${CClear}"
         else
