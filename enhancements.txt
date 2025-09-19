@@ -1,5 +1,6 @@
 To-Do:
 - If the WAN doesn't respond after X minutes, issue a router reboot?
+- Option for round-robin on lists, instead of random.
 
 Done:
 - Add the Interface IP as a required field for the WG Server Lists @Ventola
