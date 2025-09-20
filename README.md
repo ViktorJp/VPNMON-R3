@@ -1,7 +1,7 @@
-# VPNMON-R3 v1.6.4
+# VPNMON-R3 v1.7.0
 Asus-Merlin OpenVPN/Wireguard Monitor R3
 
-Updated on 2025-Sep-14
+Updated on 2025-Sep-20
 
 ---
 
