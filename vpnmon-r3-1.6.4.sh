@@ -1,20 +1,20 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.7.0 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.6.4 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2025-Sep-20
+# Last Modified: 2025-Sep-14
 ##########################################################################################
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.7.0"                                                 # Version tracker
+version="1.6.4"                                                 # Version tracker
 beta=0                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -56,7 +56,6 @@ vrcnt=0                                                         # Counter for VP
 wrcnt=0                                                         # Counter for WG connection recovery
 problemvpnslot=0                                                # Temporary holder for problem VPN slot
 problemwgslot=0                                                 # Temporary holder for problem WG slot
-selectionmethod=0                                               # 0=Random vs 1=sequential slot selection
 
 ##-------------------------------------##
 ## Added by Martinski W. [2024-Oct-05] ##
@@ -950,12 +949,6 @@ do
      rstspdmerlindisp="Enabled"
   fi
 
-  if [ "$selectionmethod" -eq 0 ]; then
-     selectionmethoddisp="Random"
-  elif [ "$selectionmethod" -eq 1 ]; then
-     selectionmethoddisp="Sequential"
-  fi
-
   clear
   echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 Configuration Options                                                       ${CClear}"
   echo -e "${InvGreen} ${CClear}"
@@ -979,13 +972,12 @@ do
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(10)${CClear} : Whitelist VPN Server IP Lists in Skynet      : ${CGreen}$updateskynetdisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(11)${CClear} : AMTM Email Notifications / Rate Limiting     : ${CGreen}$amtmemailsuccfaildisp $rldisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(12)${CClear} : Reset spdMerlin Interfaces on VPN Reset      : ${CGreen}$rstspdmerlindisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(13)${CClear} : Server List Item Selection Method            : ${CGreen}$selectionmethoddisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  | ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( e)${CClear} : Exit${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo ""
-  read -p "Please select? (1-13, e=Exit): " SelectSlot
+  read -p "Please select? (1-12, e=Exit): " SelectSlot
     case $SelectSlot in
       1)
         clear
@@ -1892,48 +1884,6 @@ do
             rstspdmerlindisp="$([ "$rstspdmerlin" = "0" ] && echo "Disabled" || echo "Enabled")"
             [ "$rstspdmerlin" != "$previousValue" ] && \
             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: spdMerlin Interface Reset $monitorwandisp" >> $logfile
-            saveconfig
-        fi
-      ;;
-
-      13)
-        clear
-        echo -e "${InvGreen} ${InvDkGray}${CWhite} Server List Item Selection Method                                                     ${CClear}"
-        echo -e "${InvGreen} ${CClear}"
-        echo -e "${InvGreen} ${CClear} Please indicate below if you would like to use a Random or Sequential method to pick${CClear}"
-        echo -e "${InvGreen} ${CClear} your next available Server List item to populate your VPN/WG slots. When choosing${CClear}"
-        echo -e "${InvGreen} ${CClear} 'Sequential', please know that this method will use a Round-Robin style method, and${CClear}"
-        echo -e "${InvGreen} ${CClear} will start at the beginning of your list again after it has used the last entry in${CClear}"
-        echo -e "${InvGreen} ${CClear} your list. The 'Sequential' method is a preferred method to use for those using${CClear}"
-        echo -e "${InvGreen} ${CClear} shorter lists of servers, as the chances of selecting the same server is much greater${CClear}"
-        echo -e "${InvGreen} ${CClear} when using a 'Random' method against these short lists.${CClear}"
-        echo -e "${InvGreen} ${CClear}"
-        echo -e "${InvGreen} ${CClear} (Default = 0 - Random)"
-        echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-        echo
-        echo -e "${CClear}Current: ${CGreen}$selectionmethoddisp${CClear}" ; echo
-        read -p "Please Choose? (Random = 0, Sequential = 1, e=Exit): " newselectionmethod
-        if [ "$newselectionmethod" = "0" ]
-        then
-            selectionmethod=0
-            newselectionmethoddisp="Random"
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Server List Item Selection Method set to Random" >> $logfile
-            saveconfig
-        elif [ "$newselectionmethod" = "1" ]
-        then
-            selectionmethod=1
-            newselectionmethoddisp="Sequential"
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Server List Item Selection Method set to Sequential" >> $logfile
-            saveconfig
-        elif [ "$newselectionmethod" = "e" ]
-        then
-            echo -e "\n[Exiting]"; sleep 2
-        else
-            previousValue="$selectionmethod"
-            selectionmethod="${selectionmethod:=0}"
-            selectionmethoddisp="$([ "$selectionmethod" = "0" ] && echo "Random" || echo "Sequential")"
-            [ "$selectionmethod" != "$previousValue" ] && \
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Server List Item Selection Method set to $selectionmethoddisp" >> $logfile
             saveconfig
         fi
       ;;
@@ -4071,7 +4021,6 @@ saveconfig()
      echo 'amtmemailfailure='$amtmemailfailure
      echo 'rstspdmerlin='$rstspdmerlin
      echo 'ratelimit='$ratelimit
-     echo 'selectionmethod='$selectionmethod
    } > "$config"
 
    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New vpnmon-r3.cfg File Saved" >> $logfile
@@ -4608,96 +4557,27 @@ restartvpn()
       printf "\33[2K\r"
       printf "${CGreen}\r[Letting VPN$1 Settle]"
       sleep 10
-      return
-
-    elif [ "$selectionmethod" -eq 1 ] # 1=roundrobin
-      then
-        robintracker="/jffs/addons/vpnmon-r3.d/vr3robin.txt"
-
-        # If the robintracker file doesn't exist, create it and start all from 0.
-        if [ ! -f "$robintracker" ]; then
-          { echo 'VPN1RR=0'
-            echo 'VPN2RR=0'
-            echo 'VPN3RR=0'
-            echo 'VPN4RR=0'
-            echo 'VPN5RR=0'
-            echo 'WG1RR=0'
-            echo 'WG2RR=0'
-            echo 'WG3RR=0'
-            echo 'WG4RR=0'
-            echo 'WG5RR=0'
-          } > "$robintracker"
-
-          printf "\33[2K\r"
-          printf "${CGreen}\r[Writing New Sequential Tracker File]"
-          sleep 1
-        fi
-
-        # Read the last used line number from the tracker file, calculate next
-        lastused=$(grep 'VPN'$1'RR=' "$robintracker" | cut -d'=' -f2)
-        nextup="$((lastused+1))"
-
-        # Check if we've reached the end of the file. If so, loop back to line 1.
-        if [ "$nextup" -gt "$servers" ]; then
-          nextup=1
-        fi
-
-        printf "\33[2K\r"
-        printf "${CGreen}\r[Selecting Next Sequential Entry]"
-
-        #---------OVPN-specific nvram values
-
-        # Extract the target line and parse it
-        RNDVPNIP=$(sed -n "${nextup}p" /jffs/addons/vpnmon-r3.d/vr3svr$1.txt)
-        nvram set vpn_client"$1"_addr="$RNDVPNIP"
-        nvram set vpn_client"$1"_desc="VPN$1 - $RNDVPNIP added by VPNMON-R3"
-        sleep 2
-
-        #---------OVPN-specific nvram values
-
-        # Update the tracker file with the line number we just used.
-        sed -i "s/^VPN$1RR=.*/VPN$1RR=$nextup/" "$robintracker"
-
-        #Restart the new server currently allocated to that vpn slot
-        printf "\33[2K\r"
-        printf "${CGreen}\r[Starting VPN Client $1]"
-        service start_vpnclient$1 >/dev/null 2>&1
-        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN$1 Connection Restarted [SEQ] - New Server: $RNDVPNIP" >> $logfile
-        resettimer $1 "VPN"
-        sleep 10
-        printf "\33[2K\r"
-        printf "${CGreen}\r[Letting VPN$1 Settle]"
-        sleep 10
-
-    elif [ "$selectionmethod" -eq 0 ] # 0=Random
-      then
-        #Pick a random server from the alternate servers file, populate in vpn client slot, and restart
-        printf "\33[2K\r"
-        printf "${CGreen}\r[Selecting Random Entry]"
-        RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
-        R_LINE=$(( RANDOM % servers + 1 ))
-
-        #---------OVPN-specific nvram values
-
-        RNDVPNIP=$(sed -n "${R_LINE}p" /jffs/addons/vpnmon-r3.d/vr3svr$1.txt)
-        nvram set vpn_client"$1"_addr="$RNDVPNIP"
-        nvram set vpn_client"$1"_desc="VPN$1 - $RNDVPNIP added by VPNMON-R3"
-        sleep 2
-
-        #---------OVPN-specific nvram values
-
-        #Restart the new server currently allocated to that vpn slot
-        printf "\33[2K\r"
-        printf "${CGreen}\r[Starting VPN Client $1]"
-        service start_vpnclient$1 >/dev/null 2>&1
-        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN$1 Connection Restarted [RND] - New Server: $RNDVPNIP" >> $logfile
-        resettimer $1 "VPN"
-        sleep 10
-        printf "\33[2K\r"
-        printf "${CGreen}\r[Letting VPN$1 Settle]"
-        sleep 10
+    else
+      #Pick a random server from the alternate servers file, populate in vpn client slot, and restart
+      printf "\33[2K\r"
+      printf "${CGreen}\r[Selecting Random Entry]"
+      RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
+      R_LINE=$(( RANDOM % servers + 1 ))
+      RNDVPNIP=$(sed -n "${R_LINE}p" /jffs/addons/vpnmon-r3.d/vr3svr$1.txt)
+      nvram set vpn_client"$1"_addr="$RNDVPNIP"
+      nvram set vpn_client"$1"_desc="VPN$1 - $RNDVPNIP added by VPNMON-R3"
+      sleep 2
+      #Restart the new server currently allocated to that vpn slot
+      printf "\33[2K\r"
+      printf "${CGreen}\r[Starting VPN Client $1]"
+      service start_vpnclient$1 >/dev/null 2>&1
+      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN$1 Connection Restarted - New Server: $RNDVPNIP" >> $logfile
+      resettimer $1 "VPN"
+      sleep 10
+      printf "\33[2K\r"
+      printf "${CGreen}\r[Letting VPN$1 Settle]"
+      sleep 10
     fi
-
   else
     #Restart the same server currently allocated to that vpn slot
     printf "\33[2K\r"
@@ -4751,123 +4631,46 @@ restartwg()
       printf "\33[2K\r"
       printf "${CGreen}\r[Letting WGC$1 Settle]"
       sleep 10
-      return
+    else
+      #Pick a random server from the alternate servers file, populate in wg client slot, and restart
+      printf "\33[2K\r"
+      printf "${CGreen}\r[Selecting Random Entry]"
+      RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
+      R_LINE=$(( RANDOM % servers + 1 ))
 
-    elif [ "$selectionmethod" -eq 1 ] # 1=roundrobin
-      then
-        robintracker="/jffs/addons/vpnmon-r3.d/vr3robin.txt"
+      #---------WG-specific nvram values
 
-        # If the robintracker file doesn't exist, create it and start from 0.
-        if [ ! -f "$robintracker" ]; then
-          { echo 'VPN1RR=0'
-            echo 'VPN2RR=0'
-            echo 'VPN3RR=0'
-            echo 'VPN4RR=0'
-            echo 'VPN5RR=0'
-            echo 'WG1RR=0'
-            echo 'WG2RR=0'
-            echo 'WG3RR=0'
-            echo 'WG4RR=0'
-            echo 'WG5RR=0'
-          } > "$robintracker"
+      WGLINE=$(sed -n "${R_LINE}p" /jffs/addons/vpnmon-r3.d/vr3wgsvr$1.txt)
+      wgdescription=$(echo "$WGLINE" | cut -d ',' -f 1)
+      interfaceip=$(echo "$WGLINE" | cut -d ',' -f 2)
+      endpointip=$(echo "$WGLINE" | cut -d ',' -f 3)
+      endpointport=$(echo "$WGLINE" | cut -d ',' -f 4)
+      privatekey=$(echo "$WGLINE" | cut -d ',' -f 5)
+      publickey=$(echo "$WGLINE" | cut -d ',' -f 6)
+      presharedkey=$(echo "$WGLINE" | cut -d ',' -f 7) #Optional, required by AirVPN
+      nvram set wgc"$1"_desc="$wgdescription"
+      nvram set wgc"$1"_addr="$interfaceip"
+      nvram set wgc"$1"_ep_addr="$endpointip"
+      nvram set wgc"$1"_ep_addr_r="$endpointip"
+      nvram set wgc"$1"_ep_port="$endpointport"
+      nvram set wgc"$1"_priv="${privatekey}"
+      nvram set wgc"$1"_ppub="${publickey}"
+      nvram set wgc"$1"_psk="${presharedkey}" #Optional, required by AirVPN
+      sleep 2
 
-          printf "\33[2K\r"
-          printf "${CGreen}\r[Writing New Round-Robin Tracker File]"
-          sleep 1
-        fi
+      #---------WG-specific nvram values
 
-        # Read the last used line number from the tracker file, calculate next
-        lastused=$(grep 'WG'$1'RR=' "$robintracker" | cut -d'=' -f2)
-        nextup="$((lastused+1))"
-
-        # Check if we've reached the end of the file. If so, loop back to line 1.
-        if [ "$nextup" -gt "$servers" ]; then
-          nextup=1
-        fi
-
-        printf "\33[2K\r"
-        printf "${CGreen}\r[Selecting Next Sequential Entry]"
-
-        #---------WG-specific nvram values
-
-        # Extract the target line and parse it
-        WGLINE=$(sed -n "${nextup}p" /jffs/addons/vpnmon-r3.d/vr3wgsvr$1.txt)
-        wgdescription=$(echo "$WGLINE" | cut -d ',' -f 1)
-        interfaceip=$(echo "$WGLINE" | cut -d ',' -f 2)
-        endpointip=$(echo "$WGLINE" | cut -d ',' -f 3)
-        endpointport=$(echo "$WGLINE" | cut -d ',' -f 4)
-        privatekey=$(echo "$WGLINE" | cut -d ',' -f 5)
-        publickey=$(echo "$WGLINE" | cut -d ',' -f 6)
-        presharedkey=$(echo "$WGLINE" | cut -d ',' -f 7) #Optional, required by AirVPN
-        nvram set wgc"$1"_desc="$wgdescription"
-        nvram set wgc"$1"_addr="$interfaceip"
-        nvram set wgc"$1"_ep_addr="$endpointip"
-        nvram set wgc"$1"_ep_addr_r="$endpointip"
-        nvram set wgc"$1"_ep_port="$endpointport"
-        nvram set wgc"$1"_priv="${privatekey}"
-        nvram set wgc"$1"_ppub="${publickey}"
-        nvram set wgc"$1"_psk="${presharedkey}" #Optional, required by AirVPN
-        sleep 2
-
-        #---------WG-specific nvram values
-
-        # Update the tracker file with the line number we just used.
-        sed -i "s/^WG$1RR=.*/WG$1RR=$nextup/" "$robintracker"
-
-        #Restart the new server currently allocated to that wg slot
-        printf "\33[2K\r"
-        printf "${CGreen}\r[Starting WG Client $1]"
-        service "start_wgc $1" >/dev/null 2>&1
-        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WGC$1 Connection Restarted [SEQ] - New Server: $wgdescription | $endpointip" >> $logfile
-        resettimer $1 "WG"
-        sleep 10
-        printf "\33[2K\r"
-        printf "${CGreen}\r[Letting WGC$1 Settle]"
-        sleep 10
-
-    elif [ "$selectionmethod" -eq 0 ] # 0=random
-      then
-
-        # Pick a random server from the alternate servers file, populate in wg client slot, and restart
-        printf "\33[2K\r"
-        printf "${CGreen}\r[Selecting Random Entry]"
-        RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
-        R_LINE=$(( RANDOM % servers + 1 ))
-
-        #---------WG-specific nvram values
-
-        WGLINE=$(sed -n "${R_LINE}p" /jffs/addons/vpnmon-r3.d/vr3wgsvr$1.txt)
-        wgdescription=$(echo "$WGLINE" | cut -d ',' -f 1)
-        interfaceip=$(echo "$WGLINE" | cut -d ',' -f 2)
-        endpointip=$(echo "$WGLINE" | cut -d ',' -f 3)
-        endpointport=$(echo "$WGLINE" | cut -d ',' -f 4)
-        privatekey=$(echo "$WGLINE" | cut -d ',' -f 5)
-        publickey=$(echo "$WGLINE" | cut -d ',' -f 6)
-        presharedkey=$(echo "$WGLINE" | cut -d ',' -f 7) #Optional, required by AirVPN
-        nvram set wgc"$1"_desc="$wgdescription"
-        nvram set wgc"$1"_addr="$interfaceip"
-        nvram set wgc"$1"_ep_addr="$endpointip"
-        nvram set wgc"$1"_ep_addr_r="$endpointip"
-        nvram set wgc"$1"_ep_port="$endpointport"
-        nvram set wgc"$1"_priv="${privatekey}"
-        nvram set wgc"$1"_ppub="${publickey}"
-        nvram set wgc"$1"_psk="${presharedkey}" #Optional, required by AirVPN
-        sleep 2
-
-        #---------WG-specific nvram values
-
-        # Restart the new server currently allocated to that wg slot
-        printf "\33[2K\r"
-        printf "${CGreen}\r[Starting WG Client $1]"
-        service "start_wgc $1" >/dev/null 2>&1
-        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WGC$1 Connection Restarted [RND] - New Server: $wgdescription | $endpointip" >> $logfile
-        resettimer $1 "WG"
-        sleep 10
-        printf "\33[2K\r"
-        printf "${CGreen}\r[Letting WGC$1 Settle]"
-        sleep 10
+      #Restart the new server currently allocated to that wg slot
+      printf "\33[2K\r"
+      printf "${CGreen}\r[Starting WG Client $1]"
+      service "start_wgc $1" >/dev/null 2>&1
+      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WGC$1 Connection Restarted - New Server: $wgdescription | $endpointip" >> $logfile
+      resettimer $1 "WG"
+      sleep 10
+      printf "\33[2K\r"
+      printf "${CGreen}\r[Letting WGC$1 Settle]"
+      sleep 10
     fi
-
   else
     #Restart the same server currently allocated to that wg slot
     printf "\33[2K\r"
@@ -5216,8 +5019,6 @@ vreset()
 
   restartrouting
   resetspdmerlin
-
-  echo -e "${CGreen}[Reset Complete]${CClear}"
 
   # Clean up lockfile
   rm -f $lockfile >/dev/null 2>&1
@@ -6679,7 +6480,7 @@ do
             if [ -z "$maxsvrping" ] || [ "$maxsvrping" = "" ]; then
               maxsvrping="Null"
             fi
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$i received invalid PING information. Contents: $maxsvrping" >> $logfile
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: Invalid VPN PING information received. Contents: $maxsvrping" >> $logfile
             maxsvrping=0
           fi
         else
@@ -6886,7 +6687,7 @@ do
             if [ -z "$maxsvrping" ] || [ "$maxsvrping" = "" ]; then
               maxsvrping="Null"
             fi
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WGC$i received invalid PING information. Contents: $maxsvrping" >> $logfile
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: Invalid WG PING information received. Contents: $maxsvrping" >> $logfile
             maxsvrping=0
           fi
         else
