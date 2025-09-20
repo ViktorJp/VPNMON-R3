@@ -1,3 +1,15 @@
+v1.7.0   - (September 20, 2025)
+         - MINOR: Added the ability to choose between a Random or Sequential way to pick the next server off
+           your custom Server Lists. Statistically, there's a higher chance of the script randomly picking
+           the same server on smaller server lists compared to ones numbered in the thousands. This way, for
+           those with smaller lists, you can sequentially step through your list in a round-robin fashion. Once
+           it reaches the end of your custom Server List, it will start back from the beginning. This option is
+           now available in the (C)onfiguration menu -> (1) Custom options -> (13) Server List Item Selection
+           Method. 
+         - PATCH: Added more visibility to the WARNING log item that complains about invalid PING information
+           received, and will now show which VPN/WG slot made the complaint. Thanks much for the suggestion,
+           @scootertramp!
+
 v1.6.4   - (September 14, 2025)
          - PATCH: Bug fix around the Recovery Timeout Opportunities(tm) functionality. In certain situations,
            like if you're running multiple Wireguard connections, the timer would keep resetting itself as
