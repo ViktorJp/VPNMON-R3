@@ -1,9 +1,9 @@
 To-Do:
 - If the WAN doesn't respond after X minutes, issue a router reboot?
 - Option for round-robin on lists, instead of random.
-- Shot which slot was having ping issues (@scootertramp)
 
 Done:
+- Show which slot was having ping issues (@scootertramp)
 - Add the Interface IP as a required field for the WG Server Lists @Ventola
 - Invalid ping response values in log
 - "Time Connected" in UI
