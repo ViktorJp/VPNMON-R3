@@ -6679,7 +6679,7 @@ do
             if [ -z "$maxsvrping" ] || [ "$maxsvrping" = "" ]; then
               maxsvrping="Null"
             fi
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$i received invalid VPN PING information. Contents: $maxsvrping" >> $logfile
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$i received invalid PING information. Contents: $maxsvrping" >> $logfile
             maxsvrping=0
           fi
         else
@@ -6886,7 +6886,7 @@ do
             if [ -z "$maxsvrping" ] || [ "$maxsvrping" = "" ]; then
               maxsvrping="Null"
             fi
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WGC$i received invalid WG PING information. Contents: $maxsvrping" >> $logfile
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WGC$i received invalid PING information. Contents: $maxsvrping" >> $logfile
             maxsvrping=0
           fi
         else
