@@ -1,3 +1,10 @@
+v1.8.0b1 - (October 2, 2025)
+         - MINOR: Added more visibility to the main UI, and included both TX and RX stats for each connection.
+           Please know, these stats are basically the average connection speed across the length of the timer.
+           They may not be exactly accurate, and are a close approximation of the speeds encountered during
+           this period of time.
+         - PATCH: Fixed a few small inconsistencies across the script.
+
 v1.7.0   - (September 20, 2025)
          - MINOR: Added the ability to choose between a Random or Sequential way to pick the next server off
            your custom Server Lists. Statistically, there's a higher chance of the script randomly picking
