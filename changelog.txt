@@ -1,8 +1,9 @@
 v1.8.0b1 - (October 2, 2025)
          - MINOR: Added more visibility to the main UI, and included both TX and RX stats for each connection.
            Please know, these stats are basically the average connection speed across the length of the timer.
-           They may not be exactly accurate, and are a close approximation of the speeds encountered during
-           this period of time.
+           They may not be entirely 100% accurate, and are a close approximation of the speeds encountered
+           during this period of time. At the moment, the ranges for Green = 0 - 100Mbps, Yellow = 100 -
+           250Mbps, Red = > 250Mbps. Will be creating an interface to modify these values.
          - PATCH: Fixed a few small inconsistencies across the script.
 
 v1.7.0   - (September 20, 2025)
