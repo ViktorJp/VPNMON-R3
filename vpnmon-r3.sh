@@ -7,7 +7,7 @@
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2025-Sep-20
+# Last Modified: 2025-Oct-3
 ##########################################################################################
 
 #Preferred standard router binaries path
@@ -298,22 +298,22 @@ progressbaroverride()
           [\-]) echo ""; killunmonwg 3; sendmessage 0 "WG Killed" 3; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
           [\+]) echo ""; killunmonwg 4; sendmessage 0 "WG Killed" 4; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
           [\=]) echo ""; killunmonwg 5; sendmessage 0 "WG Killed" 5; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [Aa]) autostart;;
-          [Cc]) vsetup;;
-          [Dd]) wgserverlistautomation;;
+          [Aa]) autostart; resetifacestats;;
+          [Cc]) vsetup; resetifacestats;;
+          [Dd]) wgserverlistautomation; resetifacestats;;
           [Ee]) logoNMexit; echo -e "${CClear}\n"; exit 0;;
           [Hh]) hideoptions=1 ; [ "$hideoptions" != "$prevHideOpts" ] && timerreset=1 ;;
-          [Ii]) amtmevents;;
-          [Ll]) vlogs;;
-          [Mm]) vpnslots;;
-          [Pp]) maxping;;
-          [Rr]) schedulevpnreset;;
+          [Ii]) amtmevents; resetifacestats;;
+          [Ll]) vlogs; resetifacestats;;
+          [Mm]) vpnslots; resetifacestats;;
+          [Pp]) maxping; resetifacestats;;
+          [Rr]) schedulevpnreset; resetifacestats;;
           [Ss]) hideoptions=0 ; [ "$hideoptions" != "$prevHideOpts" ] && timerreset=1 ;;
-          [Tt]) timerloopconfig;;
-          [Uu]) vpnserverlistautomation;;
-          [Vv]) vpnserverlistmaint;;
-          [Ww]) wgserverlistmaint;;
-          [Xx]) uninstallr2;;
+          [Tt]) timerloopconfig; resetifacestats;;
+          [Uu]) vpnserverlistautomation; resetifacestats;;
+          [Vv]) vpnserverlistmaint; resetifacestats;;
+          [Ww]) wgserverlistmaint; resetifacestats;;
+          [Xx]) uninstallr2; resetifacestats;;
              *) ;; ##IGNORE INVALID key presses ##
       esac
       bypasswancheck=1
@@ -465,17 +465,17 @@ do
             [2]) echo ""; restartvpn 2; sendmessage 0 "VPN Reset" 2; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [\!]) echo ""; killunmonvpn 1; sendmessage 0 "VPN Killed" 1; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [\@]) echo ""; killunmonvpn 2; sendmessage 0 "VPN Killed" 2; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [Aa]) autostart;;
-            [Cc]) vsetup;;
+            [Aa]) autostart; resetifacestats;;
+            [Cc]) vsetup; resetifacestats;;
             [Ee]) echo -e "${CClear}\n"; exit 0;;
-            [Ii]) amtmevents;;
-            [Ll]) vlogs;;
-            [Mm]) vpnslots;;
-            [Pp]) maxping;;
-            [Rr]) schedulevpnreset;;
-            [Tt]) timerloopconfig;;
-            [Uu]) vpnserverlistautomation;;
-            [Vv]) vpnserverlistmaint;;
+            [Ii]) amtmevents; resetifacestats;;
+            [Ll]) vlogs; resetifacestats;;
+            [Mm]) vpnslots; resetifacestats;;
+            [Pp]) maxping; resetifacestats;;
+            [Rr]) schedulevpnreset; resetifacestats;;
+            [Tt]) timerloopconfig; resetifacestats;;
+            [Uu]) vpnserverlistautomation; resetifacestats;;
+            [Vv]) vpnserverlistmaint; resetifacestats;;
             [Nn]) exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             *) exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
         esac
@@ -506,18 +506,18 @@ do
             [\-]) echo ""; killunmonwg 3; sendmessage 0 "WG Killed" 3; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [\+]) echo ""; killunmonwg 4; sendmessage 0 "WG Killed" 4; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [\=]) echo ""; killunmonwg 5; sendmessage 0 "WG Killed" 5; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [Aa]) autostart;;
-            [Cc]) vsetup;;
+            [Aa]) autostart; resetifacestats;;
+            [Cc]) vsetup; resetifacestats;;
             [Ee]) echo -e "${CClear}\n"; exit 0;;
-            [Ii]) amtmevents;;
-            [Ll]) vlogs;;
-            [Mm]) vpnslots;;
-            [Pp]) maxping;;
-            [Rr]) schedulevpnreset;;
-            [Tt]) timerloopconfig;;
-            [Uu]) vpnserverlistautomation;;
-            [Vv]) vpnserverlistmaint;;
-            [Ww]) wgserverlistmaint;;
+            [Ii]) amtmevents; resetifacestats;;
+            [Ll]) vlogs; resetifacestats;;
+            [Mm]) vpnslots; resetifacestats;;
+            [Pp]) maxping; resetifacestats;;
+            [Rr]) schedulevpnreset; resetifacestats;;
+            [Tt]) timerloopconfig; resetifacestats;;
+            [Uu]) vpnserverlistautomation; resetifacestats;;
+            [Vv]) vpnserverlistmaint; resetifacestats;;
+            [Ww]) wgserverlistmaint; resetifacestats;;
             [Nn]) exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             *) exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
         esac
@@ -5969,7 +5969,7 @@ wancheck()
         fi
 
         WAN0BWRX="$(printf '%4s' "$diffwan0rxbytes")"
-        if [ -z "$diffwan0rxbytes" ]
+        if [ -z "$diffwan0rxbytes" ] || [ "$diffwan0rxbytes" = "" ]
         then
           WAN0RX="${CRed}[UNKN]${CClear}"
         elif [ "$diffwan0rxbytes" -ge 0 ] && [ "$diffwan0rxbytes" -le "$lowutilspd" ]
@@ -5984,7 +5984,7 @@ wancheck()
         fi
         
         WAN0BWTX="$(printf '%4s' "$diffwan0txbytes")"
-        if [ -z "$diffwan0txbytes" ]
+        if [ -z "$diffwan0txbytes" ] || [ "$diffwan0txbytes" = "" ]
         then
           WAN0TX="${CRed}[UNKN]${CClear}"
         elif [ "$diffwan0txbytes" -ge 0 ] && [ "$diffwan0txbytes" -le "$lowutilspd" ]
@@ -6044,7 +6044,7 @@ wancheck()
         fi
 
         WAN1BWRX="$(printf '%4s' "$diffwan1rxbytes")"
-        if [ -z "$diffwan1rxbytes" ]
+        if [ -z "$diffwan1rxbytes" ] || [ "$diffwan1rxbytes" = "" ]
         then
           WAN1RX="${CRed}[UNKN]${CClear}"
         elif [ "$diffwan1rxbytes" -ge 0 ] && [ "$diffwan1rxbytes" -le "$lowutilspd" ]
@@ -6059,7 +6059,7 @@ wancheck()
         fi
 
         WAN1BWTX="$(printf '%4s' "$diffwan1txbytes")"
-        if [ -z "$diffwan1txbytes" ]
+        if [ -z "$diffwan1txbytes" ] || [ "$diffwan1txbytes" = "" ]
         then
           WAN1TX="${CRed}[UNKN]${CClear}"
         elif [ "$diffwan1txbytes" -ge 0 ] && [ "$diffwan1txbytes" -le "$lowutilspd" ]
@@ -6340,6 +6340,12 @@ getifacestats()
 calcifacestats()
 {
 
+  if [ "$resetifacestatsswitch" -eq 1 ]
+  then
+  	resetifacestatsswitch=0
+    return
+  fi
+
   if [ ! -z "$WAN0IFNAME" ]
   then
     newwan0rxbytes="$($timeoutcmd$timeoutsec cat /sys/class/net/$WAN0IFNAME/statistics/rx_bytes)"
@@ -6503,6 +6509,38 @@ calcifacestats()
     diffwg5rxbytes=""
     diffwg5txbytes=""
   fi
+
+}
+
+resetifacestats()
+{
+
+diffwan0rxbytes=""
+diffwan0txbytes=""
+diffwan1rxbytes=""
+diffwan1txbytes=""
+diffvpn1rxbytes=""
+diffvpn1txbytes=""
+diffvpn2rxbytes=""
+diffvpn2txbytes=""
+diffvpn3rxbytes=""
+diffvpn3txbytes=""
+diffvpn4rxbytes=""
+diffvpn4txbytes=""
+diffvpn5rxbytes=""
+diffvpn5txbytes=""
+diffwg1rxbytes=""
+diffwg1txbytes=""
+diffwg2rxbytes=""
+diffwg2txbytes=""
+diffwg3rxbytes=""
+diffwg3txbytes=""
+diffwg4rxbytes=""
+diffwg4txbytes=""
+diffwg5rxbytes=""
+diffwg5txbytes=""
+
+resetifacestatsswitch=1
 
 }
 
@@ -7024,7 +7062,7 @@ do
 	        tmpvpnslot="diffvpn${i}rxbytes"
 	        eval currentvpnslot=\$$tmpvpnslot
 	        vpnbwtx="$(printf '%4s' "$currentvpnslot")"
-	        if [ -z "$currentvpnslot" ]
+	        if [ -z "$currentvpnslot" ] || [ "$currentvpnslot" = "" ]
 	        then
 	          vpnrx="${CRed}[UNKN]${CClear}"
 	        elif [ "$currentvpnslot" -ge 0 ] && [ "$currentvpnslot" -le "$lowutilspd" ]
@@ -7045,7 +7083,7 @@ do
 	        tmpvpnslot="diffvpn${i}txbytes"
 	        eval currentvpnslot=\$$tmpvpnslot
 	        vpnbwtx="$(printf '%4s' "$currentvpnslot")"
-	        if [ -z "$currentvpnslot" ]
+	        if [ -z "$currentvpnslot" ] || [ "$currentvpnslot" = "" ]
 	        then
 	          vpntx="${CRed}[UNKN]${CClear}"
 	        elif [ "$currentvpnslot" -ge 0 ] && [ "$currentvpnslot" -le 100 ]
@@ -7296,7 +7334,7 @@ do
 	        tmpwgslot="diffwg${i}rxbytes"
 	        eval currentwgslot=\$$tmpwgslot
 	        wgbwrx="$(printf '%4s' "$currentwgslot")"
-	        if [ -z "$currentwgslot" ]
+	        if [ -z "$currentwgslot" ] || [ "$currentwgslot" = "" ]
 	        then
 	          wgrx="${CRed}[UNKN]${CClear}"
 	        elif [ "$currentwgslot" -ge 0 ] && [ "$currentwgslot" -le "$lowutilspd" ]
@@ -7317,7 +7355,7 @@ do
 	        tmpwgslot="diffwg${i}txbytes"
 	        eval currentwgslot=\$$tmpwgslot
 	        wgbwtx="$(printf '%4s' "$currentwgslot")"
-	        if [ -z "$currentwgslot" ]
+	        if [ -z "$currentwgslot" ] || [ "$currentwgslot" = "" ]
 	        then
 	          wgtx="${CRed}[UNKN]${CClear}"
 	        elif [ "$currentwgslot" -ge 0 ] && [ "$currentwgslot" -le "$lowutilspd" ]
