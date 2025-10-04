@@ -1999,7 +1999,7 @@ do
                  fi;;
               [Ee])
                  saveconfig
-                 echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Connection Speed Threshold Selections Set: 0-$lowutilspd, $lowutilspd-$medutilspd, $medutilspd->Max Limit" >> $logfile
+                 echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Connection Speed Threshold Selections Set: 0->$lowutilspd, $lowutilspd->$medutilspd, $medutilspd->Max Limit" >> $logfile
                  timer="$timerloop"
                  break;;
             esac
