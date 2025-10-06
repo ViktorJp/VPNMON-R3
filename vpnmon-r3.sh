@@ -1,20 +1,20 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.8.0b3 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.8.0b4 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2025-Oct-5
+# Last Modified: 2025-Oct-6
 ##########################################################################################
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.8.0b3"                                               # Version tracker
+version="1.8.0b4"                                               # Version tracker
 beta=1                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -987,8 +987,9 @@ do
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(11)${CClear} : AMTM Email Notifications / Rate Limiting     : ${CGreen}$amtmemailsuccfaildisp $rldisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(12)${CClear} : Reset spdMerlin Interfaces on VPN Reset      : ${CGreen}$rstspdmerlindisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(13)${CClear} : Server List Item Selection Method            : ${CGreen}$selectionmethoddisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(14)${CClear} : Connection Speed Threshold Selections        : $utilspddisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  | ${CClear}                                                : $utilspdupdisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(14)${CClear} : Connection Throughput Threshold Selections   : $utilspddisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  |-${CClear}---                                             : $utilspdupdisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  | ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( e)${CClear} : Exit${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
@@ -1950,10 +1951,10 @@ do
         while true
         do
           clear
-          echo -e "${InvGreen} ${InvDkGray}${CWhite} Connection Speed Threshold Selections                                                 ${CClear}"
+          echo -e "${InvGreen} ${InvDkGray}${CWhite} Connection Throughput Threshold Selections                                            ${CClear}"
           echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Please indicate below how you would like to configure the visual representation${CClear}"
-          echo -e "${InvGreen} ${CClear} of the Connection Speeds that are displayed in the main UI for each active OVPN/WG${CClear}"
+          echo -e "${InvGreen} ${CClear} Please indicate below how you would like to configure the visual representation of${CClear}"
+          echo -e "${InvGreen} ${CClear} the Connection Throughput that are displayed in the main UI for each active OVPN/WG${CClear}"
           echo -e "${InvGreen} ${CClear} Connection. This is very dependent on your own preferences and the total amount of${CClear}"
           echo -e "${InvGreen} ${CClear} bandwidth your have at your disposal. These ranges represent the different colors${CClear}"
           echo -e "${InvGreen} ${CClear} ${CGreen}Green${CClear} / ${CYellow}Yellow${CClear} / ${CRed}Red ${CClear} to provide visual indicators of the current speeds your${CClear}"
@@ -6877,6 +6878,7 @@ fi
 
 ubsync=""
 firstDataCollection=true
+resetifacestatsswitch=0
 
 ##----------------------------------------##
 ## Modified by Martinski W. [2024-Nov-02] ##
