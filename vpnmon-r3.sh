@@ -7,7 +7,7 @@
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2025-Oct-3
+# Last Modified: 2025-Oct-5
 ##########################################################################################
 
 #Preferred standard router binaries path
@@ -960,8 +960,8 @@ do
      selectionmethoddisp="Sequential"
   fi
 
-  utilspddisp="${CGreen}RX:0-->$lowutilspd${CGreen} | ${CYellow}$lowutilspd-->$medutilspd${CGreen} | ${CRed}$medutilspd-->Max${CClear}"
-  utilspdupdisp="${CGreen}TX:0-->$lowutilspdup${CGreen} | ${CYellow}$lowutilspdup-->$medutilspdup${CGreen} | ${CRed}$medutilspdup-->Max${CClear}"
+  utilspddisp="${CGreen}RX: 0-->$lowutilspd${CGreen}|${CYellow}$lowutilspd-->$medutilspd${CGreen}|${CRed}$medutilspd-->Max${CClear}"
+  utilspdupdisp="${CGreen}TX: 0-->$lowutilspdup${CGreen}|${CYellow}$lowutilspdup-->$medutilspdup${CGreen}|${CRed}$medutilspdup-->Max${CClear}"
 
   clear
   echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 Configuration Options                                                       ${CClear}"
