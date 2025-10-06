@@ -1,5 +1,6 @@
 To-Do:
 - If the WAN doesn't respond after X minutes, issue a router reboot?
+- Build in a VPN/WG Reset Scheduler
 
 Done:
 - Option for round-robin on lists, instead of random.
