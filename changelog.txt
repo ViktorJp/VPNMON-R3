@@ -2,11 +2,11 @@ v1.8.0b3 - (October 5, 2025)
          - MINOR: Added more visibility to the main UI, and included both TX and RX stats for each connection.
            Please know, these stats are basically the average connection speed across the length of the timer.
            They may not be entirely 100% accurate, and are a close approximation of the speeds encountered
-           during this period of time. At the moment, the ranges for Green = 0 - 100Mbps, Yellow = 100 -
+           during this period of time. At the moment, the RX ranges for Green = 0 - 100Mbps, Yellow = 100 -
            250Mbps, Red = > 250Mbps. Config menu item #14 allows you to modify these values based on your own
            personal preferences and bandwidth. Separation between RX and TX thresholds has been added for
            those with asymmetrical internet connections, with thanks to @Stephen Harrington for the push in
-           that direction!
+           that direction! TX range defaults for Green = 0 - 15Mbps, Yellow = 15 - 25Mbps, Red = > 25Mbps.
          - PATCH: Fixed a few small inconsistencies across the script.
 
 v1.7.0   - (September 20, 2025)
