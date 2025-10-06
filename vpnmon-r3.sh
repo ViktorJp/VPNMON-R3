@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.8.0b2 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.8.0b3 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
@@ -14,7 +14,7 @@
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.8.0b2"                                               # Version tracker
+version="1.8.0b3"                                               # Version tracker
 beta=1                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -57,8 +57,10 @@ wrcnt=0                                                         # Counter for WG
 problemvpnslot=0                                                # Temporary holder for problem VPN slot
 problemwgslot=0                                                 # Temporary holder for problem WG slot
 selectionmethod=0                                               # 0=Random vs 1=sequential slot selection
-lowutilspd=100                                                  # Upper limit of Low / Lower Limit of Med Utilization Range
-medutilspd=250                                                  # Upper Limit of Med / Lower Limit of High Utilization Range
+lowutilspd=100                                                  # Upper limit of Low / Lower Limit of Med RX Utilization Range
+medutilspd=250                                                  # Upper Limit of Med / Lower Limit of High RX Utilization Range
+lowutilspdup=15                                                 # Upper limit of Low / Lower Limit of Med TX Utilization Range
+medutilspdup=25                                                 # Upper Limit of Med / Lower Limit of High TX Utilization Range
 
 ##-------------------------------------##
 ## Added by Martinski W. [2024-Oct-05] ##
@@ -958,7 +960,8 @@ do
      selectionmethoddisp="Sequential"
   fi
 
-  utilspddisp="${CGreen}0-->$lowutilspd${CGreen}|${CYellow}$lowutilspd-->$medutilspd${CGreen}|${CRed}$medutilspd-->Max${CClear}"
+  utilspddisp="${CGreen}RX:0-->$lowutilspd${CGreen} | ${CYellow}$lowutilspd-->$medutilspd${CGreen} | ${CRed}$medutilspd-->Max${CClear}"
+  utilspdupdisp="${CGreen}TX:0-->$lowutilspdup${CGreen} | ${CYellow}$lowutilspdup-->$medutilspdup${CGreen} | ${CRed}$medutilspdup-->Max${CClear}"
 
   clear
   echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 Configuration Options                                                       ${CClear}"
@@ -985,7 +988,7 @@ do
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(12)${CClear} : Reset spdMerlin Interfaces on VPN Reset      : ${CGreen}$rstspdmerlindisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(13)${CClear} : Server List Item Selection Method            : ${CGreen}$selectionmethoddisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(14)${CClear} : Connection Speed Threshold Selections        : $utilspddisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  | ${CClear}"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  | ${CClear}                                                : $utilspdupdisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( e)${CClear} : Exit${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
@@ -1954,23 +1957,33 @@ do
           echo -e "${InvGreen} ${CClear} Connection. This is very dependent on your own preferences and the total amount of${CClear}"
           echo -e "${InvGreen} ${CClear} bandwidth your have at your disposal. These ranges represent the different colors${CClear}"
           echo -e "${InvGreen} ${CClear} ${CGreen}Green${CClear} / ${CYellow}Yellow${CClear} / ${CRed}Red ${CClear} to provide visual indicators of the current speeds your${CClear}"
-          echo -e "${InvGreen} ${CClear} connections are experiencing at that moment.${CClear}"
+          echo -e "${InvGreen} ${CClear} connections are experiencing at that moment. You are able to choose different sets${CClear}"
+          echo -e "${InvGreen} ${CClear} of RX/TX thresholds for those using asymmetric internet connections.${CClear}"
           echo -e "${InvGreen} ${CClear}"
           echo -e "${InvGreen} ${CClear} Use the corresponding ${CGreen}()${CClear} key to modify the different thresholds.${CClear}"
+          echo -e "${InvGreen} ${CClear} RX Defaults: 0->100 / 100->250 / 250->Max -- TX Defaults: 0->15 / 15->25 / 25->Max${CClear}"
           echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+          echo -e "${InvGreen} ${CClear}"
+          echo -e "${InvGreen} ${InvDkGray}${CWhite} RX (Receive) Thresholds                                                               ${CClear}"
           echo -e "${InvGreen} ${CClear}"
           echo -e "${InvGreen} ${CClear} ${InvDkGray}${CClear} ${InvGreen}${CWhite}  Low Utilization ${CClear} - 0Mbps ---> ${CGreen}(1) ${lowutilspd}Mbps${CClear}"
           echo -e "${InvGreen} ${CClear} ${InvDkGray}${CClear} ${InvYellow}${CBlack}  Med Utilization ${CClear} - ${lowutilspd}Mbps ---> ${CGreen}(2) ${medutilspd}Mbps${CClear}"
           echo -e "${InvGreen} ${CClear} ${InvDkGray}${CClear} ${InvRed}${CWhite} High Utilization ${CClear} - ${medutilspd}Mbps ---> Max Limit${CClear}"
+          echo -e "${InvGreen} ${CClear}"
+          echo -e "${InvGreen} ${InvDkGray}${CWhite} TX (Transmit) Thresholds                                                              ${CClear}"
+          echo -e "${InvGreen} ${CClear}"
+          echo -e "${InvGreen} ${CClear} ${InvDkGray}${CClear} ${InvGreen}${CWhite}  Low Utilization ${CClear} - 0Mbps ---> ${CGreen}(3) ${lowutilspdup}Mbps${CClear}"
+          echo -e "${InvGreen} ${CClear} ${InvDkGray}${CClear} ${InvYellow}${CBlack}  Med Utilization ${CClear} - ${lowutilspdup}Mbps ---> ${CGreen}(4) ${medutilspdup}Mbps${CClear}"
+          echo -e "${InvGreen} ${CClear} ${InvDkGray}${CClear} ${InvRed}${CWhite} High Utilization ${CClear} - ${medutilspdup}Mbps ---> Max Limit${CClear}"
           echo ""
-          read -p "Please select? (1-2, e=Exit): " SelectSlot
+          read -p "Please select? (1-4, e=Exit): " SelectSlot
             case $SelectSlot in
               1)
                  echo ""
-                 read -p "Please enter the upper 'Low Utilization' range (in Mbps)? (Default = 100): " lowutilspdchoice
+                 read -p "Please enter the upper 'Low RX Utilization' range (in Mbps)? (Default = 100): " lowutilspdchoice
                  if [ "$lowutilspdchoice" -le 0 ] || [ "$lowutilspdchoice" -ge "$medutilspd" ]
                  	then
-                 		echo ""; echo -e "${CRed}ERROR: Your upper range must be greater than 0 and less than $medutilspd.${CClear}"; echo ""
+                 		echo ""; echo -e "${CRed}ERROR: Your upper 'Low RX Utilization' range must be greater than 0 and less than $medutilspd.${CClear}"; echo ""
                  		sleep 3
                  	  continue
                  	elif [ -z "$lowutilspdchoice" ]
@@ -1983,10 +1996,10 @@ do
                  fi;;
               2)
                  echo ""
-                 read -p "Please enter the upper 'Med Utilization' range (in Mbps)? (Default = 250): " medutilspdchoice
+                 read -p "Please enter the upper 'Med RX Utilization' range (in Mbps)? (Default = 250): " medutilspdchoice
                  if [ "$medutilspdchoice" -le "$lowutilspd" ]
                  	then
-                 		echo ""; echo -e "${CRed}ERROR: Your upper range must be greater than $lowutilspd.${CClear}"; echo ""
+                 		echo ""; echo -e "${CRed}ERROR: Your upper 'Med RX Utilization' range must be greater than $lowutilspd.${CClear}"; echo ""
                  		sleep 3
                  	  continue
                  	elif [ -z "$medutilspdchoice" ]
@@ -1997,9 +2010,41 @@ do
                  	  medutilspd=$medutilspdchoice
                  	  continue
                  fi;;
+              3)
+                 echo ""
+                 read -p "Please enter the upper 'Low TX Utilization' range (in Mbps)? (Default = 15): " lowutilspdupchoice
+                 if [ "$lowutilspdupchoice" -le 0 ] || [ "$lowutilspdupchoice" -ge "$medutilspdup" ]
+                 	then
+                 		echo ""; echo -e "${CRed}ERROR: Your upper 'Low TX Utilization' range must be greater than 0 and less than $medutilspdup.${CClear}"; echo ""
+                 		sleep 3
+                 	  continue
+                 	elif [ -z "$lowutilspdupchoice" ]
+                 	  then
+                 	  	lowutilspdup=15
+                 	  	continue
+                 	else
+                 	  lowutilspdup=$lowutilspdupchoice
+                 	  continue
+                 fi;;
+              4)
+                 echo ""
+                 read -p "Please enter the upper 'Med TX Utilization' range (in Mbps)? (Default = 25): " medutilspdupchoice
+                 if [ "$medutilspdupchoice" -le "$lowutilspdup" ]
+                 	then
+                 		echo ""; echo -e "${CRed}ERROR: Your upper 'Med TX Utilization' range must be greater than $lowutilspdup.${CClear}"; echo ""
+                 		sleep 3
+                 	  continue
+                 	elif [ -z "$medutilspdupchoice" ]
+                 	  then
+                 	  	medutilspdup=25
+                 	  	continue
+                 	else
+                 	  medutilspdup=$medutilspdupchoice
+                 	  continue
+                 fi;;
               [Ee])
                  saveconfig
-                 echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Connection Speed Threshold Selections Set: 0->$lowutilspd, $lowutilspd->$medutilspd, $medutilspd->Max Limit" >> $logfile
+                 echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Connection Speed Threshold Selections Set -- RX: 0->$lowutilspd->$medutilspd->Max | TX: 0->$lowutilspdup->$medutilspdup->Max" >> $logfile
                  timer="$timerloop"
                  break;;
             esac
@@ -4143,6 +4188,8 @@ saveconfig()
      echo 'selectionmethod='$selectionmethod
      echo 'lowutilspd='$lowutilspd
      echo 'medutilspd='$medutilspd
+     echo 'lowutilspdup='$lowutilspdup
+     echo 'medutilspdup='$medutilspdup
    } > "$config"
 
    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New vpnmon-r3.cfg File Saved" >> $logfile
@@ -5987,13 +6034,13 @@ wancheck()
         if [ -z "$diffwan0txbytes" ] || [ "$diffwan0txbytes" = "" ]
         then
           WAN0TX="${CRed}[UNKN]${CClear}"
-        elif [ "$diffwan0txbytes" -ge 0 ] && [ "$diffwan0txbytes" -le "$lowutilspd" ]
+        elif [ "$diffwan0txbytes" -ge 0 ] && [ "$diffwan0txbytes" -le "$lowutilspdup" ]
         then
         	WAN0TX="${CGreen}[$WAN0BWTX]${CClear}"
-        elif [ "$diffwan0txbytes" -gt "$lowutilspd" ] && [ "$diffwan0txbytes" -le "$medutilspd" ]
+        elif [ "$diffwan0txbytes" -gt "$lowutilspdup" ] && [ "$diffwan0txbytes" -le "$medutilspdup" ]
         then
           WAN0TX="${CYellow}[$WAN0BWTX]${CClear}"
-        elif [ "$diffwan0txbytes" -gt "$medutilspd" ]
+        elif [ "$diffwan0txbytes" -gt "$medutilspdup" ]
         then
           WAN0TX="${CRed}[$WAN0BWTX]${CClear}"
         fi
@@ -6062,13 +6109,13 @@ wancheck()
         if [ -z "$diffwan1txbytes" ] || [ "$diffwan1txbytes" = "" ]
         then
           WAN1TX="${CRed}[UNKN]${CClear}"
-        elif [ "$diffwan1txbytes" -ge 0 ] && [ "$diffwan1txbytes" -le "$lowutilspd" ]
+        elif [ "$diffwan1txbytes" -ge 0 ] && [ "$diffwan1txbytes" -le "$lowutilspdup" ]
         then
         	WAN1TX="${CGreen}[$WAN1BWTX]${CClear}"
-        elif [ "$diffwan1txbytes" -gt "$lowutilspd" ] && [ "$diffwan1txbytes" -le "$medutilspd" ]
+        elif [ "$diffwan1txbytes" -gt "$lowutilspdup" ] && [ "$diffwan1txbytes" -le "$medutilspdup" ]
         then
           WAN1TX="${CYellow}[$WAN1BWTX]${CClear}"
-        elif [ "$diffwan1txbytes" -gt "$medutilspd" ]
+        elif [ "$diffwan1txbytes" -gt "$medutilspdup" ]
         then
           WAN1TX="${CRed}[$WAN1BWTX]${CClear}"
         fi
@@ -7086,13 +7133,13 @@ do
 	        if [ -z "$currentvpnslot" ] || [ "$currentvpnslot" = "" ]
 	        then
 	          vpntx="${CRed}[UNKN]${CClear}"
-	        elif [ "$currentvpnslot" -ge 0 ] && [ "$currentvpnslot" -le 100 ]
+	        elif [ "$currentvpnslot" -ge 0 ] && [ "$currentvpnslot" -le "$lowutilspdup" ]
 	        then
 	        	vpntx="${CGreen}[$vpnbwtx]${CClear}"
-	        elif [ "$currentvpnslot" -gt "$lowutilspd" ] && [ "$currentvpnslot" -le "$medutilspd" ]
+	        elif [ "$currentvpnslot" -gt "$lowutilspdup" ] && [ "$currentvpnslot" -le "$medutilspdup" ]
 	        then
 	          vpntx="${CYellow}[$vpnbwtx]${CClear}"
-	        elif [ "$currentvpnslot" -gt "$medutilspd" ]
+	        elif [ "$currentvpnslot" -gt "$medutilspdup" ]
 	        then
 	          vpntx="${CRed}[$vpnbwtx]${CClear}"
 	        fi
@@ -7358,13 +7405,13 @@ do
 	        if [ -z "$currentwgslot" ] || [ "$currentwgslot" = "" ]
 	        then
 	          wgtx="${CRed}[UNKN]${CClear}"
-	        elif [ "$currentwgslot" -ge 0 ] && [ "$currentwgslot" -le "$lowutilspd" ]
+	        elif [ "$currentwgslot" -ge 0 ] && [ "$currentwgslot" -le "$lowutilspdup" ]
 	        then
 	        	wgtx="${CGreen}[$wgbwtx]${CClear}"
-	        elif [ "$currentwgslot" -gt "$lowutilspd" ] && [ "$currentwgslot" -le "$medutilspd" ]
+	        elif [ "$currentwgslot" -gt "$lowutilspdup" ] && [ "$currentwgslot" -le "$medutilspdup" ]
 	        then
 	          wgtx="${CYellow}[$wgbwtx]${CClear}"
-	        elif [ "$currentwgslot" -gt "$medutilspd" ]
+	        elif [ "$currentwgslot" -gt "$medutilspdup" ]
 	        then
 	          wgtx="${CRed}[$wgbwtx]${CClear}"
 	        fi
