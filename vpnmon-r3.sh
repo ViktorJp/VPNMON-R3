@@ -873,13 +873,13 @@ do
   fi
 
   if [ "$unboundclient" -eq 0 ]; then
-     unboundclientexp="Disabled"
+     unboundclientexp="${CDkGray}Disabled"
   else
      unboundclientexp="Enabled, VPN$unboundclient"
   fi
 
   if [ "$unboundwgclient" -eq 0 ]; then
-     unboundwgclientexp="Disabled"
+     unboundwgclientexp="${CDkGray}Disabled"
   else
      unboundwgclientexp="Enabled, WGC$unboundwgclient"
   fi
@@ -890,25 +890,25 @@ do
   fi
 
   if [ "$unboundshowip" -eq 0 ]; then
-     unboundshowipdisp="Disabled"
+     unboundshowipdisp="${CDkGray}Disabled"
   else
      unboundshowipdisp="Enabled"
   fi
 
   if [ "$refreshserverlists" -eq 0 ]; then
-     refreshserverlistsdisp="Disabled"
+     refreshserverlistsdisp="${CDkGray}Disabled"
   else
      refreshserverlistsdisp="Enabled"
   fi
 
   if [ "$monitorwan" -eq 0 ]; then
-     monitorwandisp="Disabled"
+     monitorwandisp="${CDkGray}Disabled"
   else
      monitorwandisp="Enabled"
   fi
 
   if [ "$useovpn" -eq 0 ] && [ "$usewg" -eq 0 ]; then
-     useovpnwgDisp="${CRed}OVPN/WG Disabled"
+     useovpnwgDisp="${CDkGray}OVPN/WG Disabled"
   elif
      [ "$useovpn" -eq 1 ] && [ "$usewg" -eq 0 ]; then
      useovpnwgDisp="${CGreen}OVPN Only"
@@ -921,13 +921,13 @@ do
   fi
 
   if [ "$updateskynet" -eq 0 ]; then
-     updateskynetdisp="Disabled"
+     updateskynetdisp="${CDkGray}Disabled"
   else
      updateskynetdisp="Enabled"
   fi
 
   if [ "$amtmemailsuccess" = "0" ] && [ "$amtmemailfailure" = "0" ]; then
-     amtmemailsuccfaildisp="Disabled"
+     amtmemailsuccfaildisp="${CDkGray}Disabled"
   elif [ "$amtmemailsuccess" = "1" ] && [ "$amtmemailfailure" = "0" ]; then
      amtmemailsuccfaildisp="Success"
   elif [ "$amtmemailsuccess" = "0" ] && [ "$amtmemailfailure" = "1" ]; then
@@ -942,14 +942,14 @@ do
   if [ "$amtmemailsuccess" = "1" ] || [ "$amtmemailfailure" = "1" ]
     then
       if [ "$ratelimit" = "0" ]; then
-        rldisp="| ${CRed}RL"
+        rldisp="| ${CDkGray}RL"
       else
         rldisp="| ${CGreen}RL:$ratelimit/h"
       fi
   fi
 
   if [ "$rstspdmerlin" -eq 0 ]; then
-     rstspdmerlindisp="Disabled"
+     rstspdmerlindisp="${CDkGray}Disabled"
   else
      rstspdmerlindisp="Enabled"
   fi
