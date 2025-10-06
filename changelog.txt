@@ -1,4 +1,4 @@
-v1.8.0b3 - (October 5, 2025)
+v1.8.0b4 - (October 6, 2025)
          - MINOR: Added more visibility to the main UI, and included both TX and RX stats for each connection.
            Please know, these stats are basically the average connection speed across the length of the timer.
            They may not be entirely 100% accurate, and are a close approximation of the speeds encountered
@@ -8,6 +8,9 @@ v1.8.0b3 - (October 5, 2025)
            those with asymmetrical internet connections, with thanks to @Stephen Harrington for the push in
            that direction! TX range defaults for Green = 0 - 15Mbps, Yellow = 15 - 25Mbps, Red = > 25Mbps.
          - PATCH: Fixed a few small inconsistencies across the script.
+         - PATCH: Renamed "Connection Speed" to "Connection Throughput" to help clarify the purpose of the
+           new RX/TX measurement information while in setup item #14. Thanks @CaptainSTX for the suggestion!
+         - PATCH: Fixed the "Bad Number:%" error. Thanks to @scootertramp for reporting that!
 
 v1.7.0   - (September 20, 2025)
          - MINOR: Added the ability to choose between a Random or Sequential way to pick the next server off
