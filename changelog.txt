@@ -1,4 +1,4 @@
-v1.8.0b4 - (October 6, 2025)
+v1.8.0b5 - (October 19, 2025)
          - MINOR: Added more visibility to the main UI, and included both TX and RX stats for each connection.
            Please know, these stats are basically the average connection speed across the length of the timer.
            They may not be entirely 100% accurate, and are a close approximation of the speeds encountered
@@ -7,6 +7,12 @@ v1.8.0b4 - (October 6, 2025)
            personal preferences and bandwidth. Separation between RX and TX thresholds has been added for
            those with asymmetrical internet connections, with thanks to @Stephen Harrington for the push in
            that direction! TX range defaults for Green = 0 - 15Mbps, Yellow = 15 - 25Mbps, Red = > 25Mbps.
+         - MINOR: Significantly changed the Slot (M)onitoring screen, and have now added the capability of
+           resetting individual slot connection times. This might be useful for those running WG considering
+           that after a router reboot, the WG connections will complete before VPNMON-R3 is started up, so
+           it has no idea that the tunnels were reset. I might get fancy down the road and look at router
+           uptime as well, but for now, this will suffice. Thanks to @CaptainSTX for coming up with this
+           great idea!
          - PATCH: Fixed a few small inconsistencies across the script.
          - PATCH: Renamed "Connection Speed" to "Connection Throughput" to help clarify the purpose of the
            new RX/TX measurement information while in setup item #14. Thanks @CaptainSTX for the suggestion!
