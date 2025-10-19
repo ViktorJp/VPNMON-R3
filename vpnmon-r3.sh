@@ -7,14 +7,14 @@
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2025-Oct-6
+# Last Modified: 2025-Oct-19
 ##########################################################################################
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.8.0b4"                                               # Version tracker
+version="1.8.0b5"                                               # Version tracker
 beta=1                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -2251,72 +2251,120 @@ do
   clear
   echo -e "${InvGreen} ${InvDkGray}${CWhite} VPN/WG Client Slot Monitoring                                                         ${CClear}"
   echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} Please indicate which VPN/WG slots you would like VPNMON-R3 to monitor.${CClear}"
-  echo -e "${InvGreen} ${CClear} Use the corresponding ${CGreen}()${CClear} key to enable/disable monitoring for each slot:${CClear}"
+  echo -e "${InvGreen} ${CClear} Please indicate which VPN/WG slots you would like VPNMON-R3 to monitor, or to${CClear}"
+  echo -e "${InvGreen} ${CClear} alternatively reset the connected time on an active VPN/WG connection. Monitoring${CClear}"
+  echo -e "${InvGreen} ${CClear} a VPN/WG connection ensures that VPNMON-R3 will actively keep a watch over it, and${CClear}"
+  echo -e "${InvGreen} ${CClear} will reset it should the connection go down, or ping times go above set limits.${CClear}"
+  echo -e "${InvGreen} ${CClear} A Connection Time reset may be necessary for WG connections at times, as a router${CClear}"
+  echo -e "${InvGreen} ${CClear} reboot will start the WG tunnels up before VPNMON-R3 is able to start, and is not${CClear}" 
+  echo -e "${InvGreen} ${CClear} aware that they were restarted.${CClear}"
+  echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear} Use the corresponding ${CGreen}()${CClear} key to enable/disable monitoring or to reset the time${CClear}"
+  echo -e "${InvGreen} ${CClear} for each connected slot:${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
 
     if [ "$availableslots" = "1 2" ]
     then
       if [ "$VPN1" = "1" ]; then VPN1Disp="${CGreen}Y${CCyan}"; else VPN1=0; VPN1Disp="${CRed}N${CCyan}"; fi
       if [ "$VPN2" = "1" ]; then VPN2Disp="${CGreen}Y${CCyan}"; else VPN2=0; VPN2Disp="${CRed}N${CCyan}"; fi
+
+      currtime=$(date +%s)
+      if [ "$VPNTIMER1" -gt 0 ]; then timediffvpn1=$((currtime-VPNTIMER1)); sincelastresetvpn1=$(printf '%dd %02dh:%02dm\n' $(($timediffvpn1/86400)) $(($timediffvpn1%86400/3600)) $(($timediffvpn1%3600/60))); else sincelastresetvpn1="${CDkGray}Disabled"; fi
+      if [ "$VPNTIMER2" -gt 0 ]; then timediffvpn2=$((currtime-VPNTIMER2)); sincelastresetvpn2=$(printf '%dd %02dh:%02dm\n' $(($timediffvpn2/86400)) $(($timediffvpn2%86400/3600)) $(($timediffvpn2%3600/60))); else sincelastresetvpn2="${CDkGray}Disabled"; fi
+
       echo -e "${InvGreen} ${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN1${CClear} ${CGreen}(1) -${CClear} $VPN1Disp${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN2${CClear} ${CGreen}(2) -${CClear} $VPN2Disp${CClear}"
+      echo -e "${InvGreen} ${CClear} ${CWhite}     Monitored? Y/N  ${CClear}|${CWhite}  Time Connected / Reset? ${CClear}"
+      echo -e "${InvGreen} ${CClear}                      |"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN1${CClear} ${CGreen}(1) -${CClear} $VPN1Disp         |  ${CGreen}(!) -${CClear} $sincelastresetvpn1 ${CClear}"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN2${CClear} ${CGreen}(2) -${CClear} $VPN2Disp         |  ${CGreen}(@) -${CClear} $sincelastresetvpn2 ${CClear}"
+      echo -e "${InvGreen} ${CClear}"
+      echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
       echo ""
-      read -p "Please select? (1-2, e=Exit): " SelectSlot
+      read -p "Please select? (1-2, !-@, e=Exit): " SelectSlot
         case $SelectSlot in
-          1) if [ "$VPN1" = "0" ]; then VPN1=1; VPN1Disp="${CGreen}Y${CCyan}"; elif [ "$VPN1" = "1" ]; then VPN1=0; VPN1Disp="${CRed}N${CCyan}"; fi;;
-          2) if [ "$VPN2" = "0" ]; then VPN2=1; VPN2Disp="${CGreen}Y${CCyan}"; elif [ "$VPN2" = "1" ]; then VPN2=0; VPN2Disp="${CRed}N${CCyan}"; fi;;
+          1) currvpn1state="$(_VPN_GetClientState_ "1")"; if [ "$VPN1" = "0" ] && [ "$currvpn1state" -eq 2 ]; then VPN1=1; VPNTIMER1=$(date +%s); VPN1Disp="${CGreen}Y${CCyan}"; elif [ "$VPN1" = "1" ]; then VPN1=0; VPNTIMER2=0; VPN1Disp="${CRed}N${CCyan}"; fi;;
+          2) currvpn2state="$(_VPN_GetClientState_ "2")"; if [ "$VPN2" = "0" ] && [ "$currvpn2state" -eq 2 ]; then VPN2=1; VPNTIMER2=$(date +%s); VPN2Disp="${CGreen}Y${CCyan}"; elif [ "$VPN2" = "1" ]; then VPN2=0; VPNTIMER2=0; VPN2Disp="${CRed}N${CCyan}"; fi;;
+          [\!]) if [ "$VPN1" = "1" ]; then VPNTIMER1=$(date +%s); else VPNTIMER1=0; fi;;
+          [\@]) if [ "$VPN2" = "1" ]; then VPNTIMER2=$(date +%s); else VPNTIMER2=0; fi;;
           [Ee])
              { echo 'VPN1='$VPN1
                echo 'VPN2='$VPN2
              } > /jffs/addons/vpnmon-r3.d/vr3clients.txt
-             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN Client Slot Monitoring configuration saved" >> $logfile
+
+             { echo 'VPNTIMER1='$VPNTIMER1
+				       echo 'VPNTIMER2='$VPNTIMER2
+				     } > /jffs/addons/vpnmon-r3.d/vr3timers.txt
+             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN/WG Client Slot Monitoring configuration / Connection Time Resets Saved" >> $logfile
              timer="$timerloop"
              break;;
         esac
 
     elif [ "$availableslots" = "1 2 3 4 5" ]
     then
-      if [ "$VPN1" = "1" ]; then VPN1Disp="${CGreen}Y${CCyan}"; else VPN1=0; VPN1Disp="${CRed}N${CCyan}"; fi
-      if [ "$VPN2" = "1" ]; then VPN2Disp="${CGreen}Y${CCyan}"; else VPN2=0; VPN2Disp="${CRed}N${CCyan}"; fi
-      if [ "$VPN3" = "1" ]; then VPN3Disp="${CGreen}Y${CCyan}"; else VPN3=0; VPN3Disp="${CRed}N${CCyan}"; fi
-      if [ "$VPN4" = "1" ]; then VPN4Disp="${CGreen}Y${CCyan}"; else VPN4=0; VPN4Disp="${CRed}N${CCyan}"; fi
-      if [ "$VPN5" = "1" ]; then VPN5Disp="${CGreen}Y${CCyan}"; else VPN5=0; VPN5Disp="${CRed}N${CCyan}"; fi
-      if [ "$WG1" = "1" ]; then WG1Disp="${CGreen}Y${CCyan}"; else WG1=0; WG1Disp="${CRed}N${CCyan}"; fi
-      if [ "$WG2" = "1" ]; then WG2Disp="${CGreen}Y${CCyan}"; else WG2=0; WG2Disp="${CRed}N${CCyan}"; fi
-      if [ "$WG3" = "1" ]; then WG3Disp="${CGreen}Y${CCyan}"; else WG3=0; WG3Disp="${CRed}N${CCyan}"; fi
-      if [ "$WG4" = "1" ]; then WG4Disp="${CGreen}Y${CCyan}"; else WG4=0; WG4Disp="${CRed}N${CCyan}"; fi
-      if [ "$WG5" = "1" ]; then WG5Disp="${CGreen}Y${CCyan}"; else WG5=0; WG5Disp="${CRed}N${CCyan}"; fi
+      if [ "$VPN1" = "1" ]; then VPN1Disp="${CGreen}Y${CClear}"; else VPN1=0; VPN1Disp="${CRed}N${CClear}"; fi
+      if [ "$VPN2" = "1" ]; then VPN2Disp="${CGreen}Y${CClear}"; else VPN2=0; VPN2Disp="${CRed}N${CClear}"; fi
+      if [ "$VPN3" = "1" ]; then VPN3Disp="${CGreen}Y${CClear}"; else VPN3=0; VPN3Disp="${CRed}N${CClear}"; fi
+      if [ "$VPN4" = "1" ]; then VPN4Disp="${CGreen}Y${CClear}"; else VPN4=0; VPN4Disp="${CRed}N${CClear}"; fi
+      if [ "$VPN5" = "1" ]; then VPN5Disp="${CGreen}Y${CClear}"; else VPN5=0; VPN5Disp="${CRed}N${CClear}"; fi
+      if [ "$WG1" = "1" ]; then WG1Disp="${CGreen}Y${CClear}"; else WG1=0; WG1Disp="${CRed}N${CClear}"; fi
+      if [ "$WG2" = "1" ]; then WG2Disp="${CGreen}Y${CClear}"; else WG2=0; WG2Disp="${CRed}N${CClear}"; fi
+      if [ "$WG3" = "1" ]; then WG3Disp="${CGreen}Y${CClear}"; else WG3=0; WG3Disp="${CRed}N${CClear}"; fi
+      if [ "$WG4" = "1" ]; then WG4Disp="${CGreen}Y${CClear}"; else WG4=0; WG4Disp="${CRed}N${CClear}"; fi
+      if [ "$WG5" = "1" ]; then WG5Disp="${CGreen}Y${CClear}"; else WG5=0; WG5Disp="${CRed}N${CClear}"; fi
+      
+      currtime=$(date +%s)
+      if [ "$VPNTIMER1" -gt 0 ]; then timediffvpn1=$((currtime-VPNTIMER1)); sincelastresetvpn1=$(printf '%dd %02dh:%02dm\n' $(($timediffvpn1/86400)) $(($timediffvpn1%86400/3600)) $(($timediffvpn1%3600/60))); else sincelastresetvpn1="${CDkGray}Disabled"; fi
+      if [ "$VPNTIMER2" -gt 0 ]; then timediffvpn2=$((currtime-VPNTIMER2)); sincelastresetvpn2=$(printf '%dd %02dh:%02dm\n' $(($timediffvpn2/86400)) $(($timediffvpn2%86400/3600)) $(($timediffvpn2%3600/60))); else sincelastresetvpn2="${CDkGray}Disabled"; fi
+      if [ "$VPNTIMER3" -gt 0 ]; then timediffvpn3=$((currtime-VPNTIMER3)); sincelastresetvpn3=$(printf '%dd %02dh:%02dm\n' $(($timediffvpn3/86400)) $(($timediffvpn3%86400/3600)) $(($timediffvpn3%3600/60))); else sincelastresetvpn3="${CDkGray}Disabled"; fi
+      if [ "$VPNTIMER4" -gt 0 ]; then timediffvpn4=$((currtime-VPNTIMER4)); sincelastresetvpn4=$(printf '%dd %02dh:%02dm\n' $(($timediffvpn4/86400)) $(($timediffvpn4%86400/3600)) $(($timediffvpn4%3600/60))); else sincelastresetvpn4="${CDkGray}Disabled"; fi
+      if [ "$VPNTIMER5" -gt 0 ]; then timediffvpn5=$((currtime-VPNTIMER5)); sincelastresetvpn5=$(printf '%dd %02dh:%02dm\n' $(($timediffvpn5/86400)) $(($timediffvpn5%86400/3600)) $(($timediffvpn5%3600/60))); else sincelastresetvpn5="${CDkGray}Disabled"; fi
+      if [ "$WGTIMER1" -gt 0 ]; then timediffwg1=$((currtime-WGTIMER1)); sincelastresetwg1=$(printf '%dd %02dh:%02dm\n' $(($timediffwg1/86400)) $(($timediffwg1%86400/3600)) $(($timediffwg1%3600/60))); else sincelastresetwg1="${CDkGray}Disabled"; fi
+      if [ "$WGTIMER2" -gt 0 ]; then timediffwg2=$((currtime-WGTIMER2)); sincelastresetwg2=$(printf '%dd %02dh:%02dm\n' $(($timediffwg2/86400)) $(($timediffwg2%86400/3600)) $(($timediffwg2%3600/60))); else sincelastresetwg2="${CDkGray}Disabled"; fi
+      if [ "$WGTIMER3" -gt 0 ]; then timediffwg3=$((currtime-WGTIMER3)); sincelastresetwg3=$(printf '%dd %02dh:%02dm\n' $(($timediffwg3/86400)) $(($timediffwg3%86400/3600)) $(($timediffwg3%3600/60))); else sincelastresetwg3="${CDkGray}Disabled"; fi
+      if [ "$WGTIMER4" -gt 0 ]; then timediffwg4=$((currtime-WGTIMER4)); sincelastresetwg4=$(printf '%dd %02dh:%02dm\n' $(($timediffwg4/86400)) $(($timediffwg4%86400/3600)) $(($timediffwg4%3600/60))); else sincelastresetwg4="${CDkGray}Disabled"; fi
+      if [ "$WGTIMER5" -gt 0 ]; then timediffwg5=$((currtime-WGTIMER5)); sincelastresetwg5=$(printf '%dd %02dh:%02dm\n' $(($timediffwg5/86400)) $(($timediffwg5%86400/3600)) $(($timediffwg5%3600/60))); else sincelastresetwg5="${CDkGray}Disabled"; fi
+      
       echo -e "${InvGreen} ${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN1${CClear} ${CGreen}(1) -${CClear} $VPN1Disp${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN2${CClear} ${CGreen}(2) -${CClear} $VPN2Disp${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN3${CClear} ${CGreen}(3) -${CClear} $VPN3Disp${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN4${CClear} ${CGreen}(4) -${CClear} $VPN4Disp${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN5${CClear} ${CGreen}(5) -${CClear} $VPN5Disp${CClear}"
+      echo -e "${InvGreen} ${CClear} ${CWhite}     Monitored? Y/N  ${CClear}|${CWhite}  Time Connected / Reset? ${CClear}"
+      echo -e "${InvGreen} ${CClear}                      |"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN1${CClear} ${CGreen}(1) -${CClear} $VPN1Disp         |  ${CGreen}(!) -${CClear} $sincelastresetvpn1 ${CClear}"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN2${CClear} ${CGreen}(2) -${CClear} $VPN2Disp         |  ${CGreen}(@) -${CClear} $sincelastresetvpn2 ${CClear}"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN3${CClear} ${CGreen}(3) -${CClear} $VPN3Disp         |  ${CGreen}(#) -${CClear} $sincelastresetvpn3 ${CClear}"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN4${CClear} ${CGreen}(4) -${CClear} $VPN4Disp         |  ${CGreen}($) -${CClear} $sincelastresetvpn4 ${CClear}"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}VPN5${CClear} ${CGreen}(5) -${CClear} $VPN5Disp         |  ${CGreen}(%) -${CClear} $sincelastresetvpn5 ${CClear}"
       echo -e "${InvGreen} ${CClear}"
       echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
       echo -e "${InvGreen} ${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG1${CClear} ${CGreen}(6) -${CClear} $WG1Disp${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG2${CClear} ${CGreen}(7) -${CClear} $WG2Disp${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG3${CClear} ${CGreen}(8) -${CClear} $WG3Disp${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG4${CClear} ${CGreen}(9) -${CClear} $WG4Disp${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG5${CClear} ${CGreen}(0) -${CClear} $WG5Disp${CClear}"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG1${CClear} ${CGreen}(6) -${CClear} $WG1Disp         |  ${CGreen}(^) -${CClear} $sincelastresetwg1 ${CClear}"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG2${CClear} ${CGreen}(7) -${CClear} $WG2Disp         |  ${CGreen}(&) -${CClear} $sincelastresetwg2 ${CClear}"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG3${CClear} ${CGreen}(8) -${CClear} $WG3Disp         |  ${CGreen}(-) -${CClear} $sincelastresetwg3 ${CClear}"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG4${CClear} ${CGreen}(9) -${CClear} $WG4Disp         |  ${CGreen}(+) -${CClear} $sincelastresetwg4 ${CClear}"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} WG5${CClear} ${CGreen}(0) -${CClear} $WG5Disp         |  ${CGreen}(=) -${CClear} $sincelastresetwg5 ${CClear}"
       echo -e "${InvGreen} ${CClear}"
       echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
       echo ""
-      read -p "Please select? (1-0, e=Exit): " SelectSlot
+      read -p "Please select? (1-0, !-=, e=Exit): " SelectSlot
         case $SelectSlot in
-          1) if [ "$VPN1" = "0" ]; then VPN1=1; VPN1Disp="${CGreen}Y${CCyan}"; elif [ "$VPN1" = "1" ]; then VPN1=0; VPN1Disp="${CRed}N${CCyan}"; fi;;
-          2) if [ "$VPN2" = "0" ]; then VPN2=1; VPN2Disp="${CGreen}Y${CCyan}"; elif [ "$VPN2" = "1" ]; then VPN2=0; VPN2Disp="${CRed}N${CCyan}"; fi;;
-          3) if [ "$VPN3" = "0" ]; then VPN3=1; VPN3Disp="${CGreen}Y${CCyan}"; elif [ "$VPN3" = "1" ]; then VPN3=0; VPN3Disp="${CRed}N${CCyan}"; fi;;
-          4) if [ "$VPN4" = "0" ]; then VPN4=1; VPN4Disp="${CGreen}Y${CCyan}"; elif [ "$VPN4" = "1" ]; then VPN4=0; VPN4Disp="${CRed}N${CCyan}"; fi;;
-          5) if [ "$VPN5" = "0" ]; then VPN5=1; VPN5Disp="${CGreen}Y${CCyan}"; elif [ "$VPN5" = "1" ]; then VPN5=0; VPN5Disp="${CRed}N${CCyan}"; fi;;
-          6) if [ "$WG1" = "0" ]; then WG1=1; WG1Disp="${CGreen}Y${CCyan}"; elif [ "$WG1" = "1" ]; then WG1=0; WG1Disp="${CRed}N${CCyan}"; fi;;
-          7) if [ "$WG2" = "0" ]; then WG2=1; WG2Disp="${CGreen}Y${CCyan}"; elif [ "$WG2" = "1" ]; then WG2=0; WG2Disp="${CRed}N${CCyan}"; fi;;
-          8) if [ "$WG3" = "0" ]; then WG3=1; WG3Disp="${CGreen}Y${CCyan}"; elif [ "$WG3" = "1" ]; then WG3=0; WG3Disp="${CRed}N${CCyan}"; fi;;
-          9) if [ "$WG4" = "0" ]; then WG4=1; WG4Disp="${CGreen}Y${CCyan}"; elif [ "$WG4" = "1" ]; then WG4=0; WG4Disp="${CRed}N${CCyan}"; fi;;
-          0) if [ "$WG5" = "0" ]; then WG5=1; WG5Disp="${CGreen}Y${CCyan}"; elif [ "$WG5" = "1" ]; then WG5=0; WG5Disp="${CRed}N${CCyan}"; fi;;
+          1) currvpn1state="$(_VPN_GetClientState_ "1")"; if [ "$VPN1" = "0" ] && [ "$currvpn1state" -eq 2 ]; then VPN1=1; VPNTIMER1=$(date +%s); VPN1Disp="${CGreen}Y${CCyan}"; elif [ "$VPN1" = "1" ]; then VPN1=0; VPNTIMER2=0; VPN1Disp="${CRed}N${CCyan}"; fi;;
+          2) currvpn2state="$(_VPN_GetClientState_ "2")"; if [ "$VPN2" = "0" ] && [ "$currvpn2state" -eq 2 ]; then VPN2=1; VPNTIMER2=$(date +%s); VPN2Disp="${CGreen}Y${CCyan}"; elif [ "$VPN2" = "1" ]; then VPN2=0; VPNTIMER2=0; VPN2Disp="${CRed}N${CCyan}"; fi;;
+          3) currvpn3state="$(_VPN_GetClientState_ "3")"; if [ "$VPN3" = "0" ] && [ "$currvpn3state" -eq 2 ]; then VPN3=1; VPNTIMER3=$(date +%s); VPN3Disp="${CGreen}Y${CCyan}"; elif [ "$VPN3" = "1" ]; then VPN3=0; VPNTIMER3=0; VPN3Disp="${CRed}N${CCyan}"; fi;;
+          4) currvpn4state="$(_VPN_GetClientState_ "4")"; if [ "$VPN4" = "0" ] && [ "$currvpn4state" -eq 2 ]; then VPN4=1; VPNTIMER4=$(date +%s); VPN4Disp="${CGreen}Y${CCyan}"; elif [ "$VPN4" = "1" ]; then VPN4=0; VPNTIMER4=0; VPN4Disp="${CRed}N${CCyan}"; fi;;
+          5) currvpn5state="$(_VPN_GetClientState_ "5")"; if [ "$VPN5" = "0" ] && [ "$currvpn5state" -eq 2 ]; then VPN5=1; VPNTIMER5=$(date +%s); VPN5Disp="${CGreen}Y${CCyan}"; elif [ "$VPN5" = "1" ]; then VPN5=0; VPNTIMER5=0; VPN5Disp="${CRed}N${CCyan}"; fi;;
+          6) currwg1state="$(_WG_GetClientState_ "1")"; if [ "$WG1" = "0" ] && [ "$currwg1state" -eq 2 ]; then WG1=1; WGTIMER1=$(date +%s); WG1Disp="${CGreen}Y${CCyan}"; elif [ "$WG1" = "1" ]; then WG1=0; WGTIMER1=0; WG1Disp="${CRed}N${CCyan}"; fi;;
+          7) currwg2state="$(_WG_GetClientState_ "2")"; if [ "$WG2" = "0" ] && [ "$currwg2state" -eq 2 ]; then WG2=1; WGTIMER2=$(date +%s); WG2Disp="${CGreen}Y${CCyan}"; elif [ "$WG2" = "1" ]; then WG2=0; WGTIMER2=0; WG2Disp="${CRed}N${CCyan}"; fi;;
+          8) currwg3state="$(_WG_GetClientState_ "3")"; if [ "$WG3" = "0" ] && [ "$currwg3state" -eq 2 ]; then WG3=1; WGTIMER3=$(date +%s); WG3Disp="${CGreen}Y${CCyan}"; elif [ "$WG3" = "1" ]; then WG3=0; WGTIMER3=0; WG3Disp="${CRed}N${CCyan}"; fi;;
+          9) currwg4state="$(_WG_GetClientState_ "4")"; if [ "$WG4" = "0" ] && [ "$currwg4state" -eq 2 ]; then WG4=1; WGTIMER4=$(date +%s); WG4Disp="${CGreen}Y${CCyan}"; elif [ "$WG4" = "1" ]; then WG4=0; WGTIMER4=0; WG4Disp="${CRed}N${CCyan}"; fi;;
+          0) currwg5state="$(_WG_GetClientState_ "5")"; if [ "$WG5" = "0" ] && [ "$currwg5state" -eq 2 ]; then WG5=1; WGTIMER5=$(date +%s); WG5Disp="${CGreen}Y${CCyan}"; elif [ "$WG5" = "1" ]; then WG5=0; WGTIMER5=0; WG5Disp="${CRed}N${CCyan}"; fi;;
+          [\!]) if [ "$VPN1" = "1" ]; then VPNTIMER1=$(date +%s); else VPNTIMER1=0; fi;;
+          [\@]) if [ "$VPN2" = "1" ]; then VPNTIMER2=$(date +%s); else VPNTIMER2=0; fi;;
+          [\#]) if [ "$VPN3" = "1" ]; then VPNTIMER3=$(date +%s); else VPNTIMER3=0; fi;;
+          [\$]) if [ "$VPN4" = "1" ]; then VPNTIMER4=$(date +%s); else VPNTIMER4=0; fi;;
+          [\%]) if [ "$VPN5" = "1" ]; then VPNTIMER5=$(date +%s); else VPNTIMER5=0; fi;;
+          [\^]) if [ "$WG1" = "1" ]; then WGTIMER1=$(date +%s); else WGTIMER1=0; fi;;
+          [\&]) if [ "$WG2" = "1" ]; then WGTIMER2=$(date +%s); else WGTIMER2=0; fi;;
+          [\-]) if [ "$WG3" = "1" ]; then WGTIMER3=$(date +%s); else WGTIMER3=0; fi;;
+          [\+]) if [ "$WG4" = "1" ]; then WGTIMER4=$(date +%s); else WGTIMER4=0; fi;;
+          [\=]) if [ "$WG5" = "1" ]; then WGTIMER5=$(date +%s); else WGTIMER5=0; fi;;
           [Ee])
              { echo 'VPN1='$VPN1
                echo 'VPN2='$VPN2
@@ -2329,7 +2377,19 @@ do
                echo 'WG4='$WG4
                echo 'WG5='$WG5
              } > /jffs/addons/vpnmon-r3.d/vr3clients.txt
-             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN/WG Client Slot Monitoring configuration saved" >> $logfile
+             
+             { echo 'VPNTIMER1='$VPNTIMER1
+				       echo 'VPNTIMER2='$VPNTIMER2
+				       echo 'VPNTIMER3='$VPNTIMER3
+				       echo 'VPNTIMER4='$VPNTIMER4
+				       echo 'VPNTIMER5='$VPNTIMER5
+				       echo 'WGTIMER1='$WGTIMER1
+				       echo 'WGTIMER2='$WGTIMER2
+				       echo 'WGTIMER3='$WGTIMER3
+				       echo 'WGTIMER4='$WGTIMER4
+				       echo 'WGTIMER5='$WGTIMER5
+				     } > /jffs/addons/vpnmon-r3.d/vr3timers.txt
+             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN/WG Client Slot Monitoring configuration / Connection Time Resets Saved" >> $logfile
              timer="$timerloop"
              break;;
       esac
@@ -5054,6 +5114,7 @@ killunmonvpn()
 
   # Write the VPN client file back with the correct monitoring configuration
   sed -i "s/^VPN$1=.*/VPN$1=0/" "/jffs/addons/vpnmon-r3.d/vr3clients.txt"
+  sed -i "s/^VPNTIMER$1=.*/VPNTIMER$1=0/" "/jffs/addons/vpnmon-r3.d/vr3timers.txt"
   sleep 5
 
   # Restart VPN Director Routing Services
@@ -5079,6 +5140,7 @@ killunmonwg()
 
   # Write the VPN client file back with the correct monitoring configuration
   sed -i "s/^WG$1=.*/WG$1=0/" "/jffs/addons/vpnmon-r3.d/vr3clients.txt"
+  sed -i "s/^WGTIMER$1=.*/WGTIMER$1=0/" "/jffs/addons/vpnmon-r3.d/vr3timers.txt"
   sleep 5
 
   # Restart VPN Director Routing Services
@@ -5142,9 +5204,9 @@ resettimer()
     fi
   fi
 
-  if [ "$2" = "VPN" ]; then
+  if [ "$2" = "VPN" ] && [ "$VPN$1" = "1" ]; then
     sed -i "s/^VPNTIMER$1=.*/VPNTIMER$1=$(date +%s)/" "/jffs/addons/vpnmon-r3.d/vr3timers.txt"
-  elif [ "$2" = "WG" ]; then
+  elif [ "$2" = "WG" ] && [ "$WG$1" = "1" ]; then
     sed -i "s/^WGTIMER$1=.*/WGTIMER$1=$(date +%s)/" "/jffs/addons/vpnmon-r3.d/vr3timers.txt"
   fi
 
@@ -6666,7 +6728,7 @@ displayopsmenu()
       echo -e "${InvGreen} ${InvDkGray}${CWhite} Operations Menu                                                                                                                ${CClear}"
       echo -e "${InvGreen} ${CClear} Reset/Reconnect VPN 1:${CGreen}(1)${CClear} 2:${CGreen}(2)${CClear}                               ${InvGreen} ${CClear} ${CGreen}(C)${CClear}onfiguration Menu / Main Setup Menu $rldisp${CClear}"
       echo -e "${InvGreen} ${CClear} Stop/Unmonitor  VPN 1:${CGreen}(!)${CClear} 2:${CGreen}(@)${CClear}                               ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN/WG CRON Time Scheduler: $schedtime"
-      echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN Slots                          ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim Log Size (rows): $logSizeStr"
+      echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN Slots | Time Reset             ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim Log Size (rows): $logSizeStr"
       echo -e "${InvGreen} ${CClear} Update/Maintain ${CGreen}(V)${CClear}PN Server Lists                            ${InvGreen} ${CClear} ${CGreen}(A)${CClear}utostart VPNMON-R3 on Reboot: $rebootprot"
       echo -e "${InvGreen} ${CClear} Edit/R${CGreen}(U)${CClear}n Server List Automation                             ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer Loop Check Interval: $timerLoopStr | $recoverdisp"
       echo -e "${InvGreen} ${CClear} AMTM Email Not${CGreen}(I)${CClear}fications: $amtmdisp                  ${InvGreen} ${CClear} ${CGreen}(P)${CClear}ing Maximum Before Reset in ms: $pingResetStr"
@@ -6679,7 +6741,7 @@ displayopsmenu()
       echo -e "${InvGreen} ${CClear} Stop/Unmonitor  VPN 1:${CGreen}(!)${CClear} 2:${CGreen}(@)${CClear} 3:${CGreen}(#)${CClear} 4:${CGreen}($)${CClear} 5:${CGreen}(%)${CClear}             ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN/WG CRON Time Scheduler: $schedtime"
       echo -e "${InvGreen} ${CClear} Reset/Reconnect  WG 1:${CGreen}(6)${CClear} 2:${CGreen}(7)${CClear} 3:${CGreen}(8)${CClear} 4:${CGreen}(9)${CClear} 5:${CGreen}(0)${CClear}             ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim Log Size (rows): $logSizeStr"
       echo -e "${InvGreen} ${CClear} Stop/Unmonitor   WG 1:${CGreen}(^)${CClear} 2:${CGreen}(&)${CClear} 3:${CGreen}(-)${CClear} 4:${CGreen}(+)${CClear} 5:${CGreen}(=)${CClear}             ${InvGreen} ${CClear} ${CGreen}(A)${CClear}utostart VPNMON-R3 on Reboot: $rebootprot"
-      echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN/WG Slots                       ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer Loop Check Interval: $timerLoopStr | $recoverdisp"
+      echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN/WG Slots | Time Reset          ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer Loop Check Interval: $timerLoopStr | $recoverdisp"
       echo -e "${InvGreen} ${CClear} Update/Maintain ${CGreen}(V)${CClear}PN/${CGreen}(W)${CClear}G Server Lists                       ${InvGreen} ${CClear} ${CGreen}(P)${CClear}ing Maximum Before Reset in ms: $pingResetStr"
       echo -e "${InvGreen} ${CClear} Edit/R${CGreen}(U)${CClear}n Server List Automation                             ${InvGreen} ${CClear} AMTM Email Not${CGreen}(I)${CClear}fications: $amtmdisp"
       echo -e "${InvGreen} ${CClear}${CDkGray}--------------------------------------------------------------------------------------------------------------------------------${CClear}"
