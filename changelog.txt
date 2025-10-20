@@ -18,6 +18,8 @@ v1.8.0b5 - (October 19, 2025)
          - PATCH: Renamed "Connection Speed" to "Connection Throughput" to help clarify the purpose of the
            new RX/TX measurement information while in setup item #14. Thanks @CaptainSTX for the suggestion!
          - PATCH: Fixed the "Bad Number:%" error. Thanks to @scootertramp for reporting that!
+         - PATCH: Fixed a bug that was preventing the connected time from getting reset to 0 when a VPN/WG
+           connections was being reset.
 
 v1.7.0   - (September 20, 2025)
          - MINOR: Added the ability to choose between a Random or Sequential way to pick the next server off
