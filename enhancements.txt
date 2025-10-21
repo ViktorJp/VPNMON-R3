@@ -1,6 +1,7 @@
 To-Do:
 - If the WAN doesn't respond after X minutes, issue a router reboot?
 - Find a way to reset all active VPN/WG counters, and set non-active ones to 0 - @CaptainSTX
+- avg vs total throughput stats @CaptainSTX
 
 Done:
 - Option for round-robin on lists, instead of random.
