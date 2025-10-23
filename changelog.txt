@@ -14,6 +14,10 @@ v1.8.0b5 - (October 19, 2025)
            it has no idea that the tunnels were reset. I might get fancy down the road and look at router
            uptime as well, but for now, this will suffice. Thanks to @CaptainSTX for coming up with this
            great idea!
+         - MINOR: Based on a good suggestion from @CaptainSTX, I have now added the capability of measuring
+           total throughput. These values are expressed in total MB sent and received per timer cycle. A
+           brand new menu item #15 has been added to give you the choice between Average Throughput in Mbps,
+           or Total Throughput in MB.
          - PATCH: Fixed a few small inconsistencies across the script.
          - PATCH: Renamed "Connection Speed" to "Connection Throughput" to help clarify the purpose of the
            new RX/TX measurement information while in setup item #14. Thanks @CaptainSTX for the suggestion!
