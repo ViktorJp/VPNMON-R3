@@ -1,20 +1,20 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.8.0b5 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.8.0b6 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2025-Oct-19
+# Last Modified: 2025-Oct-23
 ##########################################################################################
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.8.0b5"                                               # Version tracker
+version="1.8.0b6"                                               # Version tracker
 beta=1                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -61,6 +61,7 @@ lowutilspd=100                                                  # Upper limit of
 medutilspd=250                                                  # Upper Limit of Med / Lower Limit of High RX Utilization Range
 lowutilspdup=15                                                 # Upper limit of Low / Lower Limit of Med TX Utilization Range
 medutilspdup=25                                                 # Upper Limit of Med / Lower Limit of High TX Utilization Range
+bwdisp=1                                                        # Display value for bandwidth/throughput - 1=Average, 2=Total
 
 ##-------------------------------------##
 ## Added by Martinski W. [2024-Oct-05] ##
@@ -960,6 +961,13 @@ do
      selectionmethoddisp="Sequential"
   fi
 
+  if [ "$bwdisp" -eq 1 ]; then
+     throughputmethoddisp="Average Throughput (in Mbps)"
+  elif [ "$bwdisp" -eq 2 ]; then
+     throughputmethoddisp="Total Throughput (in MB)"
+  fi
+
+
   utilspddisp="${CGreen}RX: 0-->$lowutilspd${CGreen}|${CYellow}$lowutilspd-->$medutilspd${CGreen}|${CRed}$medutilspd-->Max${CClear}"
   utilspdupdisp="${CGreen}TX: 0-->$lowutilspdup${CGreen}|${CYellow}$lowutilspdup-->$medutilspdup${CGreen}|${CRed}$medutilspdup-->Max${CClear}"
 
@@ -989,12 +997,13 @@ do
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(13)${CClear} : Server List Item Selection Method            : ${CGreen}$selectionmethoddisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(14)${CClear} : Connection Throughput Threshold Selections   : $utilspddisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  |-${CClear}---                                             : $utilspdupdisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(15)${CClear} : Connection Throughput Display Method         : ${CGreen}$throughputmethoddisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  | ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( e)${CClear} : Exit${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo ""
-  read -p "Please select? (1-14, e=Exit): " SelectSlot
+  read -p "Please select? (1-15, e=Exit): " SelectSlot
     case $SelectSlot in
       1)
         clear
@@ -1950,6 +1959,7 @@ do
       14)
         while true
         do
+          if [ "$bwdisp" = "1" ]; then bwdispval="Mbps"; else bwdispval="MB"; fi
           clear
           echo -e "${InvGreen} ${InvDkGray}${CWhite} Connection Throughput Threshold Selections                                            ${CClear}"
           echo -e "${InvGreen} ${CClear}"
@@ -1967,81 +1977,81 @@ do
           echo -e "${InvGreen} ${CClear}"
           echo -e "${InvGreen} ${InvDkGray}${CWhite} RX (Receive) Thresholds                                                               ${CClear}"
           echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} ${InvDkGray}${CClear} ${InvGreen}${CWhite}  Low Utilization ${CClear} - 0Mbps ---> ${CGreen}(1) ${lowutilspd}Mbps${CClear}"
-          echo -e "${InvGreen} ${CClear} ${InvDkGray}${CClear} ${InvYellow}${CBlack}  Med Utilization ${CClear} - ${lowutilspd}Mbps ---> ${CGreen}(2) ${medutilspd}Mbps${CClear}"
-          echo -e "${InvGreen} ${CClear} ${InvDkGray}${CClear} ${InvRed}${CWhite} High Utilization ${CClear} - ${medutilspd}Mbps ---> Max Limit${CClear}"
+          echo -e "${InvGreen} ${CClear} ${InvDkGray}${CClear} ${InvGreen}${CWhite}  Low Utilization ${CClear} - 0$bwdispval ---> ${CGreen}(1) ${lowutilspd}$bwdispval${CClear}"
+          echo -e "${InvGreen} ${CClear} ${InvDkGray}${CClear} ${InvYellow}${CBlack}  Med Utilization ${CClear} - ${lowutilspd}$bwdispval ---> ${CGreen}(2) ${medutilspd}$bwdispval${CClear}"
+          echo -e "${InvGreen} ${CClear} ${InvDkGray}${CClear} ${InvRed}${CWhite} High Utilization ${CClear} - ${medutilspd}$bwdispval ---> Max Limit${CClear}"
           echo -e "${InvGreen} ${CClear}"
           echo -e "${InvGreen} ${InvDkGray}${CWhite} TX (Transmit) Thresholds                                                              ${CClear}"
           echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} ${InvDkGray}${CClear} ${InvGreen}${CWhite}  Low Utilization ${CClear} - 0Mbps ---> ${CGreen}(3) ${lowutilspdup}Mbps${CClear}"
-          echo -e "${InvGreen} ${CClear} ${InvDkGray}${CClear} ${InvYellow}${CBlack}  Med Utilization ${CClear} - ${lowutilspdup}Mbps ---> ${CGreen}(4) ${medutilspdup}Mbps${CClear}"
-          echo -e "${InvGreen} ${CClear} ${InvDkGray}${CClear} ${InvRed}${CWhite} High Utilization ${CClear} - ${medutilspdup}Mbps ---> Max Limit${CClear}"
+          echo -e "${InvGreen} ${CClear} ${InvDkGray}${CClear} ${InvGreen}${CWhite}  Low Utilization ${CClear} - 0$bwdispval ---> ${CGreen}(3) ${lowutilspdup}$bwdispval${CClear}"
+          echo -e "${InvGreen} ${CClear} ${InvDkGray}${CClear} ${InvYellow}${CBlack}  Med Utilization ${CClear} - ${lowutilspdup}$bwdispval ---> ${CGreen}(4) ${medutilspdup}$bwdispval${CClear}"
+          echo -e "${InvGreen} ${CClear} ${InvDkGray}${CClear} ${InvRed}${CWhite} High Utilization ${CClear} - ${medutilspdup}$bwdispval ---> Max Limit${CClear}"
           echo ""
           read -p "Please select? (1-4, e=Exit): " SelectSlot
             case $SelectSlot in
               1)
                  echo ""
-                 read -p "Please enter the upper 'Low RX Utilization' range (in Mbps)? (Default = 100): " lowutilspdchoice
+                 read -p "Please enter the upper 'Low RX Utilization' range (in $bwdispval)? (Default = 100): " lowutilspdchoice
                  if [ "$lowutilspdchoice" -le 0 ] || [ "$lowutilspdchoice" -ge "$medutilspd" ]
-                 	then
-                 		echo ""; echo -e "${CRed}ERROR: Your upper 'Low RX Utilization' range must be greater than 0 and less than $medutilspd.${CClear}"; echo ""
-                 		sleep 3
-                 	  continue
-                 	elif [ -z "$lowutilspdchoice" ]
-                 	  then
-                 	  	lowutilspd=100
-                 	  	continue
-                 	else
-                 	  lowutilspd=$lowutilspdchoice
-                 	  continue
+                  then
+                    echo ""; echo -e "${CRed}ERROR: Your upper 'Low RX Utilization' range must be greater than 0 and less than $medutilspd.${CClear}"; echo ""
+                    sleep 3
+                    continue
+                  elif [ -z "$lowutilspdchoice" ]
+                    then
+                      lowutilspd=100
+                      continue
+                  else
+                    lowutilspd=$lowutilspdchoice
+                    continue
                  fi;;
               2)
                  echo ""
-                 read -p "Please enter the upper 'Med RX Utilization' range (in Mbps)? (Default = 250): " medutilspdchoice
+                 read -p "Please enter the upper 'Med RX Utilization' range (in $bwdispval)? (Default = 250): " medutilspdchoice
                  if [ "$medutilspdchoice" -le "$lowutilspd" ]
-                 	then
-                 		echo ""; echo -e "${CRed}ERROR: Your upper 'Med RX Utilization' range must be greater than $lowutilspd.${CClear}"; echo ""
-                 		sleep 3
-                 	  continue
-                 	elif [ -z "$medutilspdchoice" ]
-                 	  then
-                 	  	medutilspd=250
-                 	  	continue
-                 	else
-                 	  medutilspd=$medutilspdchoice
-                 	  continue
+                  then
+                    echo ""; echo -e "${CRed}ERROR: Your upper 'Med RX Utilization' range must be greater than $lowutilspd.${CClear}"; echo ""
+                    sleep 3
+                    continue
+                  elif [ -z "$medutilspdchoice" ]
+                    then
+                      medutilspd=250
+                      continue
+                  else
+                    medutilspd=$medutilspdchoice
+                    continue
                  fi;;
               3)
                  echo ""
-                 read -p "Please enter the upper 'Low TX Utilization' range (in Mbps)? (Default = 15): " lowutilspdupchoice
+                 read -p "Please enter the upper 'Low TX Utilization' range (in $bwdispval)? (Default = 15): " lowutilspdupchoice
                  if [ "$lowutilspdupchoice" -le 0 ] || [ "$lowutilspdupchoice" -ge "$medutilspdup" ]
-                 	then
-                 		echo ""; echo -e "${CRed}ERROR: Your upper 'Low TX Utilization' range must be greater than 0 and less than $medutilspdup.${CClear}"; echo ""
-                 		sleep 3
-                 	  continue
-                 	elif [ -z "$lowutilspdupchoice" ]
-                 	  then
-                 	  	lowutilspdup=15
-                 	  	continue
-                 	else
-                 	  lowutilspdup=$lowutilspdupchoice
-                 	  continue
+                  then
+                    echo ""; echo -e "${CRed}ERROR: Your upper 'Low TX Utilization' range must be greater than 0 and less than $medutilspdup.${CClear}"; echo ""
+                    sleep 3
+                    continue
+                  elif [ -z "$lowutilspdupchoice" ]
+                    then
+                      lowutilspdup=15
+                      continue
+                  else
+                    lowutilspdup=$lowutilspdupchoice
+                    continue
                  fi;;
               4)
                  echo ""
-                 read -p "Please enter the upper 'Med TX Utilization' range (in Mbps)? (Default = 25): " medutilspdupchoice
+                 read -p "Please enter the upper 'Med TX Utilization' range (in $bwdispval)? (Default = 25): " medutilspdupchoice
                  if [ "$medutilspdupchoice" -le "$lowutilspdup" ]
-                 	then
-                 		echo ""; echo -e "${CRed}ERROR: Your upper 'Med TX Utilization' range must be greater than $lowutilspdup.${CClear}"; echo ""
-                 		sleep 3
-                 	  continue
-                 	elif [ -z "$medutilspdupchoice" ]
-                 	  then
-                 	  	medutilspdup=25
-                 	  	continue
-                 	else
-                 	  medutilspdup=$medutilspdupchoice
-                 	  continue
+                  then
+                    echo ""; echo -e "${CRed}ERROR: Your upper 'Med TX Utilization' range must be greater than $lowutilspdup.${CClear}"; echo ""
+                    sleep 3
+                    continue
+                  elif [ -z "$medutilspdupchoice" ]
+                    then
+                      medutilspdup=25
+                      continue
+                  else
+                    medutilspdup=$medutilspdupchoice
+                    continue
                  fi;;
               [Ee])
                  saveconfig
@@ -2050,7 +2060,44 @@ do
                  break;;
             esac
         done
+      ;;
 
+      15)
+        clear
+        echo -e "${InvGreen} ${InvDkGray}${CWhite} Connection Throughput Display Method                                                  ${CClear}"
+        echo -e "${InvGreen} ${CClear}"
+        echo -e "${InvGreen} ${CClear} Please indicate below what kind of information you would like to display in the${CClear}"
+        echo -e "${InvGreen} ${CClear} Connection Throughput field within the main VPNMON-R3 UI? You have the choice${CClear}"
+        echo -e "${InvGreen} ${CClear} between displaying Average Throughput in Mbps (average speed across tunnels), ${CClear}"
+        echo -e "${InvGreen} ${CClear} or Total Throughput in MB (total amount of data sent/received across tunnels),${CClear}"
+        echo -e "${InvGreen} ${CClear} which is calculated each time your timer restarts.${CClear}"
+        echo -e "${InvGreen} ${CClear}"
+        echo -e "${InvGreen} ${CClear} Use 1 for Average Throughput (in Mbps), 2 for Total Throughput (in MB). (Default = 1)"
+        echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+        echo
+        echo -e "${CClear}Current: ${CGreen}$throughputmethoddisp${CClear}" ; echo
+        read -p "Please Choose? (Avg in Mbps = 1, Ttl in MB = 2, e=Exit): " newthroughputmethod
+        if [ "$newthroughputmethod" = "1" ]
+        then
+            bwdisp=1
+            throughputmethoddisp="Average Throughput (in Mbps)"
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Connection Throughput Display Method set to: Average Throughput (in Mbps)" >> $logfile
+            saveconfig
+        elif [ "$newthroughputmethod" = "2" ]
+        then
+            bwdisp=2
+            throughputmethoddisp="Total Throughput (in MB)"
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Connection Throughput Display Method set to: Total Throughput (in MB)" >> $logfile
+            saveconfig
+        elif [ "$newthroughputmethod" = "e" ]
+        then
+            echo -e "\n[Exiting]"; sleep 2
+        else
+            bwdisp=1
+            throughputmethoddisp="Average Throughput (in Mbps)"
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Connection Throughput Display Method set to: Average Throughput (in Mbps)" >> $logfile
+            saveconfig
+        fi
       ;;
 
     esac
@@ -2256,7 +2303,7 @@ do
   echo -e "${InvGreen} ${CClear} a VPN/WG connection ensures that VPNMON-R3 will actively keep a watch over it, and${CClear}"
   echo -e "${InvGreen} ${CClear} will reset it should the connection go down, or ping times go above set limits.${CClear}"
   echo -e "${InvGreen} ${CClear} A Connection Time reset may be necessary for WG connections at times, as a router${CClear}"
-  echo -e "${InvGreen} ${CClear} reboot will start the WG tunnels up before VPNMON-R3 is able to start, and is not${CClear}" 
+  echo -e "${InvGreen} ${CClear} reboot will start the WG tunnels up before VPNMON-R3 is able to start, and is not${CClear}"
   echo -e "${InvGreen} ${CClear} aware that they were restarted.${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} Use the corresponding ${CGreen}()${CClear} key to enable/disable monitoring or to reset the time${CClear}"
@@ -2292,8 +2339,8 @@ do
              } > /jffs/addons/vpnmon-r3.d/vr3clients.txt
 
              { echo 'VPNTIMER1='$VPNTIMER1
-				       echo 'VPNTIMER2='$VPNTIMER2
-				     } > /jffs/addons/vpnmon-r3.d/vr3timers.txt
+               echo 'VPNTIMER2='$VPNTIMER2
+             } > /jffs/addons/vpnmon-r3.d/vr3timers.txt
              echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN/WG Client Slot Monitoring configuration / Connection Time Resets Saved" >> $logfile
              timer="$timerloop"
              break;;
@@ -2311,7 +2358,7 @@ do
       if [ "$WG3" = "1" ]; then WG3Disp="${CGreen}Y${CClear}"; else WG3=0; WG3Disp="${CRed}N${CClear}"; fi
       if [ "$WG4" = "1" ]; then WG4Disp="${CGreen}Y${CClear}"; else WG4=0; WG4Disp="${CRed}N${CClear}"; fi
       if [ "$WG5" = "1" ]; then WG5Disp="${CGreen}Y${CClear}"; else WG5=0; WG5Disp="${CRed}N${CClear}"; fi
-      
+
       currtime=$(date +%s)
       if [ "$VPNTIMER1" -gt 0 ]; then timediffvpn1=$((currtime-VPNTIMER1)); sincelastresetvpn1=$(printf '%dd %02dh:%02dm\n' $(($timediffvpn1/86400)) $(($timediffvpn1%86400/3600)) $(($timediffvpn1%3600/60))); else sincelastresetvpn1="${CDkGray}Disabled"; fi
       if [ "$VPNTIMER2" -gt 0 ]; then timediffvpn2=$((currtime-VPNTIMER2)); sincelastresetvpn2=$(printf '%dd %02dh:%02dm\n' $(($timediffvpn2/86400)) $(($timediffvpn2%86400/3600)) $(($timediffvpn2%3600/60))); else sincelastresetvpn2="${CDkGray}Disabled"; fi
@@ -2323,7 +2370,7 @@ do
       if [ "$WGTIMER3" -gt 0 ]; then timediffwg3=$((currtime-WGTIMER3)); sincelastresetwg3=$(printf '%dd %02dh:%02dm\n' $(($timediffwg3/86400)) $(($timediffwg3%86400/3600)) $(($timediffwg3%3600/60))); else sincelastresetwg3="${CDkGray}Disabled"; fi
       if [ "$WGTIMER4" -gt 0 ]; then timediffwg4=$((currtime-WGTIMER4)); sincelastresetwg4=$(printf '%dd %02dh:%02dm\n' $(($timediffwg4/86400)) $(($timediffwg4%86400/3600)) $(($timediffwg4%3600/60))); else sincelastresetwg4="${CDkGray}Disabled"; fi
       if [ "$WGTIMER5" -gt 0 ]; then timediffwg5=$((currtime-WGTIMER5)); sincelastresetwg5=$(printf '%dd %02dh:%02dm\n' $(($timediffwg5/86400)) $(($timediffwg5%86400/3600)) $(($timediffwg5%3600/60))); else sincelastresetwg5="${CDkGray}Disabled"; fi
-      
+
       echo -e "${InvGreen} ${CClear}"
       echo -e "${InvGreen} ${CClear} ${CWhite}     Monitored? Y/N  ${CClear}|${CWhite}  Time Connected / Reset? ${CClear}"
       echo -e "${InvGreen} ${CClear}                      |"
@@ -2377,18 +2424,18 @@ do
                echo 'WG4='$WG4
                echo 'WG5='$WG5
              } > /jffs/addons/vpnmon-r3.d/vr3clients.txt
-             
+
              { echo 'VPNTIMER1='$VPNTIMER1
-				       echo 'VPNTIMER2='$VPNTIMER2
-				       echo 'VPNTIMER3='$VPNTIMER3
-				       echo 'VPNTIMER4='$VPNTIMER4
-				       echo 'VPNTIMER5='$VPNTIMER5
-				       echo 'WGTIMER1='$WGTIMER1
-				       echo 'WGTIMER2='$WGTIMER2
-				       echo 'WGTIMER3='$WGTIMER3
-				       echo 'WGTIMER4='$WGTIMER4
-				       echo 'WGTIMER5='$WGTIMER5
-				     } > /jffs/addons/vpnmon-r3.d/vr3timers.txt
+               echo 'VPNTIMER2='$VPNTIMER2
+               echo 'VPNTIMER3='$VPNTIMER3
+               echo 'VPNTIMER4='$VPNTIMER4
+               echo 'VPNTIMER5='$VPNTIMER5
+               echo 'WGTIMER1='$WGTIMER1
+               echo 'WGTIMER2='$WGTIMER2
+               echo 'WGTIMER3='$WGTIMER3
+               echo 'WGTIMER4='$WGTIMER4
+               echo 'WGTIMER5='$WGTIMER5
+             } > /jffs/addons/vpnmon-r3.d/vr3timers.txt
              echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN/WG Client Slot Monitoring configuration / Connection Time Resets Saved" >> $logfile
              timer="$timerloop"
              break;;
@@ -4251,6 +4298,7 @@ saveconfig()
      echo 'medutilspd='$medutilspd
      echo 'lowutilspdup='$lowutilspdup
      echo 'medutilspdup='$medutilspdup
+     echo 'bwdisp='$bwdisp
    } > "$config"
 
    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New vpnmon-r3.cfg File Saved" >> $logfile
@@ -5221,7 +5269,7 @@ resettimer()
 
   source /jffs/addons/vpnmon-r3.d/vr3timers.txt
   source /jffs/addons/vpnmon-r3.d/vr3clients.txt
-  
+
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -6091,42 +6139,80 @@ wancheck()
         WAN0BWRX="$(printf '%4s' "$diffwan0rxbytes")"
         if [ -z "$diffwan0rxbytes" ] || [ "$diffwan0rxbytes" = "" ]
         then
-          WAN0RX="${CRed}[UNKN]${CClear}"
+          WAN0RX1="${CRed}[UNKN]${CClear}"
         elif [ "$diffwan0rxbytes" -ge 0 ] && [ "$diffwan0rxbytes" -le "$lowutilspd" ]
         then
-        	WAN0RX="${CGreen}[$WAN0BWRX]${CClear}"
+          WAN0RX1="${CGreen}[$WAN0BWRX]${CClear}"
         elif [ "$diffwan0rxbytes" -gt "$lowutilspd" ] && [ "$diffwan0rxbytes" -le "$medutilspd" ]
         then
-          WAN0RX="${CYellow}[$WAN0BWRX]${CClear}"
+          WAN0RX1="${CYellow}[$WAN0BWRX]${CClear}"
         elif [ "$diffwan0rxbytes" -gt "$medutilspd" ]
         then
-          WAN0RX="${CRed}[$WAN0BWRX]${CClear}"
+          WAN0RX1="${CRed}[$WAN0BWRX]${CClear}"
         fi
-        
+
         WAN0BWTX="$(printf '%4s' "$diffwan0txbytes")"
         if [ -z "$diffwan0txbytes" ] || [ "$diffwan0txbytes" = "" ]
         then
-          WAN0TX="${CRed}[UNKN]${CClear}"
+          WAN0TX1="${CRed}[UNKN]${CClear}"
         elif [ "$diffwan0txbytes" -ge 0 ] && [ "$diffwan0txbytes" -le "$lowutilspdup" ]
         then
-        	WAN0TX="${CGreen}[$WAN0BWTX]${CClear}"
+          WAN0TX1="${CGreen}[$WAN0BWTX]${CClear}"
         elif [ "$diffwan0txbytes" -gt "$lowutilspdup" ] && [ "$diffwan0txbytes" -le "$medutilspdup" ]
         then
-          WAN0TX="${CYellow}[$WAN0BWTX]${CClear}"
+          WAN0TX1="${CYellow}[$WAN0BWTX]${CClear}"
         elif [ "$diffwan0txbytes" -gt "$medutilspdup" ]
         then
-          WAN0TX="${CRed}[$WAN0BWTX]${CClear}"
+          WAN0TX1="${CRed}[$WAN0BWTX]${CClear}"
         fi
-        
+
+        WAN0TPRX="$(printf '%4s' "$thruwan0rxbytes")"
+        if [ -z "$thruwan0rxbytes" ] || [ "$thruwan0rxbytes" = "" ]
+        then
+          WAN0RX2="${CRed}[UNKN]${CClear}"
+        elif [ "$thruwan0rxbytes" -ge 0 ] && [ "$thruwan0rxbytes" -le "$lowutilspd" ]
+        then
+          WAN0RX2="${CGreen}[$WAN0TPRX]${CClear}"
+        elif [ "$thruwan0rxbytes" -gt "$lowutilspd" ] && [ "$thruwan0rxbytes" -le "$medutilspd" ]
+        then
+          WAN0RX2="${CYellow}[$WAN0TPRX]${CClear}"
+        elif [ "$thruwan0rxbytes" -gt "$medutilspd" ]
+        then
+          WAN0RX2="${CRed}[$WAN0TPRX]${CClear}"
+        fi
+
+        WAN0TPTX="$(printf '%4s' "$thruwan0txbytes")"
+        if [ -z "$thruwan0txbytes" ] || [ "$thruwan0txbytes" = "" ]
+        then
+          WAN0TX2="${CRed}[UNKN]${CClear}"
+        elif [ "$thruwan0txbytes" -ge 0 ] && [ "$thruwan0txbytes" -le "$lowutilspdup" ]
+        then
+          WAN0TX2="${CGreen}[$WAN0TPTX]${CClear}"
+        elif [ "$thruwan0txbytes" -gt "$lowutilspdup" ] && [ "$thruwan0txbytes" -le "$medutilspdup" ]
+        then
+          WAN0TX2="${CYellow}[$WAN0TPTX]${CClear}"
+        elif [ "$thruwan0txbytes" -gt "$medutilspdup" ]
+        then
+          WAN0TX2="${CRed}[$WAN0TPTX]${CClear}"
+        fi
+
         if [ "$WAN0PING" = "[FAILOVER]" ]
         then
            echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN0${CClear} | ${CGreen}[X]${CClear} | "
            printf "%-6s" "$WAN0IFNAME"
-           echo -e " | ${CGreen}[ OK ]${CClear} | Failover     | $WAN0IP | $WAN0PING | $WAN0RX | $WAN0TX | $WAN0CITY: $uptimeStr"
+           if [ "$bwdisp" = "1" ]; then
+             echo -e " | ${CGreen}[ OK ]${CClear} | Failover     | $WAN0IP | $WAN0PING | $WAN0RX1 | $WAN0TX1 | $WAN0CITY: $uptimeStr"
+           else
+             echo -e " | ${CGreen}[ OK ]${CClear} | Failover     | $WAN0IP | $WAN0PING | $WAN0RX2 | $WAN0TX2 | $WAN0CITY: $uptimeStr"
+           fi
         else
            echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN0${CClear} | ${CGreen}[X]${CClear} | "
            printf "%-6s" "$WAN0IFNAME"
-           echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN0IP | $WAN0PING | $WAN0RX | $WAN0TX | $WAN0CITY: $uptimeStr"
+           if [ "$bwdisp" = "1" ]; then
+             echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN0IP | $WAN0PING | $WAN0RX1 | $WAN0TX1 | $WAN0CITY: $uptimeStr"
+           else
+             echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN0IP | $WAN0PING | $WAN0RX2 | $WAN0TX2 | $WAN0CITY: $uptimeStr"
+           fi
         fi
      else
         echo -e "${InvDkGray}${CWhite}  WAN0${CClear} | ${CGreen}[X]${CClear} | ${CDkGray}[n/a]${CClear}  | ${CDkGray}[n/a ]${CClear} | Inactive     |           ${CDkGray}[n/a]${CClear} |      ${CDkGray}[n/a]${CClear} | ${CDkGray}[n/a ]${CClear} | ${CDkGray}[n/a ]${CClear} | ${CDkGray}[n/a]${CClear}"
@@ -6166,42 +6252,80 @@ wancheck()
         WAN1BWRX="$(printf '%4s' "$diffwan1rxbytes")"
         if [ -z "$diffwan1rxbytes" ] || [ "$diffwan1rxbytes" = "" ]
         then
-          WAN1RX="${CRed}[UNKN]${CClear}"
+          WAN1RX1="${CRed}[UNKN]${CClear}"
         elif [ "$diffwan1rxbytes" -ge 0 ] && [ "$diffwan1rxbytes" -le "$lowutilspd" ]
         then
-        	WAN1RX="${CGreen}[$WAN1BWRX]${CClear}"
+          WAN1RX1="${CGreen}[$WAN1BWRX]${CClear}"
         elif [ "$diffwan1rxbytes" -gt "$lowutilspd" ] && [ "$diffwan1rxbytes" -le "$medutilspd" ]
         then
-          WAN1RX="${CYellow}[$WAN1BWRX]${CClear}"
+          WAN1RX1="${CYellow}[$WAN1BWRX]${CClear}"
         elif [ "$diffwan1rxbytes" -gt "$medutilspd" ]
         then
-          WAN1RX="${CRed}[$WAN1BWRX]${CClear}"
+          WAN1RX1="${CRed}[$WAN1BWRX]${CClear}"
         fi
 
         WAN1BWTX="$(printf '%4s' "$diffwan1txbytes")"
         if [ -z "$diffwan1txbytes" ] || [ "$diffwan1txbytes" = "" ]
         then
-          WAN1TX="${CRed}[UNKN]${CClear}"
+          WAN1TX1="${CRed}[UNKN]${CClear}"
         elif [ "$diffwan1txbytes" -ge 0 ] && [ "$diffwan1txbytes" -le "$lowutilspdup" ]
         then
-        	WAN1TX="${CGreen}[$WAN1BWTX]${CClear}"
+          WAN1TX1="${CGreen}[$WAN1BWTX]${CClear}"
         elif [ "$diffwan1txbytes" -gt "$lowutilspdup" ] && [ "$diffwan1txbytes" -le "$medutilspdup" ]
         then
-          WAN1TX="${CYellow}[$WAN1BWTX]${CClear}"
+          WAN1TX1="${CYellow}[$WAN1BWTX]${CClear}"
         elif [ "$diffwan1txbytes" -gt "$medutilspdup" ]
         then
-          WAN1TX="${CRed}[$WAN1BWTX]${CClear}"
+          WAN1TX1="${CRed}[$WAN1BWTX]${CClear}"
         fi
-        
+
+        WAN1TPRX="$(printf '%4s' "$thruwan1rxbytes")"
+        if [ -z "$thruwan1rxbytes" ] || [ "$thruwan1rxbytes" = "" ]
+        then
+          WAN1RX2="${CRed}[UNKN]${CClear}"
+        elif [ "$thruwan1rxbytes" -ge 0 ] && [ "$thruwan1rxbytes" -le "$lowutilspd" ]
+        then
+          WAN1RX2="${CGreen}[$WAN1TPRX]${CClear}"
+        elif [ "$thruwan1rxbytes" -gt "$lowutilspd" ] && [ "$thruwan1rxbytes" -le "$medutilspd" ]
+        then
+          WAN1RX2="${CYellow}[$WAN1TPRX]${CClear}"
+        elif [ "$thruwan1rxbytes" -gt "$medutilspd" ]
+        then
+          WAN1RX2="${CRed}[$WAN1TPRX]${CClear}"
+        fi
+
+        WAN1TPTX="$(printf '%4s' "$thruwan1txbytes")"
+        if [ -z "$thruwan1txbytes" ] || [ "$thruwan1txbytes" = "" ]
+        then
+          WAN1TX2="${CRed}[UNKN]${CClear}"
+        elif [ "$thruwan1txbytes" -ge 0 ] && [ "$thruwan1txbytes" -le "$lowutilspdup" ]
+        then
+          WAN1TX2="${CGreen}[$WAN1TPTX]${CClear}"
+        elif [ "$thruwan1txbytes" -gt "$lowutilspdup" ] && [ "$thruwan1txbytes" -le "$medutilspdup" ]
+        then
+          WAN1TX2="${CYellow}[$WAN1TPTX]${CClear}"
+        elif [ "$thruwan1txbytes" -gt "$medutilspdup" ]
+        then
+          WAN1TX2="${CRed}[$WAN1TPTX]${CClear}"
+        fi
+
         if [ "$WAN1PING" = "[FAILOVER]" ]
         then
            echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN1${CClear} | ${CGreen}[X]${CClear} | "
            printf "%-6s" "$WAN1IFNAME"
-           echo -e " | ${CGreen}[ OK ]${CClear} | Failover     | $WAN1IP | $WAN1PING | $WAN1RX | $WAN1TX | $WAN1CITY: $uptimeStr"
+           if [ "$bwdisp" = "1" ]; then
+             echo -e " | ${CGreen}[ OK ]${CClear} | Failover     | $WAN1IP | $WAN1PING | $WAN1RX1 | $WAN1TX1 | $WAN1CITY: $uptimeStr"
+           else
+             echo -e " | ${CGreen}[ OK ]${CClear} | Failover     | $WAN1IP | $WAN1PING | $WAN1RX2 | $WAN1TX2 | $WAN1CITY: $uptimeStr"
+           fi
         else
            echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN1${CClear} | ${CGreen}[X]${CClear} | "
            printf "%-6s" "$WAN1IFNAME"
-           echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN1IP | $WAN1PING | $WAN1RX | $WAN1TX | $WAN1CITY: $uptimeStr"
+           if [ "$bwdisp" = "1" ]; then
+             echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN1IP | $WAN1PING | $WAN1RX1 | $WAN1TX1 | $WAN1CITY: $uptimeStr"
+           else
+             echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN1IP | $WAN1PING | $WAN1RX2 | $WAN1TX2 | $WAN1CITY: $uptimeStr"
+           fi
         fi
      else
         echo -e "${InvDkGray}${CWhite}  WAN1${CClear} | ${CGreen}[X]${CClear} | ${CDkGray}[n/a]${CClear}  | ${CDkGray}[n/a ]${CClear} | Inactive     |           ${CDkGray}[n/a]${CClear} |      ${CDkGray}[n/a]${CClear} | ${CDkGray}[n/a ]${CClear} | ${CDkGray}[n/a ]${CClear} | ${CDkGray}[n/a]${CClear}"
@@ -6350,11 +6474,11 @@ getifacestats()
     oldwan0rxbytes="$($timeoutcmd$timeoutsec cat /sys/class/net/$WAN0IFNAME/statistics/rx_bytes)"
     oldwan0txbytes="$($timeoutcmd$timeoutsec cat /sys/class/net/$WAN0IFNAME/statistics/tx_bytes)"
   fi
-  
+
   if [ ! -z "$WAN1IFNAME" ]
   then
-  	oldwan1rxbytes="$($timeoutcmd$timeoutsec cat /sys/class/net/$WAN1IFNAME/statistics/rx_bytes)"
-  	oldwan1txbytes="$($timeoutcmd$timeoutsec cat /sys/class/net/$WAN1IFNAME/statistics/tx_bytes)"
+    oldwan1rxbytes="$($timeoutcmd$timeoutsec cat /sys/class/net/$WAN1IFNAME/statistics/rx_bytes)"
+    oldwan1txbytes="$($timeoutcmd$timeoutsec cat /sys/class/net/$WAN1IFNAME/statistics/tx_bytes)"
   fi
 
   if [ "$availableslots" = "1 2" ]
@@ -6382,7 +6506,7 @@ getifacestats()
     if [ -z $oldvpn1rxbytes ]; then oldvpn1rxbytes=0; fi
     if [ -z $oldvpn1txbytes ]; then oldvpn1txbytes=0; fi
   fi
-  
+
   if [ "$state2" -eq 2 ]; then
     oldvpn2txrxbytes=$(awk -F',' '1 == /TUN\/TAP read bytes/ {print $2} 1 == /TUN\/TAP write bytes/ {print $2}' /tmp/etc/openvpn/client2/status 2>/dev/null)
     oldvpn2rxbytes="$(echo $oldvpn2txrxbytes | cut -d' ' -f1)"
@@ -6390,7 +6514,7 @@ getifacestats()
     if [ -z $oldvpn2rxbytes ]; then oldvpn2rxbytes=0; fi
     if [ -z $oldvpn2txbytes ]; then oldvpn2txbytes=0; fi
   fi
-  
+
   if [ "$state3" -eq 2 ]; then
     oldvpn3txrxbytes=$(awk -F',' '1 == /TUN\/TAP read bytes/ {print $2} 1 == /TUN\/TAP write bytes/ {print $2}' /tmp/etc/openvpn/client3/status 2>/dev/null)
     oldvpn3rxbytes="$(echo $oldvpn3txrxbytes | cut -d' ' -f1)"
@@ -6398,7 +6522,7 @@ getifacestats()
     if [ -z $oldvpn3rxbytes ]; then oldvpn3rxbytes=0; fi
     if [ -z $oldvpn3txbytes ]; then oldvpn3txbytes=0; fi
   fi
-  
+
   if [ "$state4" -eq 2 ]; then
     oldvpn4txrxbytes=$(awk -F',' '1 == /TUN\/TAP read bytes/ {print $2} 1 == /TUN\/TAP write bytes/ {print $2}' /tmp/etc/openvpn/client4/status 2>/dev/null)
     oldvpn4rxbytes="$(echo $oldvpn4txrxbytes | cut -d' ' -f1)"
@@ -6406,7 +6530,7 @@ getifacestats()
     if [ -z $oldvpn4rxbytes ]; then oldvpn4rxbytes=0; fi
     if [ -z $oldvpn4txbytes ]; then oldvpn4txbytes=0; fi
   fi
-  
+
   if [ "$state5" -eq 2 ]; then
     oldvpn5txrxbytes=$(awk -F',' '1 == /TUN\/TAP read bytes/ {print $2} 1 == /TUN\/TAP write bytes/ {print $2}' /tmp/etc/openvpn/client5/status 2>/dev/null)
     oldvpn5rxbytes="$(echo $oldvpn5txrxbytes | cut -d' ' -f1)"
@@ -6414,7 +6538,7 @@ getifacestats()
     if [ -z $oldvpn5rxbytes ]; then oldvpn5rxbytes=0; fi
     if [ -z $oldvpn5txbytes ]; then oldvpn5txbytes=0; fi
   fi
-  
+
   if [ "$wgstate1" -eq 2 ]; then
     oldwg1txrxbytes=$(wg show wgc1 transfer)
     oldwg1rxbytes="$(echo $oldwg1txrxbytes | cut -d' ' -f2)"
@@ -6446,7 +6570,7 @@ getifacestats()
     if [ -z $oldwg4rxbytes ] || [ $oldwg4rxbytes -le 0 ]; then oldwg4rxbytes=0; fi
     if [ -z $oldwg4txbytes ] || [ $oldwg4txbytes -le 0 ]; then oldwg4txbytes=0; fi
   fi
-  
+
   if [ "$wgstate5" -eq 2 ]; then
     oldwg5txrxbytes=$(wg show wgc5 transfer)
     oldwg5rxbytes="$(echo $oldwg5txrxbytes | cut -d' ' -f2)"
@@ -6462,7 +6586,7 @@ calcifacestats()
 
   if [ "$resetifacestatsswitch" -eq 1 ]
   then
-  	resetifacestatsswitch=0
+    resetifacestatsswitch=0
     return
   fi
 
@@ -6472,14 +6596,18 @@ calcifacestats()
     newwan0txbytes="$($timeoutcmd$timeoutsec cat /sys/class/net/$WAN0IFNAME/statistics/tx_bytes)"
     diffwan0rxbytes=$(awk -v new=$newwan0rxbytes -v old=$oldwan0rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     diffwan0txbytes=$(awk -v new=$newwan0txbytes -v old=$oldwan0txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    thruwan0rxbytes=$(awk -v new=$newwan0rxbytes -v old=$oldwan0rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
+    thruwan0txbytes=$(awk -v new=$newwan0txbytes -v old=$oldwan0txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   fi
-  
+
   if [ ! -z "$WAN1IFNAME" ]
   then
     newwan1rxbytes="$($timeoutcmd$timeoutsec cat /sys/class/net/$WAN1IFNAME/statistics/rx_bytes)"
     newwan1txbytes="$($timeoutcmd$timeoutsec cat /sys/class/net/$WAN1IFNAME/statistics/tx_bytes)"
     diffwan1rxbytes=$(awk -v new=$newwan1rxbytes -v old=$oldwan1rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     diffwan1txbytes=$(awk -v new=$newwan1txbytes -v old=$oldwan1txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    thruwan1rxbytes=$(awk -v new=$newwan1rxbytes -v old=$oldwan1rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
+    thruwan1txbytes=$(awk -v new=$newwan1txbytes -v old=$oldwan1txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   fi
 
   if [ "$availableslots" = "1 2" ]
@@ -6508,11 +6636,15 @@ calcifacestats()
     if [ -z $newvpn1txbytes ]; then newvpn1txbytes=0; fi
     diffvpn1rxbytes=$(awk -v new=$newvpn1rxbytes -v old=$oldvpn1rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     diffvpn1txbytes=$(awk -v new=$newvpn1txbytes -v old=$oldvpn1txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    thruvpn1rxbytes=$(awk -v new=$newvpn1rxbytes -v old=$oldvpn1rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
+    thruvpn1txbytes=$(awk -v new=$newvpn1txbytes -v old=$oldvpn1txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
     diffvpn1rxbytes=""
     diffvpn1txbytes=""
+    thruvpn1rxbytes=""
+    thruvpn1txbytes=""
   fi
-  
+
   if [ "$state2" -eq 2 ]; then
     newvpn2txrxbytes=$(awk -F',' '1 == /TUN\/TAP read bytes/ {print $2} 1 == /TUN\/TAP write bytes/ {print $2}' /tmp/etc/openvpn/client2/status 2>/dev/null)
     newvpn2rxbytes="$(echo $newvpn2txrxbytes | cut -d' ' -f1)"
@@ -6521,11 +6653,15 @@ calcifacestats()
     if [ -z $newvpn2txbytes ]; then newvpn2txbytes=0; fi
     diffvpn2rxbytes=$(awk -v new=$newvpn2rxbytes -v old=$oldvpn2rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     diffvpn2txbytes=$(awk -v new=$newvpn2txbytes -v old=$oldvpn2txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    thruvpn2rxbytes=$(awk -v new=$newvpn2rxbytes -v old=$oldvpn2rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
+    thruvpn2txbytes=$(awk -v new=$newvpn2txbytes -v old=$oldvpn2txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
     diffvpn2rxbytes=""
     diffvpn2txbytes=""
+    thruvpn2rxbytes=""
+    thruvpn2txbytes=""
   fi
-  
+
   if [ "$state3" -eq 2 ]; then
     newvpn3txrxbytes=$(awk -F',' '1 == /TUN\/TAP read bytes/ {print $2} 1 == /TUN\/TAP write bytes/ {print $2}' /tmp/etc/openvpn/client3/status 2>/dev/null)
     newvpn3rxbytes="$(echo $newvpn3txrxbytes | cut -d' ' -f1)"
@@ -6534,11 +6670,15 @@ calcifacestats()
     if [ -z $newvpn3txbytes ]; then newvpn3txbytes=0; fi
     diffvpn3rxbytes=$(awk -v new=$newvpn3rxbytes -v old=$oldvpn3rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     diffvpn3txbytes=$(awk -v new=$newvpn3txbytes -v old=$oldvpn3txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    thruvpn3rxbytes=$(awk -v new=$newvpn3rxbytes -v old=$oldvpn3rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
+    thruvpn3txbytes=$(awk -v new=$newvpn3txbytes -v old=$oldvpn3txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
     diffvpn3rxbytes=""
     diffvpn3txbytes=""
+    thruvpn3rxbytes=""
+    thruvpn3txbytes=""
   fi
-  
+
   if [ "$state4" -eq 2 ]; then
     newvpn4txrxbytes=$(awk -F',' '1 == /TUN\/TAP read bytes/ {print $2} 1 == /TUN\/TAP write bytes/ {print $2}' /tmp/etc/openvpn/client4/status 2>/dev/null)
     newvpn4rxbytes="$(echo $newvpn4txrxbytes | cut -d' ' -f1)"
@@ -6547,11 +6687,15 @@ calcifacestats()
     if [ -z $newvpn4txbytes ]; then newvpn4txbytes=0; fi
     diffvpn4rxbytes=$(awk -v new=$newvpn4rxbytes -v old=$oldvpn4rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     diffvpn4txbytes=$(awk -v new=$newvpn4txbytes -v old=$oldvpn4txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    thruvpn4rxbytes=$(awk -v new=$newvpn4rxbytes -v old=$oldvpn4rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
+    thruvpn4txbytes=$(awk -v new=$newvpn4txbytes -v old=$oldvpn4txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
     diffvpn4rxbytes=""
     diffvpn4txbytes=""
+    thruvpn4rxbytes=""
+    thruvpn4txbytes=""
   fi
-  
+
   if [ "$state5" -eq 2 ]; then
     newvpn5txrxbytes=$(awk -F',' '1 == /TUN\/TAP read bytes/ {print $2} 1 == /TUN\/TAP write bytes/ {print $2}' /tmp/etc/openvpn/client5/status 2>/dev/null)
     newvpn5rxbytes="$(echo $newvpn5txrxbytes | cut -d' ' -f1)"
@@ -6560,9 +6704,13 @@ calcifacestats()
     if [ -z $newvpn5txbytes ]; then newvpn5txbytes=0; fi
     diffvpn5rxbytes=$(awk -v new=$newvpn5rxbytes -v old=$oldvpn5rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     diffvpn5txbytes=$(awk -v new=$newvpn5txbytes -v old=$oldvpn5txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    thruvpn5rxbytes=$(awk -v new=$newvpn5rxbytes -v old=$oldvpn5rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
+    thruvpn5txbytes=$(awk -v new=$newvpn5txbytes -v old=$oldvpn5txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
     diffvpn5rxbytes=""
     diffvpn5txbytes=""
+    thruvpn5rxbytes=""
+    thruvpn5txbytes=""
   fi
 
   if [ "$wgstate1" -eq 2 ]; then
@@ -6573,9 +6721,13 @@ calcifacestats()
     if [ -z $newwg1txbytes ] || [ $newwg1txbytes -le 0 ]; then newwg1txbytes=0; fi
     diffwg1rxbytes=$(awk -v new=$newwg1rxbytes -v old=$oldwg1rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     diffwg1txbytes=$(awk -v new=$newwg1txbytes -v old=$oldwg1txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    thruwg1rxbytes=$(awk -v new=$newwg1rxbytes -v old=$oldwg1rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
+    thruwg1txbytes=$(awk -v new=$newwg1txbytes -v old=$oldwg1txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
     diffwg1rxbytes=""
     diffwg1txbytes=""
+    thruwg1rxbytes=""
+    thruwg1txbytes=""
   fi
 
   if [ "$wgstate2" -eq 2 ]; then
@@ -6586,9 +6738,13 @@ calcifacestats()
     if [ -z $newwg2txbytes ] || [ $newwg2txbytes -le 0 ]; then newwg2txbytes=0; fi
     diffwg2rxbytes=$(awk -v new=$newwg2rxbytes -v old=$oldwg2rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     diffwg2txbytes=$(awk -v new=$newwg2txbytes -v old=$oldwg2txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    thruwg2rxbytes=$(awk -v new=$newwg2rxbytes -v old=$oldwg2rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
+    thruwg2txbytes=$(awk -v new=$newwg2txbytes -v old=$oldwg2txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
     diffwg2rxbytes=""
     diffwg2txbytes=""
+    thruwg2rxbytes=""
+    thruwg2txbytes=""
   fi
 
   if [ "$wgstate3" -eq 2 ]; then
@@ -6599,9 +6755,13 @@ calcifacestats()
     if [ -z $newwg3txbytes ] || [ $newwg3txbytes -le 0 ]; then newwg3txbytes=0; fi
     diffwg3rxbytes=$(awk -v new=$newwg3rxbytes -v old=$oldwg3rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     diffwg3txbytes=$(awk -v new=$newwg3txbytes -v old=$oldwg3txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    thruwg3rxbytes=$(awk -v new=$newwg3rxbytes -v old=$oldwg3rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
+    thruwg3txbytes=$(awk -v new=$newwg3txbytes -v old=$oldwg3txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
     diffwg3rxbytes=""
     diffwg3txbytes=""
+    thruwg3rxbytes=""
+    thruwg3txbytes=""
   fi
 
   if [ "$wgstate4" -eq 2 ]; then
@@ -6612,11 +6772,15 @@ calcifacestats()
     if [ -z $newwg4txbytes ] || [ $newwg4txbytes -le 0 ]; then newwg4txbytes=0; fi
     diffwg4rxbytes=$(awk -v new=$newwg4rxbytes -v old=$oldwg4rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     diffwg4txbytes=$(awk -v new=$newwg4txbytes -v old=$oldwg4txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    thruwg4rxbytes=$(awk -v new=$newwg4rxbytes -v old=$oldwg4rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
+    thruwg4txbytes=$(awk -v new=$newwg4txbytes -v old=$oldwg4txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
     diffwg4rxbytes=""
     diffwg4txbytes=""
+    thruwg4rxbytes=""
+    thruwg4txbytes=""
   fi
-  
+
   if [ "$wgstate5" -eq 2 ]; then
     newwg5txrxbytes=$(wg show wgc5 transfer)
     newwg5rxbytes="$(echo $newwg5txrxbytes | cut -d' ' -f2)"
@@ -6625,9 +6789,13 @@ calcifacestats()
     if [ -z $newwg5txbytes ] || [ $newwg5txbytes -le 0 ]; then newwg5txbytes=0; fi
     diffwg5rxbytes=$(awk -v new=$newwg5rxbytes -v old=$oldwg5rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     diffwg5txbytes=$(awk -v new=$newwg5txbytes -v old=$oldwg5txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    thruwg5rxbytes=$(awk -v new=$newwg5rxbytes -v old=$oldwg5rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
+    thruwg5txbytes=$(awk -v new=$newwg5txbytes -v old=$oldwg5txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
     diffwg5rxbytes=""
     diffwg5txbytes=""
+    thruwg5rxbytes=""
+    thruwg5txbytes=""
   fi
 
 }
@@ -6659,6 +6827,31 @@ diffwg4rxbytes=""
 diffwg4txbytes=""
 diffwg5rxbytes=""
 diffwg5txbytes=""
+
+thruwan0rxbytes=""
+thruwan0txbytes=""
+thruwan1rxbytes=""
+thruwan1txbytes=""
+thruvpn1rxbytes=""
+thruvpn1txbytes=""
+thruvpn2rxbytes=""
+thruvpn2txbytes=""
+thruvpn3rxbytes=""
+thruvpn3txbytes=""
+thruvpn4rxbytes=""
+thruvpn4txbytes=""
+thruvpn5rxbytes=""
+thruvpn5txbytes=""
+thruwg1rxbytes=""
+thruwg1txbytes=""
+thruwg2rxbytes=""
+thruwg2txbytes=""
+thruwg3rxbytes=""
+thruwg3txbytes=""
+thruwg4rxbytes=""
+thruwg4txbytes=""
+thruwg5rxbytes=""
+thruwg5txbytes=""
 
 resetifacestatsswitch=1
 
@@ -7052,7 +7245,11 @@ do
   if [ "$monitorwan" = "1" ] && [ "$firstrun" = "0" ]
   then
     #Display WAN ports grid
-    echo -e "${CClear}  Port | Mon | IFace  | Health | WAN State    | Public WAN IP   | Ping-->WAN | RxMbps | TxMbps | City Exit / Uptime"
+    if [ "$bwdisp" = "1" ]; then
+      echo -e "${CClear}  Port | Mon | IFace  | Health | WAN State    | Public WAN IP   | Ping-->WAN | Rx Avg | Tx Avg | City Exit / Uptime"
+    else
+      echo -e "${CClear}  Port | Mon | IFace  | Health | WAN State    | Public WAN IP   | Ping-->WAN | Rx Ttl | Tx Ttl | City Exit / Uptime"
+    fi
     echo -e "-------|-----|--------|--------|--------------|-----------------|------------|--------|------------------------------------------"
 
     #Cycle through the WANCheck connection function to display ping/city info
@@ -7071,9 +7268,17 @@ do
     echo ""
     #Display VPN client slot grid
     if [ "$unboundclient" != "0" ]; then
-       echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | RxMbps | TxMbps | City Exit / Time Connected / UB"
+      if [ "$bwdisp" = "1" ]; then
+        echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | Rx Avg | Tx Avg | City Exit / Time Connected / UB"
+      else
+        echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | Rx Ttl | Tx Ttl | City Exit / Time Connected / UB"
+      fi
     else
-       echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | RxMbps | TxMbps | City Exit / Time Connected"
+      if [ "$bwdisp" = "1" ]; then
+        echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | Rx Avg | Tx Avg | City Exit / Time Connected"
+      else
+        echo -e "  Slot | Mon |  Svrs  | Health | VPN State    | Public VPN IP   | Ping-->VPN | Rx Ttl | Tx Ttl | City Exit / Time Connected"
+      fi
     fi
     echo -e "-------|-----|--------|--------|--------------|-----------------|------------|--------|------------------------------------------"
 
@@ -7085,8 +7290,10 @@ do
         #Set variables
         citychange=""
         ubsync=""
-        vpnrx=""
-        vpntx=""
+        vpnrx1=""
+        vpntx1=""
+        vpnrx2=""
+        vpntx2=""
 
         #determine if the slot is monitored#
         if [ "$((VPN$i))" = "1" ]; then
@@ -7106,8 +7313,10 @@ do
            vpnip="          ${CDkGray}[n/a]${CClear}"
            vpncity="${CDkGray}[n/a]${CClear}"
            svrping="     ${CDkGray}[n/a]${CClear}"
-           vpnrx="${CDkGray}[n/a ]${CClear}"
-           vpntx="${CDkGray}[n/a ]${CClear}"
+           vpnrx1="${CDkGray}[n/a ]${CClear}"
+           vpntx1="${CDkGray}[n/a ]${CClear}"
+           vpnrx2="${CDkGray}[n/a ]${CClear}"
+           vpntx2="${CDkGray}[n/a ]${CClear}"
         elif [ "$vpnstate" = "-1" ]
         then
            vpnstate="Error State "
@@ -7116,8 +7325,10 @@ do
            vpnip="${CDkGray}          [n/a]${CClear}"
            vpncity="${CDkGray}[n/a]${CClear}"
            svrping="     ${CDkGray}[n/a]${CClear}"
-           vpnrx="${CDkGray}[n/a ]${CClear}"
-           vpntx="${CDkGray}[n/a ]${CClear}"
+           vpnrx1="${CDkGray}[n/a ]${CClear}"
+           vpntx1="${CDkGray}[n/a ]${CClear}"
+           vpnrx2="${CDkGray}[n/a ]${CClear}"
+           vpntx2="${CDkGray}[n/a ]${CClear}"
         elif [ "$vpnstate" = "1" ]
         then
            vpnstate="Connecting  "
@@ -7126,8 +7337,10 @@ do
            vpnip="          ${CDkGray}[n/a]${CClear}"
            vpncity="${CDkGray}[n/a]${CClear}"
            svrping="     ${CDkGray}[n/a]${CClear}"
-           vpnrx="${CDkGray}[n/a ]${CClear}"
-           vpntx="${CDkGray}[n/a ]${CClear}"
+           vpnrx1="${CDkGray}[n/a ]${CClear}"
+           vpntx1="${CDkGray}[n/a ]${CClear}"
+           vpnrx2="${CDkGray}[n/a ]${CClear}"
+           vpntx2="${CDkGray}[n/a ]${CClear}"
         elif [ "$vpnstate" = "2" ]
         then
            vpnstate="Connected   "
@@ -7177,52 +7390,98 @@ do
           sincelastreset=$(printf ': %dd %02dh:%02dm\n' $(($timediff/86400)) $(($timediff%86400/3600)) $(($timediff%3600/60)))
         fi
 
-        if [ -z "$vpnrx" ]
+        if [ -z "$vpnrx1" ]
         then
-					vpnbwrx=""
-	        tmpvpnslot="diffvpn${i}rxbytes"
-	        eval currentvpnslot=\$$tmpvpnslot
-	        vpnbwtx="$(printf '%4s' "$currentvpnslot")"
-	        if [ -z "$currentvpnslot" ] || [ "$currentvpnslot" = "" ]
-	        then
-	          vpnrx="${CRed}[UNKN]${CClear}"
-	        elif [ "$currentvpnslot" -ge 0 ] && [ "$currentvpnslot" -le "$lowutilspd" ]
-	        then
-	        	vpnrx="${CGreen}[$vpnbwtx]${CClear}"
-	        elif [ "$currentvpnslot" -gt "$lowutilspd" ] && [ "$currentvpnslot" -le "$medutilspd" ]
-	        then
-	          vpnrx="${CYellow}[$vpnbwtx]${CClear}"
-	        elif [ "$currentvpnslot" -gt "$medutilspd" ]
-	        then
-	          vpnrx="${CRed}[$vpnbwtx]${CClear}"
-	        fi
-	      fi
-	      
-	      if [ -z "$vpntx" ]
+          vpnbwrx=""
+          tmpvpnslot="diffvpn${i}rxbytes"
+          eval currentvpnslot=\$$tmpvpnslot
+          vpnbwtx="$(printf '%4s' "$currentvpnslot")"
+          if [ -z "$currentvpnslot" ] || [ "$currentvpnslot" = "" ]
+          then
+            vpnrx1="${CRed}[UNKN]${CClear}"
+          elif [ "$currentvpnslot" -ge 0 ] && [ "$currentvpnslot" -le "$lowutilspd" ]
+          then
+            vpnrx1="${CGreen}[$vpnbwtx]${CClear}"
+          elif [ "$currentvpnslot" -gt "$lowutilspd" ] && [ "$currentvpnslot" -le "$medutilspd" ]
+          then
+            vpnrx1="${CYellow}[$vpnbwtx]${CClear}"
+          elif [ "$currentvpnslot" -gt "$medutilspd" ]
+          then
+            vpnrx1="${CRed}[$vpnbwtx]${CClear}"
+          fi
+        fi
+
+        if [ -z "$vpnrx2" ]
         then
-					vpnbwtx=""
-	        tmpvpnslot="diffvpn${i}txbytes"
-	        eval currentvpnslot=\$$tmpvpnslot
-	        vpnbwtx="$(printf '%4s' "$currentvpnslot")"
-	        if [ -z "$currentvpnslot" ] || [ "$currentvpnslot" = "" ]
-	        then
-	          vpntx="${CRed}[UNKN]${CClear}"
-	        elif [ "$currentvpnslot" -ge 0 ] && [ "$currentvpnslot" -le "$lowutilspdup" ]
-	        then
-	        	vpntx="${CGreen}[$vpnbwtx]${CClear}"
-	        elif [ "$currentvpnslot" -gt "$lowutilspdup" ] && [ "$currentvpnslot" -le "$medutilspdup" ]
-	        then
-	          vpntx="${CYellow}[$vpnbwtx]${CClear}"
-	        elif [ "$currentvpnslot" -gt "$medutilspdup" ]
-	        then
-	          vpntx="${CRed}[$vpnbwtx]${CClear}"
-	        fi
-	      fi
+          vpntprx=""
+          tmpvpntpslot="thruvpn${i}rxbytes"
+          eval currentvpntpslot=\$$tmpvpntpslot
+          vpntptx="$(printf '%4s' "$currentvpntpslot")"
+          if [ -z "$currentvpntpslot" ] || [ "$currentvpntpslot" = "" ]
+          then
+            vpnrx2="${CRed}[UNKN]${CClear}"
+          elif [ "$currentvpntpslot" -ge 0 ] && [ "$currentvpntpslot" -le "$lowutilspd" ]
+          then
+            vpnrx2="${CGreen}[$vpntptx]${CClear}"
+          elif [ "$currentvpntpslot" -gt "$lowutilspd" ] && [ "$currentvpntpslot" -le "$medutilspd" ]
+          then
+            vpnrx2="${CYellow}[$vpntptx]${CClear}"
+          elif [ "$currentvpntpslot" -gt "$medutilspd" ]
+          then
+            vpnrx2="${CRed}[$vpntptx]${CClear}"
+          fi
+        fi
+
+        if [ -z "$vpntx1" ]
+        then
+          vpnbwtx=""
+          tmpvpnslot="diffvpn${i}txbytes"
+          eval currentvpnslot=\$$tmpvpnslot
+          vpnbwtx="$(printf '%4s' "$currentvpnslot")"
+          if [ -z "$currentvpnslot" ] || [ "$currentvpnslot" = "" ]
+          then
+            vpntx1="${CRed}[UNKN]${CClear}"
+          elif [ "$currentvpnslot" -ge 0 ] && [ "$currentvpnslot" -le "$lowutilspdup" ]
+          then
+            vpntx1="${CGreen}[$vpnbwtx]${CClear}"
+          elif [ "$currentvpnslot" -gt "$lowutilspdup" ] && [ "$currentvpnslot" -le "$medutilspdup" ]
+          then
+            vpntx1="${CYellow}[$vpnbwtx]${CClear}"
+          elif [ "$currentvpnslot" -gt "$medutilspdup" ]
+          then
+            vpntx1="${CRed}[$vpnbwtx]${CClear}"
+          fi
+        fi
+
+        if [ -z "$vpntx2" ]
+        then
+          vpntptx=""
+          tmpvpntpslot="thruvpn${i}txbytes"
+          eval currentvpntpslot=\$$tmpvpntpslot
+          vpntptx="$(printf '%4s' "$currentvpntpslot")"
+          if [ -z "$currentvpntpslot" ] || [ "$currentvpntpslot" = "" ]
+          then
+            vpntx2="${CRed}[UNKN]${CClear}"
+          elif [ "$currentvpntpslot" -ge 0 ] && [ "$currentvpntpslot" -le "$lowutilspdup" ]
+          then
+            vpntx2="${CGreen}[$vpntptx]${CClear}"
+          elif [ "$currentvpntpslot" -gt "$lowutilspdup" ] && [ "$currentvpntpslot" -le "$medutilspdup" ]
+          then
+            vpntx2="${CYellow}[$vpntptx]${CClear}"
+          elif [ "$currentvpntpslot" -gt "$medutilspdup" ]
+          then
+            vpntx2="${CRed}[$vpntptx]${CClear}"
+          fi
+        fi
 
         if "$firstDataCollection" ; then printf "\r\033[0K" ; firstDataCollection=false ; fi
 
         # Print the results of all data gathered sofar #
-      echo -e "$vpnindicator${InvDkGray}${CWhite} VPN$i${CClear} | $monitored | $servercnt | $vpnhealth | $vpnstate | $vpnip | $svrping | $vpntx | $vpnrx | $vpncity$sincelastreset $citychange$ubsync"
+        if [ "$bwdisp" = "1" ]; then
+          echo -e "$vpnindicator${InvDkGray}${CWhite} VPN$i${CClear} | $monitored | $servercnt | $vpnhealth | $vpnstate | $vpnip | $svrping | $vpntx1 | $vpnrx1 | $vpncity$sincelastreset $citychange$ubsync"
+        else
+          echo -e "$vpnindicator${InvDkGray}${CWhite} VPN$i${CClear} | $monitored | $servercnt | $vpnhealth | $vpnstate | $vpnip | $svrping | $vpntx2 | $vpnrx2 | $vpncity$sincelastreset $citychange$ubsync"
+        fi
 
         #if a vpn is monitored and disconnected, try to restart it
         if [ "$((VPN$i))" = "1" ] && [ "$vpnstate" = "Disconnected" ]
@@ -7362,9 +7621,17 @@ do
 
     #Display WG client slot grid
     if [ "$unboundwgclient" != "0" ]; then
-      echo -e "  Slot | Mon |  Svrs  | Health | WG State     | Public WG IP    | Ping--->WG | RxMbps | TxMbps | City Exit / Time Connected / UB"
+      if [ "$bwdisp" = "1" ]; then
+        echo -e "  Slot | Mon |  Svrs  | Health | WG State     | Public WG IP    | Ping--->WG | Rx Avg | Tx Avg | City Exit / Time Connected / UB"
+      else
+        echo -e "  Slot | Mon |  Svrs  | Health | WG State     | Public WG IP    | Ping--->WG | Rx Ttl | Tx Ttl | City Exit / Time Connected / UB"
+      fi
     else
-      echo -e "  Slot | Mon |  Svrs  | Health | WG State     | Public WG IP    | Ping--->WG | RxMbps | TxMbps | City Exit / Time Connected"
+      if [ "$bwdisp" = "1" ]; then
+        echo -e "  Slot | Mon |  Svrs  | Health | WG State     | Public WG IP    | Ping--->WG | Rx Avg | Tx Avg | City Exit / Time Connected"
+      else
+        echo -e "  Slot | Mon |  Svrs  | Health | WG State     | Public WG IP    | Ping--->WG | Rx Ttl | Tx Ttl | City Exit / Time Connected"
+      fi
     fi
 
     echo -e "-------|-----|--------|--------|--------------|-----------------|------------|--------|------------------------------------------"
@@ -7375,8 +7642,10 @@ do
         #Set variables
         wgcitychange=""
         ubsync=""
-        wgrx=""
-        wgtx=""
+        wgrx1=""
+        wgtx1=""
+        wgrx2=""
+        wgtx2=""
 
         #determine if the slot is monitored#
         if [ "$((WG$i))" = "1" ]; then
@@ -7396,8 +7665,10 @@ do
            wgip="          ${CDkGray}[n/a]${CClear}"
            wgcity="${CDkGray}[n/a]${CClear}"
            wgsvrping="     ${CDkGray}[n/a]${CClear}"
-           wgrx="${CDkGray}[n/a ]${CClear}"
-           wgtx="${CDkGray}[n/a ]${CClear}"
+           wgrx1="${CDkGray}[n/a ]${CClear}"
+           wgtx1="${CDkGray}[n/a ]${CClear}"
+           wgrx2="${CDkGray}[n/a ]${CClear}"
+           wgtx2="${CDkGray}[n/a ]${CClear}"
         elif [ "$wgstate" = "2" ]
         then
            wgstate="Connected   "
@@ -7420,8 +7691,10 @@ do
            wgip="          ${CDkGray}[n/a]${CClear}"
            wgcity="${CDkGray}[n/a]${CClear}"
            wgsvrping="     ${CDkGray}[n/a]${CClear}"
-           wgrx="${CDkGray}[n/a ]${CClear}"
-           wgtx="${CDkGray}[n/a ]${CClear}"
+           wgrx1="${CDkGray}[n/a ]${CClear}"
+           wgtx1="${CDkGray}[n/a ]${CClear}"
+           wgrx2="${CDkGray}[n/a ]${CClear}"
+           wgtx2="${CDkGray}[n/a ]${CClear}"
         fi
 
         #Determine how many server entries are in each of the vpn slot alternate server files#
@@ -7449,50 +7722,96 @@ do
           wgsincelastreset=$(printf ': %dd %02dh:%02dm\n' $(($wgtimediff/86400)) $(($wgtimediff%86400/3600)) $(($wgtimediff%3600/60)))
         fi
 
-        if [ -z "$wgrx" ]
+        if [ -z "$wgrx1" ]
         then
-					wgbwrx=""
-	        tmpwgslot="diffwg${i}rxbytes"
-	        eval currentwgslot=\$$tmpwgslot
-	        wgbwrx="$(printf '%4s' "$currentwgslot")"
-	        if [ -z "$currentwgslot" ] || [ "$currentwgslot" = "" ]
-	        then
-	          wgrx="${CRed}[UNKN]${CClear}"
-	        elif [ "$currentwgslot" -ge 0 ] && [ "$currentwgslot" -le "$lowutilspd" ]
-	        then
-	        	wgrx="${CGreen}[$wgbwrx]${CClear}"
-	        elif [ "$currentwgslot" -gt "$lowutilspd" ] && [ "$currentwgslot" -le "$medutilspd" ]
-	        then
-	          wgrx="${CYellow}[$wgbwrx]${CClear}"
-	        elif [ "$currentwgslot" -gt "$medutilspd" ]
-	        then
-	          wgrx="${CRed}[$wgbwrx]${CClear}"
-	        fi
-	      fi
-	      
-	      if [ -z "$wgtx" ]
+          wgbwrx=""
+          tmpwgslot="diffwg${i}rxbytes"
+          eval currentwgslot=\$$tmpwgslot
+          wgbwrx="$(printf '%4s' "$currentwgslot")"
+          if [ -z "$currentwgslot" ] || [ "$currentwgslot" = "" ]
+          then
+            wgrx1="${CRed}[UNKN]${CClear}"
+          elif [ "$currentwgslot" -ge 0 ] && [ "$currentwgslot" -le "$lowutilspd" ]
+          then
+            wgrx1="${CGreen}[$wgbwrx]${CClear}"
+          elif [ "$currentwgslot" -gt "$lowutilspd" ] && [ "$currentwgslot" -le "$medutilspd" ]
+          then
+            wgrx1="${CYellow}[$wgbwrx]${CClear}"
+          elif [ "$currentwgslot" -gt "$medutilspd" ]
+          then
+            wgrx1="${CRed}[$wgbwrx]${CClear}"
+          fi
+        fi
+
+        if [ -z "$wgrx2" ]
         then
-					wgbwtx=""
-	        tmpwgslot="diffwg${i}txbytes"
-	        eval currentwgslot=\$$tmpwgslot
-	        wgbwtx="$(printf '%4s' "$currentwgslot")"
-	        if [ -z "$currentwgslot" ] || [ "$currentwgslot" = "" ]
-	        then
-	          wgtx="${CRed}[UNKN]${CClear}"
-	        elif [ "$currentwgslot" -ge 0 ] && [ "$currentwgslot" -le "$lowutilspdup" ]
-	        then
-	        	wgtx="${CGreen}[$wgbwtx]${CClear}"
-	        elif [ "$currentwgslot" -gt "$lowutilspdup" ] && [ "$currentwgslot" -le "$medutilspdup" ]
-	        then
-	          wgtx="${CYellow}[$wgbwtx]${CClear}"
-	        elif [ "$currentwgslot" -gt "$medutilspdup" ]
-	        then
-	          wgtx="${CRed}[$wgbwtx]${CClear}"
-	        fi
-	      fi
+          wgtprx=""
+          tmpwgtpslot="thruwg${i}rxbytes"
+          eval currentwgtpslot=\$$tmpwgtpslot
+          wgtprx="$(printf '%4s' "$currentwgtpslot")"
+          if [ -z "$currentwgtpslot" ] || [ "$currentwgtpslot" = "" ]
+          then
+            wgrx2="${CRed}[UNKN]${CClear}"
+          elif [ "$currentwgtpslot" -ge 0 ] && [ "$currentwgtpslot" -le "$lowutilspd" ]
+          then
+            wgrx2="${CGreen}[$wgtprx]${CClear}"
+          elif [ "$currentwgtpslot" -gt "$lowutilspd" ] && [ "$currentwgtpslot" -le "$medutilspd" ]
+          then
+            wgrx2="${CYellow}[$wgtprx]${CClear}"
+          elif [ "$currentwgtpslot" -gt "$medutilspd" ]
+          then
+            wgrx2="${CRed}[$wgtprx]${CClear}"
+          fi
+        fi
+
+        if [ -z "$wgtx1" ]
+        then
+          wgbwtx=""
+          tmpwgslot="diffwg${i}txbytes"
+          eval currentwgslot=\$$tmpwgslot
+          wgbwtx="$(printf '%4s' "$currentwgslot")"
+          if [ -z "$currentwgslot" ] || [ "$currentwgslot" = "" ]
+          then
+            wgtx1="${CRed}[UNKN]${CClear}"
+          elif [ "$currentwgslot" -ge 0 ] && [ "$currentwgslot" -le "$lowutilspdup" ]
+          then
+            wgtx1="${CGreen}[$wgbwtx]${CClear}"
+          elif [ "$currentwgslot" -gt "$lowutilspdup" ] && [ "$currentwgslot" -le "$medutilspdup" ]
+          then
+            wgtx1="${CYellow}[$wgbwtx]${CClear}"
+          elif [ "$currentwgslot" -gt "$medutilspdup" ]
+          then
+            wgtx1="${CRed}[$wgbwtx]${CClear}"
+          fi
+        fi
+
+        if [ -z "$wgtx2" ]
+        then
+          wgtptx=""
+          tmpwgtpslot="thruwg${i}txbytes"
+          eval currentwgtpslot=\$$tmpwgtpslot
+          wgtptx="$(printf '%4s' "$currentwgtpslot")"
+          if [ -z "$currentwgtpslot" ] || [ "$currentwgtpslot" = "" ]
+          then
+            wgtx2="${CRed}[UNKN]${CClear}"
+          elif [ "$currentwgtpslot" -ge 0 ] && [ "$currentwgtpslot" -le "$lowutilspdup" ]
+          then
+            wgtx2="${CGreen}[$wgtptx]${CClear}"
+          elif [ "$currentwgtpslot" -gt "$lowutilspdup" ] && [ "$currentwgtpslot" -le "$medutilspdup" ]
+          then
+            wgtx2="${CYellow}[$wgtptx]${CClear}"
+          elif [ "$currentwgtpslot" -gt "$medutilspdup" ]
+          then
+            wgtx2="${CRed}[$wgtptx]${CClear}"
+          fi
+        fi
 
         # Print the results of all data gathered sofar #
-        echo -e "$wgindicator${InvDkGray}${CWhite} WGC$i${CClear} | $wgmonitored | $wgservercnt | $wghealth | $wgstate | $wgip | $wgsvrping | $wgrx | $wgtx | $wgcity$wgsincelastreset $wgcitychange$ubsync"
+        if [ "$bwdisp" = "1" ]; then
+          echo -e "$wgindicator${InvDkGray}${CWhite} WGC$i${CClear} | $wgmonitored | $wgservercnt | $wghealth | $wgstate | $wgip | $wgsvrping | $wgrx1 | $wgtx1 | $wgcity$wgsincelastreset $wgcitychange$ubsync"
+        else
+          echo -e "$wgindicator${InvDkGray}${CWhite} WGC$i${CClear} | $wgmonitored | $wgservercnt | $wghealth | $wgstate | $wgip | $wgsvrping | $wgrx2 | $wgtx2 | $wgcity$wgsincelastreset $wgcitychange$ubsync"
+        fi
 
         #if a wg connection is monitored and disconnected, try to restart it
         if [ "$((WG$i))" = "1" ] && [ "$wgstate" = "Disconnected" ]
@@ -7638,7 +7957,7 @@ do
   updateTimer=true
 
   getifacestats # Grab fresh interface stats
-  
+
   while [ "$timer" -lt "$timerloop" ]
   do
       if "$updateTimer"
