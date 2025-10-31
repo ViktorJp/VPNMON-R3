@@ -1,4 +1,4 @@
-v1.8.0b6 - (October 23, 2025)
+v1.8.0   - (October 30, 2025)
          - MINOR: Added more visibility to the main UI, and included both TX and RX stats for each connection.
            Please know, these stats are basically the average connection speed across the length of the timer.
            They may not be entirely 100% accurate, and are a close rounded approximation of the speeds 
