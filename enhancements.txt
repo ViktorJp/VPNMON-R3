@@ -1,9 +1,9 @@
 To-Do:
 - If the WAN doesn't respond after X minutes, issue a router reboot?
-- Find a way to reset all active VPN/WG counters, and set non-active ones to 0 - @CaptainSTX
-- avg vs total throughput stats @CaptainSTX
 
 Done:
+- Find a way to reset all active VPN/WG counters, and set non-active ones to 0 - @CaptainSTX
+- avg vs total throughput stats @CaptainSTX
 - Option for round-robin on lists, instead of random.
 - Show which slot was having ping issues (@scootertramp)
 - Add the Interface IP as a required field for the WG Server Lists @Ventola
