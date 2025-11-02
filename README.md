@@ -5,7 +5,7 @@ Updated on 2025-Oct-30
 
 ---
 
-<img width="1171" height="789" alt="Screenshot 2025-10-02 180824" src="https://github.com/user-attachments/assets/db651821-e02e-40bf-9e92-bce9e14202ec" />
+<img width="1174" height="715" alt="image" src="https://github.com/user-attachments/assets/e4694707-2c40-4d1b-a921-7d1e82f68b5f" />
 
 ---
 
