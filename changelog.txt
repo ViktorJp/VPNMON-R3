@@ -1,3 +1,9 @@
+v1.8.1   - (TBA)
+         - PATCH: After dealing with several long periods of internet outages on my end, I decided to give a
+           bit more visibility to the WAN DOWN screens, showing it retrying every 60sec/300sec depending on
+           what component is down. It now shows seconds along with a busy indicator so you know where you are
+           in the process.
+
 v1.8.0   - (October 30, 2025)
          - MINOR: Added more visibility to the main UI, and included both TX and RX stats for each connection.
            Please know, these stats are basically the average connection speed across the length of the timer.
