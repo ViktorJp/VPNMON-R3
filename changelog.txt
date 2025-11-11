@@ -3,6 +3,8 @@ v1.8.1   - (TBA)
            bit more visibility to the WAN DOWN screens, showing it retrying every 60sec/300sec depending on
            what component is down. It now shows seconds along with a busy indicator so you know where you are
            in the process.
+         - PATCH: In rare situations, the calculations for the throughput figures would yield numbers < 0.
+           Added some more logic to check for this in order to display "[UNKN]" in those cases.
 
 v1.8.0   - (October 30, 2025)
          - MINOR: Added more visibility to the main UI, and included both TX and RX stats for each connection.
