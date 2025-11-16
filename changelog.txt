@@ -1,4 +1,4 @@
-v1.8.1   - (TBA)
+v1.8.1   - (November 16, 2025)
          - PATCH: After dealing with several long periods of internet outages on my end, I decided to give a
            bit more visibility to the WAN DOWN screens, showing it retrying every 60sec/300sec depending on
            what component is down. It now shows seconds along with a busy indicator so you know where you are
