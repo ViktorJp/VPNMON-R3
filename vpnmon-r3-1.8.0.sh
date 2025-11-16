@@ -1,20 +1,20 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.8.1 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.8.0 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2025-Nov-16
+# Last Modified: 2025-Oct-30
 ##########################################################################################
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.8.1"                                                 # Version tracker
+version="1.8.0"                                                 # Version tracker
 beta=0                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -218,12 +218,10 @@ spinner()
   spins=$1
 
   spin=0
-  charspin=0
   totalspins=$((spins / 4))
   while [ $spin -le $totalspins ]; do
     for spinchar in / - \\ \|; do
-      printf "\r$spinchar ${CGreen}[${CWhite}$charspin${CGreen}]"
-      charspin=$((charspin + 1))
+      printf "\r$spinchar"
       sleep 1
     done
     spin=$((spin+1))
@@ -6053,7 +6051,7 @@ checkwan()
               echo -e "${InvGreen} ${CClear} check with your ISP, or perform general internet connectivity troubleshooting${CClear}"
               echo -e "${InvGreen} ${CClear} in order to re-establish a stable VPN connection.${CClear}"
               echo -e "${InvGreen} ${CClear}"
-              echo -e "${InvGreen} ${CClear} [Retrying to resume normal operations roughly every 60 seconds]${CClear}"
+              echo -e "${InvGreen} ${CClear} [Retrying to resume normal operations every 60 seconds]${CClear}"
               echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
               echo ""
               spinner 60
@@ -6076,7 +6074,7 @@ checkwan()
           echo -e "${InvGreen} ${CClear} Router has detected a WAN Link/Modem and waiting 300 seconds for general network${CClear}"
           echo -e "${InvGreen} ${CClear} connectivity to stabilize before re-establishing VPN/WG connectivity.${CClear}"
           echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} [Retrying to resume normal operations in roughly 300 seconds...Please stand by!]${CClear}"
+          echo -e "${InvGreen} ${CClear} [Retrying to resume normal operations in 300 seconds...Please stand by!]${CClear}"
           echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
           echo ""
           spinner 300
@@ -6139,7 +6137,7 @@ wancheck()
         fi
 
         WAN0BWRX="$(printf '%4s' "$diffwan0rxbytes")"
-        if [ -z "$diffwan0rxbytes" ] || [ "$diffwan0rxbytes" = "" ] || [ "$diffwan0rxbytes" -lt 0 ]
+        if [ -z "$diffwan0rxbytes" ] || [ "$diffwan0rxbytes" = "" ]
         then
           WAN0RX1="${CRed}[UNKN]${CClear}"
         elif [ "$diffwan0rxbytes" -ge 0 ] && [ "$diffwan0rxbytes" -le "$lowutilspd" ]
@@ -6154,7 +6152,7 @@ wancheck()
         fi
 
         WAN0BWTX="$(printf '%4s' "$diffwan0txbytes")"
-        if [ -z "$diffwan0txbytes" ] || [ "$diffwan0txbytes" = "" ] || [ "$diffwan0txbytes" -lt 0 ]
+        if [ -z "$diffwan0txbytes" ] || [ "$diffwan0txbytes" = "" ]
         then
           WAN0TX1="${CRed}[UNKN]${CClear}"
         elif [ "$diffwan0txbytes" -ge 0 ] && [ "$diffwan0txbytes" -le "$lowutilspdup" ]
@@ -6169,7 +6167,7 @@ wancheck()
         fi
 
         WAN0TPRX="$(printf '%4s' "$thruwan0rxbytes")"
-        if [ -z "$thruwan0rxbytes" ] || [ "$thruwan0rxbytes" = "" ] || [ "$thruwan0rxbytes" -lt 0 ]
+        if [ -z "$thruwan0rxbytes" ] || [ "$thruwan0rxbytes" = "" ]
         then
           WAN0RX2="${CRed}[UNKN]${CClear}"
         elif [ "$thruwan0rxbytes" -ge 0 ] && [ "$thruwan0rxbytes" -le "$lowutilspd" ]
@@ -6184,7 +6182,7 @@ wancheck()
         fi
 
         WAN0TPTX="$(printf '%4s' "$thruwan0txbytes")"
-        if [ -z "$thruwan0txbytes" ] || [ "$thruwan0txbytes" = "" ] || [ "$thruwan0txbytes" -lt 0 ]
+        if [ -z "$thruwan0txbytes" ] || [ "$thruwan0txbytes" = "" ]
         then
           WAN0TX2="${CRed}[UNKN]${CClear}"
         elif [ "$thruwan0txbytes" -ge 0 ] && [ "$thruwan0txbytes" -le "$lowutilspdup" ]
@@ -6252,7 +6250,7 @@ wancheck()
         fi
 
         WAN1BWRX="$(printf '%4s' "$diffwan1rxbytes")"
-        if [ -z "$diffwan1rxbytes" ] || [ "$diffwan1rxbytes" = "" ] || [ "$diffwan1rxbytes" -lt 0 ]
+        if [ -z "$diffwan1rxbytes" ] || [ "$diffwan1rxbytes" = "" ]
         then
           WAN1RX1="${CRed}[UNKN]${CClear}"
         elif [ "$diffwan1rxbytes" -ge 0 ] && [ "$diffwan1rxbytes" -le "$lowutilspd" ]
@@ -6267,7 +6265,7 @@ wancheck()
         fi
 
         WAN1BWTX="$(printf '%4s' "$diffwan1txbytes")"
-        if [ -z "$diffwan1txbytes" ] || [ "$diffwan1txbytes" = "" ] || [ "$diffwan1txbytes" -lt 0 ]
+        if [ -z "$diffwan1txbytes" ] || [ "$diffwan1txbytes" = "" ]
         then
           WAN1TX1="${CRed}[UNKN]${CClear}"
         elif [ "$diffwan1txbytes" -ge 0 ] && [ "$diffwan1txbytes" -le "$lowutilspdup" ]
@@ -6282,7 +6280,7 @@ wancheck()
         fi
 
         WAN1TPRX="$(printf '%4s' "$thruwan1rxbytes")"
-        if [ -z "$thruwan1rxbytes" ] || [ "$thruwan1rxbytes" = "" ] || [ "$thruwan1rxbytes" -lt 0 ]
+        if [ -z "$thruwan1rxbytes" ] || [ "$thruwan1rxbytes" = "" ]
         then
           WAN1RX2="${CRed}[UNKN]${CClear}"
         elif [ "$thruwan1rxbytes" -ge 0 ] && [ "$thruwan1rxbytes" -le "$lowutilspd" ]
@@ -6297,7 +6295,7 @@ wancheck()
         fi
 
         WAN1TPTX="$(printf '%4s' "$thruwan1txbytes")"
-        if [ -z "$thruwan1txbytes" ] || [ "$thruwan1txbytes" = "" ] || [ "$thruwan1txbytes" -lt 0 ]
+        if [ -z "$thruwan1txbytes" ] || [ "$thruwan1txbytes" = "" ]
         then
           WAN1TX2="${CRed}[UNKN]${CClear}"
         elif [ "$thruwan1txbytes" -ge 0 ] && [ "$thruwan1txbytes" -le "$lowutilspdup" ]
@@ -7398,7 +7396,7 @@ do
           tmpvpnslot="diffvpn${i}rxbytes"
           eval currentvpnslot=\$$tmpvpnslot
           vpnbwtx="$(printf '%4s' "$currentvpnslot")"
-          if [ -z "$currentvpnslot" ] || [ "$currentvpnslot" = "" ] || [ "$currentvpnslot" -lt 0 ]
+          if [ -z "$currentvpnslot" ] || [ "$currentvpnslot" = "" ]
           then
             vpnrx1="${CRed}[UNKN]${CClear}"
           elif [ "$currentvpnslot" -ge 0 ] && [ "$currentvpnslot" -le "$lowutilspd" ]
@@ -7419,7 +7417,7 @@ do
           tmpvpntpslot="thruvpn${i}rxbytes"
           eval currentvpntpslot=\$$tmpvpntpslot
           vpntptx="$(printf '%4s' "$currentvpntpslot")"
-          if [ -z "$currentvpntpslot" ] || [ "$currentvpntpslot" = "" ] || [ "$currentvpntpslot" -lt 0 ]
+          if [ -z "$currentvpntpslot" ] || [ "$currentvpntpslot" = "" ]
           then
             vpnrx2="${CRed}[UNKN]${CClear}"
           elif [ "$currentvpntpslot" -ge 0 ] && [ "$currentvpntpslot" -le "$lowutilspd" ]
@@ -7440,7 +7438,7 @@ do
           tmpvpnslot="diffvpn${i}txbytes"
           eval currentvpnslot=\$$tmpvpnslot
           vpnbwtx="$(printf '%4s' "$currentvpnslot")"
-          if [ -z "$currentvpnslot" ] || [ "$currentvpnslot" = "" ] || [ "$currentvpnslot" -lt 0 ]
+          if [ -z "$currentvpnslot" ] || [ "$currentvpnslot" = "" ]
           then
             vpntx1="${CRed}[UNKN]${CClear}"
           elif [ "$currentvpnslot" -ge 0 ] && [ "$currentvpnslot" -le "$lowutilspdup" ]
@@ -7461,7 +7459,7 @@ do
           tmpvpntpslot="thruvpn${i}txbytes"
           eval currentvpntpslot=\$$tmpvpntpslot
           vpntptx="$(printf '%4s' "$currentvpntpslot")"
-          if [ -z "$currentvpntpslot" ] || [ "$currentvpntpslot" = "" ] || [ "$currentvpntpslot" -lt 0 ]
+          if [ -z "$currentvpntpslot" ] || [ "$currentvpntpslot" = "" ]
           then
             vpntx2="${CRed}[UNKN]${CClear}"
           elif [ "$currentvpntpslot" -ge 0 ] && [ "$currentvpntpslot" -le "$lowutilspdup" ]
@@ -7730,7 +7728,7 @@ do
           tmpwgslot="diffwg${i}rxbytes"
           eval currentwgslot=\$$tmpwgslot
           wgbwrx="$(printf '%4s' "$currentwgslot")"
-          if [ -z "$currentwgslot" ] || [ "$currentwgslot" = "" ] || [ "$currentwgslot" -lt 0 ]
+          if [ -z "$currentwgslot" ] || [ "$currentwgslot" = "" ]
           then
             wgrx1="${CRed}[UNKN]${CClear}"
           elif [ "$currentwgslot" -ge 0 ] && [ "$currentwgslot" -le "$lowutilspd" ]
@@ -7751,7 +7749,7 @@ do
           tmpwgtpslot="thruwg${i}rxbytes"
           eval currentwgtpslot=\$$tmpwgtpslot
           wgtprx="$(printf '%4s' "$currentwgtpslot")"
-          if [ -z "$currentwgtpslot" ] || [ "$currentwgtpslot" = "" ] || [ "$currentwgtpslot" -lt 0 ]
+          if [ -z "$currentwgtpslot" ] || [ "$currentwgtpslot" = "" ]
           then
             wgrx2="${CRed}[UNKN]${CClear}"
           elif [ "$currentwgtpslot" -ge 0 ] && [ "$currentwgtpslot" -le "$lowutilspd" ]
@@ -7772,7 +7770,7 @@ do
           tmpwgslot="diffwg${i}txbytes"
           eval currentwgslot=\$$tmpwgslot
           wgbwtx="$(printf '%4s' "$currentwgslot")"
-          if [ -z "$currentwgslot" ] || [ "$currentwgslot" = "" ] || [ "$currentwgslot" -lt 0 ]
+          if [ -z "$currentwgslot" ] || [ "$currentwgslot" = "" ]
           then
             wgtx1="${CRed}[UNKN]${CClear}"
           elif [ "$currentwgslot" -ge 0 ] && [ "$currentwgslot" -le "$lowutilspdup" ]
@@ -7793,7 +7791,7 @@ do
           tmpwgtpslot="thruwg${i}txbytes"
           eval currentwgtpslot=\$$tmpwgtpslot
           wgtptx="$(printf '%4s' "$currentwgtpslot")"
-          if [ -z "$currentwgtpslot" ] || [ "$currentwgtpslot" = "" ] || [ "$currentwgtpslot" -lt 0 ]
+          if [ -z "$currentwgtpslot" ] || [ "$currentwgtpslot" = "" ]
           then
             wgtx2="${CRed}[UNKN]${CClear}"
           elif [ "$currentwgtpslot" -ge 0 ] && [ "$currentwgtpslot" -le "$lowutilspdup" ]
