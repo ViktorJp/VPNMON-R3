@@ -1,3 +1,8 @@
+v1.8.2   - (November 23, 2025)
+         - PATCH: Thanks to @JTnola for sharing a "[: bad number" bug he was experiencing. This hard-to-find
+           bug only seemed to come up in certain scenarios when using the limited 2-OVPN slot configuration.
+           Variables weren't being assigned that the script was expecting, causing these errors. Fixed! :)
+
 v1.8.1   - (November 16, 2025)
          - PATCH: After dealing with several long periods of internet outages on my end, I decided to give a
            bit more visibility to the WAN DOWN screens, showing it retrying every 60sec/300sec depending on
