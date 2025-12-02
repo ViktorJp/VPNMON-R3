@@ -1,3 +1,7 @@
+v1.8.x   - (TBA)
+         - PATCH: The Recovery Timeout should be defaulting to 1x, but it was inadvertently set to 3x. Thank
+           you to @Tarek Yag for reporting this. Fixed!
+
 v1.8.2   - (November 23, 2025)
          - PATCH: Thanks to @JTnola for sharing a "[: bad number" bug he was experiencing. This hard-to-find
            bug only seemed to come up in certain scenarios when using the limited 2-OVPN slot configuration.
