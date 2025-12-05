@@ -1,6 +1,13 @@
 v1.8.x   - (TBA)
          - PATCH: The Recovery Timeout should be defaulting to 1x, but it was inadvertently set to 3x. Thank
            you to @Tarek Yag for reporting this. Fixed!
+         - PATCH: Changed the wording for the custom PING host to "Custom PING host for connectivity checks"
+           to bring more clarity that it wasn't just for VPN checks, but WAN and WG as well. Thanks to
+           @scootertramp for reporting.
+         - PATCH: Changed the date/time to include the offset alongside the timezone. This is to give more
+           visibility for those who aren't assigned a standard timezone name, and in some cases would fall
+           back to using "GMT". Thanks to @Tarek Yag for reporting this, and for @EmeraldDeer providing a
+           deep dive into the date command options.
 
 v1.8.2   - (November 23, 2025)
          - PATCH: Thanks to @JTnola for sharing a "[: bad number" bug he was experiencing. This hard-to-find
