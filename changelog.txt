@@ -15,6 +15,9 @@ v1.8.x   - (TBA)
          - PATCH: Implemented recovery timeouts (if configured) and will apply to the WAN as well. Should the
            WAN have issues pinging or establishing an SSL connection with the user-selected PINGHOST, it will
            attempt to try the number of times that is user-specified.
+         - PATCH: Cut down all VPN/WG connection and reset times by half. Will continue to monitor closely 
+           for misbehavior. Done in response to @scootertramp noting the long time it takes to reconnect all
+           VPN/WG connections after a WAN DOWN event.
 
 v1.8.2   - (November 23, 2025)
          - PATCH: Thanks to @JTnola for sharing a "[: bad number" bug he was experiencing. This hard-to-find
