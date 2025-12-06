@@ -18,6 +18,9 @@ v1.8.x   - (TBA)
          - PATCH: Cut down all VPN/WG connection and reset times by half. Will continue to monitor closely 
            for misbehavior. Done in response to @scootertramp noting the long time it takes to reconnect all
            VPN/WG connections after a WAN DOWN event.
+         - PATCH: Removed the functionality that would reset the Rx/Tx indicators to [UNKN] each time you
+           went into a different menu item. It will now just show live stats no matter what. For consistent
+           and more accurate results, wait your full 60 seconds (or whatever you've set your timer value to).
 
 v1.8.2   - (November 23, 2025)
          - PATCH: Thanks to @JTnola for sharing a "[: bad number" bug he was experiencing. This hard-to-find
