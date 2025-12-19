@@ -908,8 +908,10 @@ do
 
   if [ "$monitorwan" -eq 0 ]; then
      monitorwandisp="${CDkGray}Disabled"
+     wantimersdisp="${CDkGray}Disabled"
   else
      monitorwandisp="Enabled"
+     wantimersdisp="${CGreen}$recoverytimer ${CClear}|${CGreen} $wandowntimer ${CClear}|${CGreen} $reconnecttimer sec"
   fi
 
   if [ "$useovpn" -eq 0 ] && [ "$usewg" -eq 0 ]; then
@@ -1002,7 +1004,7 @@ do
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(14)${CClear} : Connection Throughput Threshold Selections   : $utilspddisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  |-${CClear}---                                             : $utilspdupdisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(15)${CClear} : Connection Throughput Display Method         : ${CGreen}$throughputmethoddisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(16)${CClear} : WAN Recovery, Down, Reconnect Timers         : ${CGreen}$recoverytimer ${CClear}|${CGreen} $wandowntimer ${CClear}|${CGreen} $reconnecttimer sec"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(16)${CClear} : WAN Recovery, Down, Reconnect Timers         : $wantimersdisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  | ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( e)${CClear} : Exit${CClear}"
   echo -e "${InvGreen} ${CClear}"
