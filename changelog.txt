@@ -12,9 +12,9 @@ v1.8.3b2 - (TBA)
            user-selected values.
          - PATCH: Fixed some instances where PINGHOST was hardcoded to 8.8.8.8, instead of using user-selected
            values.
-         - PATCH: Implemented recovery timeouts (if configured) and will apply to the WAN as well. Should the
-           WAN have issues establishing an SSL connection with the user-selected PINGHOST, it will attempt to
-           try the number of times that is user-specified.
+         - PATCH: Recovery timeouts (if configured) will apply to the WAN as well. Should the WAN have issues
+           establishing an SSL connection with the user-selected PINGHOST, it will attempt to try the number
+           of times that is user-specified.
          - PATCH: Cut down all VPN/WG connection and reset times by half. Will continue to monitor closely 
            for misbehavior. Done in response to @scootertramp noting the long time it takes to reconnect all
            VPN/WG connections after a WAN DOWN event.
