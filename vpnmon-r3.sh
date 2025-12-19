@@ -2106,126 +2106,127 @@ do
       ;;
 
       16)
-        clear
-        while true
-        do
+        if [ "$monitorwan" -eq 1 ]; then
           clear
-          echo -e "${InvGreen} ${InvDkGray}${CWhite} WAN Recovery Timer Configuration                                                      ${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Please indicate how long the various WAN Recovery timers should last during the${CClear}"
-          echo -e "${InvGreen} ${CClear} different states as the WAN tries to recover, or goes out completely. Depending${CClear}"
-          echo -e "${InvGreen} ${CClear} on what timer values you choose will have impact on how long your WAN takes to${CClear}"
-          echo -e "${InvGreen} ${CClear} recover.${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} ${CYellow}Recovery timer${CClear}: The length of time between tries to determine if your router is${CClear}"
-          echo -e "${InvGreen} ${CClear} able to ping the IP address of your choosing and recover before declaring a WAN${CClear}"
-          echo -e "${InvGreen} ${CClear} DOWN situation. (Default = 10 sec)${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} ${CYellow}WAN DOWN Timer${CClear}: The length of time between tries while the WAN is DOWN, where${CClear}"
-          echo -e "${InvGreen} ${CClear} VPNMON-R3 tries to determine if the WAN is available again. (Default = 60 sec)${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} ${CYellow}Reconnect Timer${CClear}: The length of time from when the WAN is declared back up while${CClear}"
-          echo -e "${InvGreen} ${CClear} giving the router some time to stabilize before it restarts VPN/WG tunnels. You don't${CClear}"
-          echo -e "${InvGreen} ${CClear} want your router reconnecting tunnels while the router is bouncing up and down.${CClear}"
-          echo -e "${InvGreen} ${CClear} (Default = 300 sec).${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Current:${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Recovery Timer  ${CGreen}(1): $recoverytimer sec${CClear}"
-          echo -e "${InvGreen} ${CClear} WAN DOWN Timer  ${CGreen}(2): $wandowntimer sec ${CClear}"
-          echo -e "${InvGreen} ${CClear} Reconnect Timer ${CGreen}(3): $reconnecttimer sec ${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo
-          read -p "Please choose a Timer [1-3] and enter new Timer value in seconds (e=Exit): " newTimerChoice
-          case $newTimerChoice in
-              1) echo ""
-                 read -p "Enter new Recovery Timer value in seconds between [10-999] (default=10, e=Exit): " newRecoveryTimerChoice
-                    if [ -z "$newRecoveryTimerChoice" ] || echo "$newRecoveryTimerChoice" | grep -qE "^(e|E)$"
-                    then
-                        if echo "$recoverytimer" | grep -qE "^([1-9][0-9]{0,2})$" && \
-                           [ "$recoverytimer" -ge 10 ] && [ "$recoverytimer" -le 999 ]
-                        then
-                            printf "\n${CClear}[Exiting]\n"
-                            sleep 1 ; break
-                        else
-                            printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
-                            sleep 3
-                        fi
-                    elif echo "$newRecoveryTimerChoice" | grep -qE "^([1-9][0-9]{0,2})$" && \
-                         [ "$newRecoveryTimerChoice" -ge 10 ] && [ "$newRecoveryTimerChoice" -le 999 ]
-                    then
-                        recoverytimer="$newRecoveryTimerChoice"
-                        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Recovery Timer ($recoverytimer sec) configuration saved" >> $logfile
-                        saveconfig
-                        printf "\n${CClear}[OK]\n"
-                        sleep 1
-                    else
-                        printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
-                        sleep 3
-                    fi
-              ;;
+          while true
+          do
+            clear
+            echo -e "${InvGreen} ${InvDkGray}${CWhite} WAN Recovery Timer Configuration                                                      ${CClear}"
+            echo -e "${InvGreen} ${CClear}"
+            echo -e "${InvGreen} ${CClear} Please indicate how long the various WAN Recovery timers should last during the${CClear}"
+            echo -e "${InvGreen} ${CClear} different states as the WAN tries to recover, or goes out completely. Depending${CClear}"
+            echo -e "${InvGreen} ${CClear} on what timer values you choose will have impact on how long your WAN takes to${CClear}"
+            echo -e "${InvGreen} ${CClear} recover.${CClear}"
+            echo -e "${InvGreen} ${CClear}"
+            echo -e "${InvGreen} ${CClear} ${CYellow}Recovery timer${CClear}: The length of time between tries to determine if your router is${CClear}"
+            echo -e "${InvGreen} ${CClear} able to ping the IP address of your choosing and recover before declaring a WAN${CClear}"
+            echo -e "${InvGreen} ${CClear} DOWN situation. (Default = 10 sec)${CClear}"
+            echo -e "${InvGreen} ${CClear}"
+            echo -e "${InvGreen} ${CClear} ${CYellow}WAN DOWN Timer${CClear}: The length of time between tries while the WAN is DOWN, where${CClear}"
+            echo -e "${InvGreen} ${CClear} VPNMON-R3 tries to determine if the WAN is available again. (Default = 60 sec)${CClear}"
+            echo -e "${InvGreen} ${CClear}"
+            echo -e "${InvGreen} ${CClear} ${CYellow}Reconnect Timer${CClear}: The length of time from when the WAN is declared back up while${CClear}"
+            echo -e "${InvGreen} ${CClear} giving the router some time to stabilize before it restarts VPN/WG tunnels. You don't${CClear}"
+            echo -e "${InvGreen} ${CClear} want your router reconnecting tunnels while the router is bouncing up and down.${CClear}"
+            echo -e "${InvGreen} ${CClear} (Default = 300 sec).${CClear}"
+            echo -e "${InvGreen} ${CClear}"
+            echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+            echo -e "${InvGreen} ${CClear}"
+            echo -e "${InvGreen} ${CClear} Current:${CClear}"
+            echo -e "${InvGreen} ${CClear}"
+            echo -e "${InvGreen} ${CClear} Recovery Timer  ${CGreen}(1): $recoverytimer sec${CClear}"
+            echo -e "${InvGreen} ${CClear} WAN DOWN Timer  ${CGreen}(2): $wandowntimer sec ${CClear}"
+            echo -e "${InvGreen} ${CClear} Reconnect Timer ${CGreen}(3): $reconnecttimer sec ${CClear}"
+            echo -e "${InvGreen} ${CClear}"
+            echo
+            read -p "Please choose a Timer [1-3] and enter new Timer value in seconds (e=Exit): " newTimerChoice
+            case $newTimerChoice in
+                1) echo ""
+                   read -p "Enter new Recovery Timer value in seconds between [10-999] (default=10, e=Exit): " newRecoveryTimerChoice
+                      if [ -z "$newRecoveryTimerChoice" ] || echo "$newRecoveryTimerChoice" | grep -qE "^(e|E)$"
+                      then
+                          if echo "$recoverytimer" | grep -qE "^([1-9][0-9]{0,2})$" && \
+                             [ "$recoverytimer" -ge 10 ] && [ "$recoverytimer" -le 999 ]
+                          then
+                              printf "\n${CClear}[Exiting]\n"
+                              sleep 1 ; break
+                          else
+                              printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
+                              sleep 3
+                          fi
+                      elif echo "$newRecoveryTimerChoice" | grep -qE "^([1-9][0-9]{0,2})$" && \
+                           [ "$newRecoveryTimerChoice" -ge 10 ] && [ "$newRecoveryTimerChoice" -le 999 ]
+                      then
+                          recoverytimer="$newRecoveryTimerChoice"
+                          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Recovery Timer ($recoverytimer sec) configuration saved" >> $logfile
+                          saveconfig
+                          printf "\n${CClear}[OK]\n"
+                          sleep 1
+                      else
+                          printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
+                          sleep 3
+                      fi
+                ;;
 
-              2) echo ""
-                 read -p "Enter new WAN-DOWN Timer value in seconds between [10-999] (default=60, e=Exit): " newWANDOWNTimerChoice
-                    if [ -z "$newWANDOWNTimerChoice" ] || echo "$newWANDOWNTimerChoice" | grep -qE "^(e|E)$"
-                    then
-                        if echo "$wandowntimer" | grep -qE "^([1-9][0-9]{0,2})$" && \
-                           [ "$wandowntimer" -ge 10 ] && [ "$wandowntimer" -le 999 ]
-                        then
-                            printf "\n${CClear}[Exiting]\n"
-                            sleep 1 ; break
-                        else
-                            printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
-                            sleep 3
-                        fi
-                    elif echo "$newWANDOWNTimerChoice" | grep -qE "^([1-9][0-9]{0,2})$" && \
-                         [ "$newWANDOWNTimerChoice" -ge 10 ] && [ "$newWANDOWNTimerChoice" -le 999 ]
-                    then
-                        wandowntimer="$newWANDOWNTimerChoice"
-                        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New WAN-DOWN Timer ($recoverytimer sec) configuration saved" >> $logfile
-                        saveconfig
-                        printf "\n${CClear}[OK]\n"
-                        sleep 1
-                    else
-                        printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
-                        sleep 3
-                    fi
-              ;;
+                2) echo ""
+                   read -p "Enter new WAN-DOWN Timer value in seconds between [10-999] (default=60, e=Exit): " newWANDOWNTimerChoice
+                      if [ -z "$newWANDOWNTimerChoice" ] || echo "$newWANDOWNTimerChoice" | grep -qE "^(e|E)$"
+                      then
+                          if echo "$wandowntimer" | grep -qE "^([1-9][0-9]{0,2})$" && \
+                             [ "$wandowntimer" -ge 10 ] && [ "$wandowntimer" -le 999 ]
+                          then
+                              printf "\n${CClear}[Exiting]\n"
+                              sleep 1 ; break
+                          else
+                              printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
+                              sleep 3
+                          fi
+                      elif echo "$newWANDOWNTimerChoice" | grep -qE "^([1-9][0-9]{0,2})$" && \
+                           [ "$newWANDOWNTimerChoice" -ge 10 ] && [ "$newWANDOWNTimerChoice" -le 999 ]
+                      then
+                          wandowntimer="$newWANDOWNTimerChoice"
+                          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New WAN-DOWN Timer ($recoverytimer sec) configuration saved" >> $logfile
+                          saveconfig
+                          printf "\n${CClear}[OK]\n"
+                          sleep 1
+                      else
+                          printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
+                          sleep 3
+                      fi
+                ;;
 
-              3) echo ""
-                 read -p "Enter new Reconnect Timer value in seconds between [10-999] (default=300, e=Exit): " newReconnectTimerChoice
-                    if [ -z "$newReconnectTimerChoice" ] || echo "$newReconnectTimerChoice" | grep -qE "^(e|E)$"
-                    then
-                        if echo "$reconnecttimer" | grep -qE "^([1-9][0-9]{0,2})$" && \
-                           [ "$reconnecttimer" -ge 10 ] && [ "$reconnecttimer" -le 999 ]
-                        then
-                            printf "\n${CClear}[Exiting]\n"
-                            sleep 1 ; break
-                        else
-                            printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
-                            sleep 3
-                        fi
-                    elif echo "$newReconnectTimerChoice" | grep -qE "^([1-9][0-9]{0,2})$" && \
-                         [ "$newReconnectTimerChoice" -ge 10 ] && [ "$newReconnectTimerChoice" -le 999 ]
-                    then
-                        reconnecttimer="$newReconnectTimerChoice"
-                        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Reconnect Timer ($recoverytimer sec) configuration saved" >> $logfile
-                        saveconfig
-                        printf "\n${CClear}[OK]\n"
-                        sleep 1
-                    else
-                        printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
-                        sleep 3
-                    fi
-              ;;
+                3) echo ""
+                   read -p "Enter new Reconnect Timer value in seconds between [10-999] (default=300, e=Exit): " newReconnectTimerChoice
+                      if [ -z "$newReconnectTimerChoice" ] || echo "$newReconnectTimerChoice" | grep -qE "^(e|E)$"
+                      then
+                          if echo "$reconnecttimer" | grep -qE "^([1-9][0-9]{0,2})$" && \
+                             [ "$reconnecttimer" -ge 10 ] && [ "$reconnecttimer" -le 999 ]
+                          then
+                              printf "\n${CClear}[Exiting]\n"
+                              sleep 1 ; break
+                          else
+                              printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
+                              sleep 3
+                          fi
+                      elif echo "$newReconnectTimerChoice" | grep -qE "^([1-9][0-9]{0,2})$" && \
+                           [ "$newReconnectTimerChoice" -ge 10 ] && [ "$newReconnectTimerChoice" -le 999 ]
+                      then
+                          reconnecttimer="$newReconnectTimerChoice"
+                          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Reconnect Timer ($recoverytimer sec) configuration saved" >> $logfile
+                          saveconfig
+                          printf "\n${CClear}[OK]\n"
+                          sleep 1
+                      else
+                          printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
+                          sleep 3
+                      fi
+                ;;
 
-              [Ee]) printf "\n${CClear}[Exiting]\n"
-                    sleep 1 ; break
-          esac
-
-        done
+                [Ee]) printf "\n${CClear}[Exiting]\n"
+                      sleep 1 ; break
+            esac
+          done
+        fi
       ;;
 
     esac
