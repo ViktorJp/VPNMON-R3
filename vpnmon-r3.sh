@@ -4375,12 +4375,13 @@ trimlogs()
 {
   if [ "$logsize" -gt 0 ]
   then
-      currlogsize="$(wc -l $logfile | awk '{ print $1 }')" # Determine the number of rows in the log
+      currlogsize="$(wc -l "$logfile" | awk '{ print $1 }')" # Determine the number of rows in the log
 
       if [ "$currlogsize" -gt "$logsize" ] # If it's bigger than the max allowed, tail/trim it!
       then
-          echo "$(tail -$logsize $logfile)" > $logfile
-          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Trimmed the log file down to $logsize lines" >> $logfile
+          tail -"$logsize" "$logfile" > "${logfile}.tmp"
+          mv "${logfile}.tmp" "$logfile"
+          echo "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Trimmed the log file down to $logsize lines" >> "$logfile"
       fi
   fi
 }
