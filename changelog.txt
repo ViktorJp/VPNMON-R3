@@ -21,6 +21,11 @@ v1.8.3   - (TBA)
          - PATCH: Removed the functionality that would reset the Rx/Tx indicators to [UNKN] each time you
            went into a different menu item. It will now just show live stats no matter what. For consistent
            and more accurate results, wait your full 60 seconds (or whatever you've set your timer value to).
+         - PATCH: Added Config Menu option #16: "WAN Recovery, Down, Reconnect Timers", giving you more
+           control over the amount of time the various stages of dealing with a WAN DOWN situation, from the
+           amount of time your WAN can try to recover on its own, to how long between checking to see if the
+           WAN has become available again, to the amount of time given to let the router recover after the
+           WAN has come back up again before reconnecting all tunnels.
 
 v1.8.2   - (November 23, 2025)
          - PATCH: Thanks to @JTnola for sharing a "[: bad number" bug he was experiencing. This hard-to-find
