@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.8.3b1 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.8.3b2 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
@@ -14,7 +14,7 @@
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.8.3b1"                                               # Version tracker
+version="1.8.3b2"                                               # Version tracker
 beta=1                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -64,6 +64,9 @@ medutilspdup=25                                                 # Upper Limit of
 bwdisp=1                                                        # Display value for bandwidth/throughput - 1=Average, 2=Total
 PINGHOST="8.8.8.8"                                              # Default Ping host
 WCNT=0                                                          # WAN DOWN counter
+recoverytimer=10                                                # Time between recovery attempts before declaring WAN-DOWN
+wandowntimer=60                                                 # Time between attempts to determine if WAN is available again
+reconnecttimer=300                                              # Time allotted to giving router time to stabilize before reconnecting tunnels
 
 ##-------------------------------------##
 ## Added by Martinski W. [2024-Oct-05] ##
@@ -999,12 +1002,13 @@ do
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(14)${CClear} : Connection Throughput Threshold Selections   : $utilspddisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  |-${CClear}---                                             : $utilspdupdisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(15)${CClear} : Connection Throughput Display Method         : ${CGreen}$throughputmethoddisp"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(16)${CClear} : WAN Recovery, Down, Reconnect Timers         : "
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  | ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( e)${CClear} : Exit${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo ""
-  read -p "Please select? (1-15, e=Exit): " SelectSlot
+  read -p "Please select? (1-16, e=Exit): " SelectSlot
     case $SelectSlot in
       1)
         clear
@@ -2097,6 +2101,129 @@ do
             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Connection Throughput Display Method set to: Average Throughput (in Mbps)" >> $logfile
             saveconfig
         fi
+      ;;
+
+      16)
+        clear
+        while true
+        do
+          clear
+          echo -e "${InvGreen} ${InvDkGray}${CWhite} WAN Recovery Timer Configuration                                                      ${CClear}"
+          echo -e "${InvGreen} ${CClear}"
+          echo -e "${InvGreen} ${CClear} Please indicate how long the various WAN Recovery timers should last during the${CClear}"
+          echo -e "${InvGreen} ${CClear} different states as the WAN tries to recover, or goes out completely. Depending${CClear}"
+          echo -e "${InvGreen} ${CClear} on what timer values you choose will have impact on how long your WAN takes to${CClear}"
+          echo -e "${InvGreen} ${CClear} recover.${CClear}"
+          echo -e "${InvGreen} ${CClear}"
+          echo -e "${InvGreen} ${CClear} ${CYellow}Recovery timer${CClear}: The length of time between tries to determine if your router is${CClear}"
+          echo -e "${InvGreen} ${CClear} able to ping the IP address of your choosing and recover before declaring a WAN${CClear}"
+          echo -e "${InvGreen} ${CClear} DOWN situation. (Default = 10 sec)${CClear}"
+          echo -e "${InvGreen} ${CClear}"
+          echo -e "${InvGreen} ${CClear} ${CYellow}WAN DOWN Timer${CClear}: The length of time between tries while the WAN is DOWN, where${CClear}"
+          echo -e "${InvGreen} ${CClear} VPNMON-R3 tries to determine if the WAN is available again. (Default = 60 sec)${CClear}"
+          echo -e "${InvGreen} ${CClear}"
+          echo -e "${InvGreen} ${CClear} ${CYellow}Reconnect Timer${CClear}: The length of time from when the WAN is declared back up while${CClear}"
+          echo -e "${InvGreen} ${CClear} giving the router some time to stabilize before it restarts VPN/WG tunnels. You don't${CClear}"
+          echo -e "${InvGreen} ${CClear} want your router reconnecting tunnels while the router is bouncing up and down.${CClear}"
+          echo -e "${InvGreen} ${CClear} (Default = 300 sec).${CClear}"
+          echo -e "${InvGreen} ${CClear}"
+          echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+          echo -e "${InvGreen} ${CClear}"
+          echo -e "${InvGreen} ${CClear} Current:${CClear}"
+          echo -e "${InvGreen} ${CClear}"
+          echo -e "${InvGreen} ${CClear} Recovery Timer  ${CGreen}(1): $recoverytimer sec${CClear}"
+          echo -e "${InvGreen} ${CClear} WAN DOWN Timer  ${CGreen}(2): $wandowntimer sec ${CClear}"
+          echo -e "${InvGreen} ${CClear} Reconnect Timer ${CGreen}(3): $reconnecttimer sec ${CClear}"
+          echo -e "${InvGreen} ${CClear}"
+          echo
+          read -p "Please choose a Timer [1-3] and enter new Timer value in seconds (e=Exit): " newTimerChoice
+          case $newTimerChoice in
+              1) echo ""
+                 read -p "Enter new Recovery Timer value in seconds between [10-999] (default=10, e=Exit): " newRecoveryTimerChoice
+                    if [ -z "$newRecoveryTimerChoice" ] || echo "$newRecoveryTimerChoice" | grep -qE "^(e|E)$"
+                    then
+                        if echo "$recoverytimer" | grep -qE "^([1-9][0-9]{0,2})$" && \
+                           [ "$recoverytimer" -ge 10 ] && [ "$recoverytimer" -le 999 ]
+                        then
+                            printf "\n${CClear}[Exiting]\n"
+                            sleep 1 ; break
+                        else
+                            printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
+                            sleep 3
+                        fi
+                    elif echo "$newRecoveryTimerChoice" | grep -qE "^([1-9][0-9]{0,2})$" && \
+                         [ "$newRecoveryTimerChoice" -ge 10 ] && [ "$newRecoveryTimerChoice" -le 999 ]
+                    then
+                        recoverytimer="$newRecoveryTimerChoice"
+                        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Recovery Timer ($recoverytimer sec) configuration saved" >> $logfile
+                        saveconfig
+                        printf "\n${CClear}[OK]\n"
+                        sleep 1
+                    else
+                        printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
+                        sleep 3
+                    fi
+              ;;
+
+              2) echo ""
+                 read -p "Enter new WAN-DOWN Timer value in seconds between [10-999] (default=60, e=Exit): " newWANDOWNTimerChoice
+                    if [ -z "$newWANDOWNTimerChoice" ] || echo "$newWANDOWNTimerChoice" | grep -qE "^(e|E)$"
+                    then
+                        if echo "$wandowntimer" | grep -qE "^([1-9][0-9]{0,2})$" && \
+                           [ "$wandowntimer" -ge 10 ] && [ "$wandowntimer" -le 999 ]
+                        then
+                            printf "\n${CClear}[Exiting]\n"
+                            sleep 1 ; break
+                        else
+                            printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
+                            sleep 3
+                        fi
+                    elif echo "$newWANDOWNTimerChoice" | grep -qE "^([1-9][0-9]{0,2})$" && \
+                         [ "$newWANDOWNTimerChoice" -ge 10 ] && [ "$newWANDOWNTimerChoice" -le 999 ]
+                    then
+                        wandowntimer="$newWANDOWNTimerChoice"
+                        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New WAN-DOWN Timer ($recoverytimer sec) configuration saved" >> $logfile
+                        saveconfig
+                        printf "\n${CClear}[OK]\n"
+                        sleep 1
+                    else
+                        printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
+                        sleep 3
+                    fi
+              ;;
+
+              3) echo ""
+                 read -p "Enter new Reconnect Timer value in seconds between [10-999] (default=300, e=Exit): " newReconnectTimerChoice
+                    if [ -z "$newReconnectTimerChoice" ] || echo "$newReconnectTimerChoice" | grep -qE "^(e|E)$"
+                    then
+                        if echo "$reconnecttimer" | grep -qE "^([1-9][0-9]{0,2})$" && \
+                           [ "$reconnecttimer" -ge 10 ] && [ "$reconnecttimer" -le 999 ]
+                        then
+                            printf "\n${CClear}[Exiting]\n"
+                            sleep 1 ; break
+                        else
+                            printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
+                            sleep 3
+                        fi
+                    elif echo "$newReconnectTimerChoice" | grep -qE "^([1-9][0-9]{0,2})$" && \
+                         [ "$newReconnectTimerChoice" -ge 10 ] && [ "$newReconnectTimerChoice" -le 999 ]
+                    then
+                        reconnecttimer="$newReconnectTimerChoice"
+                        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Reconnect Timer ($recoverytimer sec) configuration saved" >> $logfile
+                        saveconfig
+                        printf "\n${CClear}[OK]\n"
+                        sleep 1
+                    else
+                        printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
+                        sleep 3
+                    fi
+              ;;
+
+              [Ee]) printf "\n${CClear}[Exiting]\n"
+                    sleep 1 ; break
+          esac
+
+        done
       ;;
 
     esac
@@ -4298,6 +4425,9 @@ saveconfig()
      echo 'lowutilspdup='$lowutilspdup
      echo 'medutilspdup='$medutilspdup
      echo 'bwdisp='$bwdisp
+     echo 'recoverytimer='$recoverytimer
+     echo 'wandowntimer='$wandowntimer
+     echo 'reconnecttimer='$reconnecttimer
    } > "$config"
 
    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New vpnmon-r3.cfg File Saved" >> $logfile
@@ -5987,15 +6117,15 @@ checkwan()
 
     if [ "$wandownbreakertrip" = "1" ]
     then
-    	
-    	WCNT="$((WCNT+1))"
+
+      WCNT="$((WCNT+1))"
       printf "\33[2K\r"
-      printf "\r${InvRed} ${CClear} WAN Connectivity Failure Detected [Attempt $WCNT]"
+      printf "\r${InvRed} ${CClear} WAN Connectivity Failure Detected [Attempt $WCNT | $recoverytimer sec/attempt]"
       echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WAN attempt $WCNT of $recover to allow connection to recover" >> $logfile
-      sleep 10 # Giving the WAN a chance to recover a certain number of times
+      sleep $recoverytimer # Giving the WAN a chance to recover a certain number of times - default: recoverytimer=10
 
       if [ "$WCNT" -eq "$recover" ] # But if it fails, report back that we have an issue requiring a WAN DOWN event
-      then 
+      then
         printf "\33[2K\r"
         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WAN failed to respond after $recover attempts" >> $logfile
 
@@ -6063,10 +6193,10 @@ checkwan()
               echo -e "${InvGreen} ${CClear} check with your ISP, or perform general internet connectivity troubleshooting${CClear}"
               echo -e "${InvGreen} ${CClear} in order to re-establish a stable VPN connection.${CClear}"
               echo -e "${InvGreen} ${CClear}"
-              echo -e "${InvGreen} ${CClear} [Retrying to resume normal operations roughly every 60 seconds]${CClear}"
+              echo -e "${InvGreen} ${CClear} [Retrying to resume normal operations roughly every $wandowntimer seconds]${CClear}"
               echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
               echo ""
-              spinner 60
+              spinner $wandowntimer # Time between attempts to determine if WAN becomes available again - Default: wandowntimer=60
               wandownbreakertrip=1
           else
               wandownbreakertrip=2
@@ -6086,13 +6216,13 @@ checkwan()
           clear
           echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 is currently recovering from a WAN Down Situation                           ${CClear}"
           echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Router has detected a WAN Link/Modem and waiting 300 seconds for general network${CClear}"
+          echo -e "${InvGreen} ${CClear} Router has detected a WAN Link/Modem and waiting $reconnecttimer seconds for general network${CClear}"
           echo -e "${InvGreen} ${CClear} connectivity to stabilize before re-establishing VPN/WG connectivity.${CClear}"
           echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} [Retrying to resume normal operations in roughly 300 seconds...Please stand by!]${CClear}"
+          echo -e "${InvGreen} ${CClear} [Retrying to resume normal operations in roughly $reconnecttimer seconds...Please stand by!]${CClear}"
           echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
           echo ""
-          spinner 300
+          spinner $reconnecttimer  # Time allotted to give router chance to recover before reconnecting tunnels - Default: reconnecttimer=300
           #sendmessage 1 "Recovering from WAN Down" - this doesn't work when the internet is down
           exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
       fi
@@ -6331,7 +6461,7 @@ wancheck()
         then
           WAN1TX2="${CRed}[$WAN1TPTX]${CClear}"
         fi
-        
+
         if [ "$WCNT" -ge 1 ]; then
           wan1status="${CRed}[$WCNT]${CClear}"
           wan1health="${CRed}[FAIL]${CClear}"
@@ -6339,7 +6469,7 @@ wancheck()
           wan1status="${CGreen}[X]${CClear}"
           wan1health="${CGreen}[ OK ]${CClear}"
         fi
-        
+
         if [ "$WAN1PING" = "[FAILOVER]" ]
         then
            echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN1${CClear} | $wan1status | "
