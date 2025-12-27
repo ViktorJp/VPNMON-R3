@@ -7332,8 +7332,9 @@ then
     clear #last switch before the main program starts
     firstrun=1
 
-    # Clean up lockfile
+    # Clean up lockfile and other files
     rm -f $lockfile >/dev/null 2>&1
+    rm -f /jffs/addons/vpnmon-r3.d/vr3start.txt >/dev/null 2>&1
 
     if [ ! -f "$config" ] && [ ! -f "/opt/bin/timeout" ] && [ ! -f "/opt/sbin/screen" ] && [ ! -f "/opt/bin/jq" ]
     then
