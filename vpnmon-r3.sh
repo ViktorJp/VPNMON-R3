@@ -1,20 +1,20 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.8.3b2 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.8.3b3 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2025-Dec-5
+# Last Modified: 2025-Dec-27
 ##########################################################################################
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.8.3b2"                                               # Version tracker
+version="1.8.3b3"                                               # Version tracker
 beta=1                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -67,6 +67,7 @@ WCNT=0                                                          # WAN DOWN count
 recoverytimer=10                                                # Time between recovery attempts before declaring WAN-DOWN
 wandowntimer=60                                                 # Time between attempts to determine if WAN is available again
 reconnecttimer=300                                              # Time allotted to giving router time to stabilize before reconnecting tunnels
+loopexit=0                                                      # Switch to determine if the timerloop was exited early
 
 ##-------------------------------------##
 ## Added by Martinski W. [2024-Oct-05] ##
@@ -324,6 +325,7 @@ progressbaroverride()
              *) ;; ##IGNORE INVALID key presses ##
       esac
       bypasswancheck=1
+      loopexit=1
   fi
 }
 
@@ -6634,6 +6636,14 @@ get_wan_setting1()
 getifacestats()
 {
 
+  if [ $loopexit -eq 1 ]
+  then
+    loopexit=0
+    return
+  else
+    echo $(date +%s) > "/jffs/addons/vpnmon-r3.d/vr3start.txt"
+  fi
+
   if [ ! -z "$WAN0IFNAME" ]
   then
     oldwan0rxbytes="$($timeoutcmd$timeoutsec cat /sys/class/net/$WAN0IFNAME/statistics/rx_bytes)"
@@ -6763,12 +6773,32 @@ calcifacestats()
     return
   fi
 
+  if [ $loopexit -eq 1 ]
+  then
+    return
+  fi
+
+  if [ -f "/jffs/addons/vpnmon-r3.d/vr3start.txt" ]
+  then
+    timerstart=$(cat "/jffs/addons/vpnmon-r3.d/vr3start.txt")
+    timernow=$(date +%s)
+    timerdiff=$((timernow-timerstart))
+    if [ $timerdiff -gt $timerloop ]
+    then
+      newtimer=$timerdiff
+    else
+      newtimer=$timerloop
+    fi
+  else
+    newtimer=$timerloop
+  fi
+
   if [ ! -z "$WAN0IFNAME" ]
   then
     newwan0rxbytes="$($timeoutcmd$timeoutsec cat /sys/class/net/$WAN0IFNAME/statistics/rx_bytes)"
     newwan0txbytes="$($timeoutcmd$timeoutsec cat /sys/class/net/$WAN0IFNAME/statistics/tx_bytes)"
-    diffwan0rxbytes=$(awk -v new=$newwan0rxbytes -v old=$oldwan0rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffwan0txbytes=$(awk -v new=$newwan0txbytes -v old=$oldwan0txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwan0rxbytes=$(awk -v new=$newwan0rxbytes -v old=$oldwan0rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwan0txbytes=$(awk -v new=$newwan0txbytes -v old=$oldwan0txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruwan0rxbytes=$(awk -v new=$newwan0rxbytes -v old=$oldwan0rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruwan0txbytes=$(awk -v new=$newwan0txbytes -v old=$oldwan0txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   fi
@@ -6777,8 +6807,8 @@ calcifacestats()
   then
     newwan1rxbytes="$($timeoutcmd$timeoutsec cat /sys/class/net/$WAN1IFNAME/statistics/rx_bytes)"
     newwan1txbytes="$($timeoutcmd$timeoutsec cat /sys/class/net/$WAN1IFNAME/statistics/tx_bytes)"
-    diffwan1rxbytes=$(awk -v new=$newwan1rxbytes -v old=$oldwan1rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffwan1txbytes=$(awk -v new=$newwan1txbytes -v old=$oldwan1txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwan1rxbytes=$(awk -v new=$newwan1rxbytes -v old=$oldwan1rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwan1txbytes=$(awk -v new=$newwan1txbytes -v old=$oldwan1txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruwan1rxbytes=$(awk -v new=$newwan1rxbytes -v old=$oldwan1rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruwan1txbytes=$(awk -v new=$newwan1txbytes -v old=$oldwan1txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   fi
@@ -6807,8 +6837,8 @@ calcifacestats()
     newvpn1txbytes="$(echo $newvpn1txrxbytes | cut -d' ' -f2)"
     if [ -z $newvpn1rxbytes ]; then newvpn1rxbytes=0; fi
     if [ -z $newvpn1txbytes ]; then newvpn1txbytes=0; fi
-    diffvpn1rxbytes=$(awk -v new=$newvpn1rxbytes -v old=$oldvpn1rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffvpn1txbytes=$(awk -v new=$newvpn1txbytes -v old=$oldvpn1txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffvpn1rxbytes=$(awk -v new=$newvpn1rxbytes -v old=$oldvpn1rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffvpn1txbytes=$(awk -v new=$newvpn1txbytes -v old=$oldvpn1txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruvpn1rxbytes=$(awk -v new=$newvpn1rxbytes -v old=$oldvpn1rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruvpn1txbytes=$(awk -v new=$newvpn1txbytes -v old=$oldvpn1txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
@@ -6824,8 +6854,8 @@ calcifacestats()
     newvpn2txbytes="$(echo $newvpn2txrxbytes | cut -d' ' -f2)"
     if [ -z $newvpn2rxbytes ]; then newvpn2rxbytes=0; fi
     if [ -z $newvpn2txbytes ]; then newvpn2txbytes=0; fi
-    diffvpn2rxbytes=$(awk -v new=$newvpn2rxbytes -v old=$oldvpn2rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffvpn2txbytes=$(awk -v new=$newvpn2txbytes -v old=$oldvpn2txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffvpn2rxbytes=$(awk -v new=$newvpn2rxbytes -v old=$oldvpn2rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffvpn2txbytes=$(awk -v new=$newvpn2txbytes -v old=$oldvpn2txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruvpn2rxbytes=$(awk -v new=$newvpn2rxbytes -v old=$oldvpn2rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruvpn2txbytes=$(awk -v new=$newvpn2txbytes -v old=$oldvpn2txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
@@ -6841,8 +6871,8 @@ calcifacestats()
     newvpn3txbytes="$(echo $newvpn3txrxbytes | cut -d' ' -f2)"
     if [ -z $newvpn3rxbytes ]; then newvpn3rxbytes=0; fi
     if [ -z $newvpn3txbytes ]; then newvpn3txbytes=0; fi
-    diffvpn3rxbytes=$(awk -v new=$newvpn3rxbytes -v old=$oldvpn3rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffvpn3txbytes=$(awk -v new=$newvpn3txbytes -v old=$oldvpn3txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffvpn3rxbytes=$(awk -v new=$newvpn3rxbytes -v old=$oldvpn3rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffvpn3txbytes=$(awk -v new=$newvpn3txbytes -v old=$oldvpn3txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruvpn3rxbytes=$(awk -v new=$newvpn3rxbytes -v old=$oldvpn3rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruvpn3txbytes=$(awk -v new=$newvpn3txbytes -v old=$oldvpn3txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
@@ -6858,8 +6888,8 @@ calcifacestats()
     newvpn4txbytes="$(echo $newvpn4txrxbytes | cut -d' ' -f2)"
     if [ -z $newvpn4rxbytes ]; then newvpn4rxbytes=0; fi
     if [ -z $newvpn4txbytes ]; then newvpn4txbytes=0; fi
-    diffvpn4rxbytes=$(awk -v new=$newvpn4rxbytes -v old=$oldvpn4rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffvpn4txbytes=$(awk -v new=$newvpn4txbytes -v old=$oldvpn4txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffvpn4rxbytes=$(awk -v new=$newvpn4rxbytes -v old=$oldvpn4rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffvpn4txbytes=$(awk -v new=$newvpn4txbytes -v old=$oldvpn4txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruvpn4rxbytes=$(awk -v new=$newvpn4rxbytes -v old=$oldvpn4rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruvpn4txbytes=$(awk -v new=$newvpn4txbytes -v old=$oldvpn4txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
@@ -6875,8 +6905,8 @@ calcifacestats()
     newvpn5txbytes="$(echo $newvpn5txrxbytes | cut -d' ' -f2)"
     if [ -z $newvpn5rxbytes ]; then newvpn5rxbytes=0; fi
     if [ -z $newvpn5txbytes ]; then newvpn5txbytes=0; fi
-    diffvpn5rxbytes=$(awk -v new=$newvpn5rxbytes -v old=$oldvpn5rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffvpn5txbytes=$(awk -v new=$newvpn5txbytes -v old=$oldvpn5txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffvpn5rxbytes=$(awk -v new=$newvpn5rxbytes -v old=$oldvpn5rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffvpn5txbytes=$(awk -v new=$newvpn5txbytes -v old=$oldvpn5txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruvpn5rxbytes=$(awk -v new=$newvpn5rxbytes -v old=$oldvpn5rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruvpn5txbytes=$(awk -v new=$newvpn5txbytes -v old=$oldvpn5txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
@@ -6892,8 +6922,8 @@ calcifacestats()
     newwg1txbytes="$(echo $newwg1txrxbytes | cut -d' ' -f3)"
     if [ -z $newwg1rxbytes ] || [ $newwg1rxbytes -le 0 ]; then newwg1rxbytes=0; fi
     if [ -z $newwg1txbytes ] || [ $newwg1txbytes -le 0 ]; then newwg1txbytes=0; fi
-    diffwg1rxbytes=$(awk -v new=$newwg1rxbytes -v old=$oldwg1rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffwg1txbytes=$(awk -v new=$newwg1txbytes -v old=$oldwg1txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwg1rxbytes=$(awk -v new=$newwg1rxbytes -v old=$oldwg1rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwg1txbytes=$(awk -v new=$newwg1txbytes -v old=$oldwg1txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruwg1rxbytes=$(awk -v new=$newwg1rxbytes -v old=$oldwg1rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruwg1txbytes=$(awk -v new=$newwg1txbytes -v old=$oldwg1txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
@@ -6909,8 +6939,8 @@ calcifacestats()
     newwg2txbytes="$(echo $newwg2txrxbytes | cut -d' ' -f3)"
     if [ -z $newwg2rxbytes ] || [ $newwg2rxbytes -le 0 ]; then newwg2rxbytes=0; fi
     if [ -z $newwg2txbytes ] || [ $newwg2txbytes -le 0 ]; then newwg2txbytes=0; fi
-    diffwg2rxbytes=$(awk -v new=$newwg2rxbytes -v old=$oldwg2rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffwg2txbytes=$(awk -v new=$newwg2txbytes -v old=$oldwg2txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwg2rxbytes=$(awk -v new=$newwg2rxbytes -v old=$oldwg2rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwg2txbytes=$(awk -v new=$newwg2txbytes -v old=$oldwg2txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruwg2rxbytes=$(awk -v new=$newwg2rxbytes -v old=$oldwg2rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruwg2txbytes=$(awk -v new=$newwg2txbytes -v old=$oldwg2txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
@@ -6926,8 +6956,8 @@ calcifacestats()
     newwg3txbytes="$(echo $newwg3txrxbytes | cut -d' ' -f3)"
     if [ -z $newwg3rxbytes ] || [ $newwg3rxbytes -le 0 ]; then newwg3rxbytes=0; fi
     if [ -z $newwg3txbytes ] || [ $newwg3txbytes -le 0 ]; then newwg3txbytes=0; fi
-    diffwg3rxbytes=$(awk -v new=$newwg3rxbytes -v old=$oldwg3rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffwg3txbytes=$(awk -v new=$newwg3txbytes -v old=$oldwg3txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwg3rxbytes=$(awk -v new=$newwg3rxbytes -v old=$oldwg3rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwg3txbytes=$(awk -v new=$newwg3txbytes -v old=$oldwg3txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruwg3rxbytes=$(awk -v new=$newwg3rxbytes -v old=$oldwg3rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruwg3txbytes=$(awk -v new=$newwg3txbytes -v old=$oldwg3txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
@@ -6943,8 +6973,8 @@ calcifacestats()
     newwg4txbytes="$(echo $newwg4txrxbytes | cut -d' ' -f3)"
     if [ -z $newwg4rxbytes ] || [ $newwg4rxbytes -le 0 ]; then newwg4rxbytes=0; fi
     if [ -z $newwg4txbytes ] || [ $newwg4txbytes -le 0 ]; then newwg4txbytes=0; fi
-    diffwg4rxbytes=$(awk -v new=$newwg4rxbytes -v old=$oldwg4rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffwg4txbytes=$(awk -v new=$newwg4txbytes -v old=$oldwg4txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwg4rxbytes=$(awk -v new=$newwg4rxbytes -v old=$oldwg4rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwg4txbytes=$(awk -v new=$newwg4txbytes -v old=$oldwg4txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruwg4rxbytes=$(awk -v new=$newwg4rxbytes -v old=$oldwg4rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruwg4txbytes=$(awk -v new=$newwg4txbytes -v old=$oldwg4txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
@@ -6960,8 +6990,8 @@ calcifacestats()
     newwg5txbytes="$(echo $newwg5txrxbytes | cut -d' ' -f3)"
     if [ -z $newwg5rxbytes ] || [ $newwg5rxbytes -le 0 ]; then newwg5rxbytes=0; fi
     if [ -z $newwg5txbytes ] || [ $newwg5txbytes -le 0 ]; then newwg5txbytes=0; fi
-    diffwg5rxbytes=$(awk -v new=$newwg5rxbytes -v old=$oldwg5rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffwg5txbytes=$(awk -v new=$newwg5txbytes -v old=$oldwg5txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwg5rxbytes=$(awk -v new=$newwg5rxbytes -v old=$oldwg5rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwg5txbytes=$(awk -v new=$newwg5txbytes -v old=$oldwg5txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruwg5rxbytes=$(awk -v new=$newwg5rxbytes -v old=$oldwg5rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruwg5txbytes=$(awk -v new=$newwg5txbytes -v old=$oldwg5txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
