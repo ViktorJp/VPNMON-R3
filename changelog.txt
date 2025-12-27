@@ -1,4 +1,4 @@
-v1.8.3b2 - (TBA)
+v1.8.3b3 - (TBA)
          - PATCH: The Recovery Timeout should be defaulting to 1x, but it was inadvertently set to 3x. Thank
            you to @Tarek Yag for reporting this. Fixed!
          - PATCH: Changed the wording for the custom PING host to "Custom PING host for connectivity checks"
@@ -26,6 +26,8 @@ v1.8.3b2 - (TBA)
            amount of time your WAN can try to recover on its own, to how long between checking to see if the
            WAN has become available again, to the amount of time given to let the router recover after the
            WAN has come back up again before reconnecting all tunnels.
+         - PATCH: Improved the tracking of the timer, plus any time spent in other menus outside of the
+           regular timer, to provide a more accurate view of the Tx/Rx stats.
 
 v1.8.2   - (November 23, 2025)
          - PATCH: Thanks to @JTnola for sharing a "[: bad number" bug he was experiencing. This hard-to-find
