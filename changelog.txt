@@ -1,4 +1,4 @@
-v1.8.3b3 - (TBA)
+v1.8.3b4 - (TBA)
          - PATCH: The Recovery Timeout should be defaulting to 1x, but it was inadvertently set to 3x. Thank
            you to @Tarek Yag for reporting this. Fixed!
          - PATCH: Changed the wording for the custom PING host to "Custom PING host for connectivity checks"
