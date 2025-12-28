@@ -28,6 +28,11 @@ v1.8.3b3 - (TBA)
            WAN has come back up again before reconnecting all tunnels.
          - PATCH: Improved the tracking of the timer, plus any time spent in other menus outside of the
            regular timer, to provide a more accurate view of the Tx/Rx stats.
+         - PATCH: Based on some feedback that @ComputerSteve was experiencing, I've optimized both the VPN
+           and WG connectivity tests to fail the curl test if the ping test fails. It seems the ping test
+           will fail pretty quickly, while the curl test could hang in there for quite some time before
+           indicating a fail. This should help resolve some of the sluggishness you would see if any of
+           your tunnels are misbehaving.
 
 v1.8.2   - (November 23, 2025)
          - PATCH: Thanks to @JTnola for sharing a "[: bad number" bug he was experiencing. This hard-to-find
