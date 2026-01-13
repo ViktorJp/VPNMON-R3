@@ -1,20 +1,20 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.8.3b4 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.8.3b6 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2025-Dec-28
+# Last Modified: 2026-Jan-12
 ##########################################################################################
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.8.3b4"                                               # Version tracker
+version="1.8.3b6"                                               # Version tracker
 beta=1                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -62,7 +62,8 @@ medutilspd=250                                                  # Upper Limit of
 lowutilspdup=15                                                 # Upper limit of Low / Lower Limit of Med TX Utilization Range
 medutilspdup=25                                                 # Upper Limit of Med / Lower Limit of High TX Utilization Range
 bwdisp=1                                                        # Display value for bandwidth/throughput - 1=Average, 2=Total
-PINGHOST="8.8.8.8"                                              # Default Ping host
+PINGHOST="8.8.8.8"                                              # Default Primary PING Host
+PINGHOST2="1.1.1.1"                                             # Default Secondary PING Host
 WCNT=0                                                          # WAN DOWN counter
 recoverytimer=10                                                # Time between recovery attempts before declaring WAN-DOWN
 wandowntimer=60                                                 # Time between attempts to determine if WAN is available again
@@ -987,7 +988,7 @@ do
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 1)${CClear} : Number of VPN/WG Client Slots available      : ${CGreen}$availableslotsdisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 2)${CClear} : Custom PING host for connectivity checks     : ${CGreen}$PINGHOST"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 2)${CClear} : Custom PING hosts for connectivity checks    : ${CGreen}$PINGHOST | $PINGHOST2"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 3)${CClear} : Custom Event Log size (rows)                 : ${CGreen}$logsize"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 4)${CClear} : Unbound DNS Lookups over VPN Integration     : ${CGreen}$unboundclientexp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 5)${CClear} : Unbound DNS Lookups over WG Integration      : ${CGreen}$unboundwgclientexp"
@@ -1069,29 +1070,45 @@ do
 
       2)
         clear
-        echo -e "${InvGreen} ${InvDkGray}${CWhite} Custom PING Host (to determine WAN/VPN/WG health)                                     ${CClear}"
+        echo -e "${InvGreen} ${InvDkGray}${CWhite} Custom PING Hosts (to determine WAN/VPN/WG health)                                    ${CClear}"
         echo -e "${InvGreen} ${CClear}"
-        echo -e "${InvGreen} ${CClear} Please indicate which host you want to PING in order to determine connectivity health.${CClear}"
-        echo -e "${InvGreen} ${CClear} By default, the script will ping 8.8.8.8 (Google DNS) as it's reliable, fairly${CClear}"
-        echo -e "${InvGreen} ${CClear} standard, and typically available globally. You can change this depending on your"
-        echo -e "${InvGreen} ${CClear} local access and connectivity situation."
+        echo -e "${InvGreen} ${CClear} Please indicate which hosts you want to PING in order to determine connectivity${CClear}"
+        echo -e "${InvGreen} ${CClear} health. By default, the script will ping 8.8.8.8 (Google DNS) and 1.1.1.1 (CloudFlare${CClear}"
+        echo -e "${InvGreen} ${CClear} DNS) as they are reliable, fairly standard, and typically available globally. You can${CClear}"
+        echo -e "${InvGreen} ${CClear} change these depending on your local access and connectivity situation. It is${CClear}"
+        echo -e "${InvGreen} ${CClear} advisable to choose 2 different DNS provider IP addresses for redundancy purposes. If${CClear}"
+        echo -e "${InvGreen} ${CClear} one fails to PING, the other will redundantly keep your connection from being reset.${CClear}"
         echo -e "${InvGreen} ${CClear}"
-        echo -e "${InvGreen} ${CClear} (Default = 8.8.8.8)${CClear}"
+        echo -e "${InvGreen} ${CClear} (Default = 8.8.8.8 | 1.1.1.1)${CClear}"
         echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
         echo
-        echo -e "${CClear}Current: ${CGreen}${PINGHOST}${CClear}" ; echo
-        read -p "Please enter valid IPv4 address? (e=Exit): " newPingHost
+        echo -e "${CClear}Current Pinghost 1: ${CGreen}${PINGHOST}${CClear}"
+        echo -e "${CClear}Current Pinghost 2: ${CGreen}${PINGHOST2}${CClear}" ; echo
+        read -p "Please enter valid IPv4 address for Pinghost 1? (e=Exit): " newPingHost
         if [ "$newPingHost" = "e" ]
         then
-            echo -e "\n[Exiting]"; sleep 2
+            echo -e "\n[Exiting]"; sleep 2; continue
         elif [ -n "$newPingHost" ] && echo "$newPingHost" | grep -qE "^${IPv4addrs_RegEx}$"
         then
             PINGHOST="$newPingHost"
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New custom PING host entered: $PINGHOST" >> $logfile
-            saveconfig
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New custom PING host 1 entered: $PINGHOST" >> $logfile
         else
             PINGHOST="8.8.8.8"
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Default PING host entered: $PINGHOST" >> $logfile
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Default PING host 1 entered: $PINGHOST" >> $logfile
+        fi
+        echo ""
+        read -p "Please enter valid IPv4 address for Pinghost 2? (e=Exit): " newPingHost2
+        if [ "$newPingHost2" = "e" ]
+        then
+            echo -e "\n[Exiting]"; sleep 2
+        elif [ -n "$newPingHost2" ] && echo "$newPingHost2" | grep -qE "^${IPv4addrs_RegEx}$"
+        then
+            PINGHOST2="$newPingHost2"
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New custom PING host 2 entered: $PINGHOST2" >> $logfile
+            saveconfig
+        else
+            PINGHOST2="1.1.1.1"
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Default PING host 2 entered: $PINGHOST2" >> $logfile
             saveconfig
         fi
       ;;
@@ -2967,7 +2984,7 @@ do
       s1)
          echo ""
          echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
-         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr1.txt "VPNMON-R3 VPN Slot 1 Import" >/dev/null 2>&1
+         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr1.txt "VPNMON-R3 VPN Slot 1 Manually Whitelisted on $date" >/dev/null 2>&1
          echo ""
          echo -e "${CGreen}[Contents of VPN Slot 1 Imported]${CClear}"
          echo ""
@@ -3048,7 +3065,7 @@ do
       s2)
          echo ""
          echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
-         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr2.txt "VPNMON-R3 VPN Slot 2 Import" >/dev/null 2>&1
+         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr2.txt "VPNMON-R3 VPN Slot 2 Manually Whitelisted on $date" >/dev/null 2>&1
          echo ""
          echo -e "${CGreen}[Contents of VPN Slot 2 Imported]${CClear}"
          echo ""
@@ -3207,7 +3224,7 @@ do
       s1)
          echo ""
          echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
-         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr1.txt "VPNMON-R3 VPN Slot 1 Import" >/dev/null 2>&1
+         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr1.txt "VPNMON-R3 VPN Slot 1 Manually Whitelisted on $date" >/dev/null 2>&1
          echo ""
          echo -e "${CGreen}[Contents of VPN Slot 1 Imported]${CClear}"
          echo ""
@@ -3288,7 +3305,7 @@ do
       s2)
          echo ""
          echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
-         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr2.txt "VPNMON-R3 VPN Slot 2 Import" >/dev/null 2>&1
+         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr2.txt "VPNMON-R3 VPN Slot 2 Manually Whitelisted on $date" >/dev/null 2>&1
          echo ""
          echo -e "${CGreen}[Contents of VPN Slot 2 Imported]${CClear}"
          echo ""
@@ -3369,7 +3386,7 @@ do
       s3)
          echo ""
          echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
-         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr3.txt "VPNMON-R3 VPN Slot 3 Import" >/dev/null 2>&1
+         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr3.txt "VPNMON-R3 VPN Slot 3 Manually Whitelisted on $date" >/dev/null 2>&1
          echo ""
          echo -e "${CGreen}[Contents of VPN Slot 3 Imported]${CClear}"
          echo ""
@@ -3450,7 +3467,7 @@ do
       s4)
          echo ""
          echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
-         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr4.txt "VPNMON-R3 VPN Slot 4 Import" >/dev/null 2>&1
+         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr4.txt "VPNMON-R3 VPN Slot 4 Manually Whitelisted on $date" >/dev/null 2>&1
          echo ""
          echo -e "${CGreen}[Contents of VPN Slot 4 Imported]${CClear}"
          echo ""
@@ -3531,7 +3548,7 @@ do
       s5)
          echo ""
          echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
-         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr5.txt "VPNMON-R3 VPN Slot 5 Import" >/dev/null 2>&1
+         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr5.txt "VPNMON-R3 VPN Slot 5 Manually Whitelisted on $date" >/dev/null 2>&1
          echo ""
          echo -e "${CGreen}[Contents of VPN Slot 5 Imported]${CClear}"
          echo ""
@@ -3613,7 +3630,7 @@ do
        echo ""
        echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
        awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr1.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 1 Import" >/dev/null 2>&1
+       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 1 Manually Whitelisted on $date" >/dev/null 2>&1
        rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
        echo ""
        echo -e "${CGreen}[Contents of WG Slot 1 Imported]${CClear}"
@@ -3696,7 +3713,7 @@ do
        echo ""
        echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
        awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr2.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 2 Import" >/dev/null 2>&1
+       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 2 Manually Whitelisted on $date" >/dev/null 2>&1
        rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
        echo ""
        echo -e "${CGreen}[Contents of WG Slot 2 Imported]${CClear}"
@@ -3779,7 +3796,7 @@ do
        echo ""
        echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
        awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr3.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 3 Import" >/dev/null 2>&1
+       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 3 Manually Whitelisted on $date" >/dev/null 2>&1
        rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
        echo ""
        echo -e "${CGreen}[Contents of WG Slot 3 Imported]${CClear}"
@@ -3862,7 +3879,7 @@ do
        echo ""
        echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
        awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr4.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 4 Import" >/dev/null 2>&1
+       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 4 Manually Whitelisted on $date" >/dev/null 2>&1
        rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
        echo ""
        echo -e "${CGreen}[Contents of WG Slot 4 Imported]${CClear}"
@@ -3945,7 +3962,7 @@ do
        echo ""
        echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
        awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr5.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 5 Import" >/dev/null 2>&1
+       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 5 Manually Whitelisted on $date" >/dev/null 2>&1
        rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
        echo ""
        echo -e "${CGreen}[Contents of WG Slot 5 Imported]${CClear}"
@@ -4395,6 +4412,7 @@ saveconfig()
 {
    { echo 'availableslots="'"$availableslots"'"'
      echo 'PINGHOST="'"$PINGHOST"'"'
+     echo 'PINGHOST2="'"$PINGHOST2"'"'
      echo 'logsize='$logsize
      echo 'timerloop='$timerloop
      echo 'recover='$recover
@@ -5345,12 +5363,12 @@ skynetwhitelist()
       slotnum=$(echo "$1" | tr -cd '0-9')
       printf "${CGreen}\r[Whitelisting WG Server Slot $slotnum List in the Skynet Firewall]${CClear}\n"
       awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr${slotnum}.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-      firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 - WG Server Slot $slotnum Whitelist" >/dev/null 2>&1
+      firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 - WG Server Slot $slotnum Whitelisted on $date" >/dev/null 2>&1
       rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
       echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WG Server Slot $slotnum List has been whitelisted in Skynet" >> $logfile
     else
       printf "${CGreen}\r[Whitelisting VPN Server Slot $1 List in the Skynet Firewall]${CClear}\n"
-      firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr$1.txt "VPNMON-R3 - VPN Server Slot $1 Whitelist" >/dev/null 2>&1
+      firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr$1.txt "VPNMON-R3 - VPN Server Slot $1 Whitelisted on $date" >/dev/null 2>&1
       echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN Server Slot $1 List has been whitelisted in Skynet" >> $logfile
     fi
     sleep 5
@@ -5959,9 +5977,11 @@ checkvpn()
   TUN="tun1$1"
 
   while [ "$CNT" -lt "$recover" ]; do # Loop through number of tries
-    ping -I $TUN -q -c 1 -W 2 $PINGHOST > /dev/null 2>&1 # First try pings
+    ping -I $TUN -q -c 1 -W 2 $PINGHOST > /dev/null 2>&1 # First try pings to Primary PING Host
     RC=$?
-    if [ "$RC" -eq 0 ]; then # Grab the public IP of the VPN Connection #
+    ping -I $TUN -q -c 1 -W 2 $PINGHOST2 > /dev/null 2>&1 # Then try pings to Secondary PING Host
+    SC=$?
+    if [ "$RC" -eq 0 ] || [ "$SC" -eq 0 ]; then # Grab the public IP of the VPN Connection #
       ICANHAZIP="$(curl --silent --retry 3 --retry-delay 2 --retry-all-errors --fail --interface "$TUN" --request GET --url https://ipv4.icanhazip.com)"
       IC=$?
     else
@@ -6030,9 +6050,11 @@ checkwg()
   ip rule add from $TUN_IP lookup $TUN prio 10 >/dev/null 2>&1
 
   while [ "$CNT" -lt "$recover" ]; do # Loop through number of tries
-    ping -I $TUN -q -c 1 -W 2 $PINGHOST > /dev/null 2>&1 # First try pings
+    ping -I $TUN -q -c 1 -W 2 $PINGHOST > /dev/null 2>&1 # First try pings to Primary PING Host
     RC=$?
-    if [ "$RC" -eq 0 ]; then # Grab the public IP of the VPN Connection #
+    ping -I $TUN -q -c 1 -W 2 $PINGHOST2 > /dev/null 2>&1 # Then try pings to Secondary PING Host
+    SC=$?
+    if [ "$RC" -eq 0 ] || [ "$SC" -eq 0 ]; then # Grab the public IP of the VPN Connection #
       ICANHAZIP="$(curl --silent --retry 3 --retry-delay 2 --retry-all-errors --fail --interface "$TUN" --request GET --url https://ipv4.icanhazip.com)"
       IC=$?
     else
@@ -6364,7 +6386,7 @@ wancheck()
         if [ "$WAN0PING" = "[FAILOVER]" ]
         then
            echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN0${CClear} | $wan0status | "
-           printf "%-6s" "$WAN0IFNAME"
+           printf "%-6s" "${WAN0IFNAME:0:6}"
            if [ "$bwdisp" = "1" ]; then
              echo -e " | $wan0health | Failover     | $WAN0IP | $WAN0PING | $WAN0RX1 | $WAN0TX1 | $WAN0CITY: $uptimeStr"
            else
@@ -6485,7 +6507,7 @@ wancheck()
         if [ "$WAN1PING" = "[FAILOVER]" ]
         then
            echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN1${CClear} | $wan1status | "
-           printf "%-6s" "$WAN1IFNAME"
+           printf "%-6s" "${WAN1IFNAME:0:6}"
            if [ "$bwdisp" = "1" ]; then
              echo -e " | $wan1health | Failover     | $WAN1IP | $WAN1PING | $WAN1RX1 | $WAN1TX1 | $WAN1CITY: $uptimeStr"
            else
