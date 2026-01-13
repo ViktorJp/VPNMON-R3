@@ -1,4 +1,4 @@
-v1.8.3b4 - (TBA)
+v1.8.3b6 - (TBA)
          - PATCH: The Recovery Timeout should be defaulting to 1x, but it was inadvertently set to 3x. Thank
            you to @Tarek Yag for reporting this. Fixed!
          - PATCH: Changed the wording for the custom PING host to "Custom PING host for connectivity checks"
@@ -33,6 +33,12 @@ v1.8.3b4 - (TBA)
            will fail pretty quickly, while the curl test could hang in there for quite some time before
            indicating a fail. This should help resolve some of the sluggishness you would see if any of
            your tunnels are misbehaving.
+         - PATCH: Built in the capability to now use redundant Pinghosts under the configuration menu, using
+           option #2 "Custom Ping Hosts for Connectivity Checks". By default, Pinghost 1 uses 8.8.8.8 and
+           Pinghost 2 uses 1.1.1.1. Pinging these hosts through the VPN/WG tunnel is used to determine if the
+           tunnel is healthy. This now also provides some redundancy, should Pinghost 1 not respond, but
+           Pinghost 2 does, then the tunnel will not get reset, and should help with those dealing with more
+           frequent resets.
 
 v1.8.2   - (November 23, 2025)
          - PATCH: Thanks to @JTnola for sharing a "[: bad number" bug he was experiencing. This hard-to-find
