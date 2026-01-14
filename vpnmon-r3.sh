@@ -5982,12 +5982,14 @@ checkvpn()
     ping -I $TUN -q -c 1 -W 2 $PINGHOST2 > /dev/null 2>&1 # Then try pings to Secondary PING Host
     SC=$?
     if [ "$RC" -eq 0 ] || [ "$SC" -eq 0 ]; then # Grab the public IP of the VPN Connection #
+      COMBOPING=0
       ICANHAZIP="$(curl --silent --retry 3 --retry-delay 2 --retry-all-errors --fail --interface "$TUN" --request GET --url https://ipv4.icanhazip.com)"
       IC=$?
     else
+      COMBOPING=1
       IC=2
     fi
-    if [ "$RC" -eq 0 ] && [ "$IC" -eq 0 ]; then  # If both ping/curl come back successful, then proceed
+    if [ "$COMBOPING" -eq 0 ] && [ "$IC" -eq 0 ]; then  # If both ping/curl come back successful, then proceed
       vpnping=$(ping -I $TUN -c 1 -W 2 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1
       VP=$?
       if [ "$VP" -eq 0 ]; then
@@ -6055,12 +6057,14 @@ checkwg()
     ping -I $TUN -q -c 1 -W 2 $PINGHOST2 > /dev/null 2>&1 # Then try pings to Secondary PING Host
     SC=$?
     if [ "$RC" -eq 0 ] || [ "$SC" -eq 0 ]; then # Grab the public IP of the VPN Connection #
+      COMBOPING=0
       ICANHAZIP="$(curl --silent --retry 3 --retry-delay 2 --retry-all-errors --fail --interface "$TUN" --request GET --url https://ipv4.icanhazip.com)"
       IC=$?
     else
+      COMBOPING=1
       IC=2
     fi
-    if [ "$RC" -eq 0 ] && [ "$IC" -eq 0 ]; then  # If both ping/curl come back successful, then proceed
+    if [ "$COMBOPING" -eq 0 ] && [ "$IC" -eq 0 ]; then  # If both ping/curl come back successful, then proceed
       wgping=$(ping -I $TUN -c 1 -W 2 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1
       VP=$?
       if [ "$VP" -eq 0 ]; then
