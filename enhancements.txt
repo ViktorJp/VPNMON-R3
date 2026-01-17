@@ -1,8 +1,8 @@
 To-Do:
 - If the WAN doesn't respond after X minutes, issue a router reboot?
-- configurable timeouts for wan detection and resets @scootertramp
 
 Done:
+- configurable timeouts for wan detection and resets @scootertramp
 - Find a way to remember past bandwidth stats so that it doesn't revert to [UNKN] as often.
 - use recovery timeouts for wan @scootertramp
 - timezone details @Tarek Yag/EmeraldDeer
