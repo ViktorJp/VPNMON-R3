@@ -1,20 +1,20 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.8.3 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.8.2 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2026-Jan-17
+# Last Modified: 2025-Nov-16
 ##########################################################################################
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.8.3"                                                 # Version tracker
+version="1.8.2"                                                 # Version tracker
 beta=0                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -26,7 +26,7 @@ vr3emails="/jffs/addons/vpnmon-r3.d/vr3emails.txt"              # Static path to
 availableslots="1 2 3 4 5"                                      # Available slots tracker
 logsize=2000                                                    # Log file size in rows
 timerloop=60                                                    # Timer loop in sec
-recover=1                                                       # Number of loops to allow for connection recovery
+recover=3                                                       # Number of loops to allow for connection recovery
 schedule=0                                                      # Scheduler enable y/n
 schedulehrs=1                                                   # Scheduler hours
 schedulemin=0                                                   # Scheduler mins
@@ -62,21 +62,17 @@ medutilspd=250                                                  # Upper Limit of
 lowutilspdup=15                                                 # Upper limit of Low / Lower Limit of Med TX Utilization Range
 medutilspdup=25                                                 # Upper Limit of Med / Lower Limit of High TX Utilization Range
 bwdisp=1                                                        # Display value for bandwidth/throughput - 1=Average, 2=Total
-PINGHOST="8.8.8.8"                                              # Default Primary PING Host
-PINGHOST2="1.1.1.1"                                             # Default Secondary PING Host
-WCNT=0                                                          # WAN DOWN counter
-recoverytimer=10                                                # Time between recovery attempts before declaring WAN-DOWN
-wandowntimer=60                                                 # Time between attempts to determine if WAN is available again
-reconnecttimer=300                                              # Time allotted to giving router time to stabilize before reconnecting tunnels
-loopexit=0                                                      # Switch to determine if the timerloop was exited early
 
 ##-------------------------------------##
 ## Added by Martinski W. [2024-Oct-05] ##
 ##-------------------------------------##
+readonly PING_HOST_Deflt="8.8.8.8"
 readonly IPv4octet_RegEx="([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])"
 readonly IPv4addrs_RegEx="(${IPv4octet_RegEx}\.){3}${IPv4octet_RegEx}"
 LAN_HostName=""
 prevHideOpts=X  # Avoid redisplaying the menu options unnecessarily too often #
+
+PINGHOST="$PING_HOST_Deflt"                                     # Ping host
 
 ## Custom Email Library Notification Variables ##
 readonly scriptFileName="${0##*/}"
@@ -307,26 +303,25 @@ progressbaroverride()
           [\-]) echo ""; killunmonwg 3; sendmessage 0 "WG Killed" 3; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
           [\+]) echo ""; killunmonwg 4; sendmessage 0 "WG Killed" 4; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
           [\=]) echo ""; killunmonwg 5; sendmessage 0 "WG Killed" 5; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [Aa]) autostart;; #resetifacestats;;
-          [Cc]) vsetup;; #resetifacestats;;
-          [Dd]) wgserverlistautomation;; #resetifacestats;;
+          [Aa]) autostart; resetifacestats;;
+          [Cc]) vsetup; resetifacestats;;
+          [Dd]) wgserverlistautomation; resetifacestats;;
           [Ee]) logoNMexit; echo -e "${CClear}\n"; exit 0;;
           [Hh]) hideoptions=1 ; [ "$hideoptions" != "$prevHideOpts" ] && timerreset=1 ;;
-          [Ii]) amtmevents;; #resetifacestats;;
-          [Ll]) vlogs;; #resetifacestats;;
-          [Mm]) vpnslots;; #resetifacestats;;
-          [Pp]) maxping;; #resetifacestats;;
-          [Rr]) schedulevpnreset;; #resetifacestats;;
+          [Ii]) amtmevents; resetifacestats;;
+          [Ll]) vlogs; resetifacestats;;
+          [Mm]) vpnslots; resetifacestats;;
+          [Pp]) maxping; resetifacestats;;
+          [Rr]) schedulevpnreset; resetifacestats;;
           [Ss]) hideoptions=0 ; [ "$hideoptions" != "$prevHideOpts" ] && timerreset=1 ;;
-          [Tt]) timerloopconfig;; #resetifacestats;;
-          [Uu]) vpnserverlistautomation;; #resetifacestats;;
-          [Vv]) vpnserverlistmaint;; #resetifacestats;;
-          [Ww]) wgserverlistmaint;; #resetifacestats;;
-          [Xx]) uninstallr2;; #resetifacestats;;
+          [Tt]) timerloopconfig; resetifacestats;;
+          [Uu]) vpnserverlistautomation; resetifacestats;;
+          [Vv]) vpnserverlistmaint; resetifacestats;;
+          [Ww]) wgserverlistmaint; resetifacestats;;
+          [Xx]) uninstallr2; resetifacestats;;
              *) ;; ##IGNORE INVALID key presses ##
       esac
       bypasswancheck=1
-      loopexit=1
   fi
 }
 
@@ -475,17 +470,17 @@ do
             [2]) echo ""; restartvpn 2; sendmessage 0 "VPN Reset" 2; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [\!]) echo ""; killunmonvpn 1; sendmessage 0 "VPN Killed" 1; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [\@]) echo ""; killunmonvpn 2; sendmessage 0 "VPN Killed" 2; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [Aa]) autostart;; #resetifacestats;;
-            [Cc]) vsetup;; #resetifacestats;;
+            [Aa]) autostart; resetifacestats;;
+            [Cc]) vsetup; resetifacestats;;
             [Ee]) echo -e "${CClear}\n"; exit 0;;
-            [Ii]) amtmevents;; #resetifacestats;;
-            [Ll]) vlogs;; #resetifacestats;;
-            [Mm]) vpnslots;; #resetifacestats;;
-            [Pp]) maxping;; #resetifacestats;;
-            [Rr]) schedulevpnreset;; #resetifacestats;;
-            [Tt]) timerloopconfig;; #resetifacestats;;
-            [Uu]) vpnserverlistautomation;; #resetifacestats;;
-            [Vv]) vpnserverlistmaint;; #resetifacestats;;
+            [Ii]) amtmevents; resetifacestats;;
+            [Ll]) vlogs; resetifacestats;;
+            [Mm]) vpnslots; resetifacestats;;
+            [Pp]) maxping; resetifacestats;;
+            [Rr]) schedulevpnreset; resetifacestats;;
+            [Tt]) timerloopconfig; resetifacestats;;
+            [Uu]) vpnserverlistautomation; resetifacestats;;
+            [Vv]) vpnserverlistmaint; resetifacestats;;
             [Nn]) exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             *) exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
         esac
@@ -516,18 +511,18 @@ do
             [\-]) echo ""; killunmonwg 3; sendmessage 0 "WG Killed" 3; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [\+]) echo ""; killunmonwg 4; sendmessage 0 "WG Killed" 4; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [\=]) echo ""; killunmonwg 5; sendmessage 0 "WG Killed" 5; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [Aa]) autostart;; #resetifacestats;;
-            [Cc]) vsetup;; #resetifacestats;;
+            [Aa]) autostart; resetifacestats;;
+            [Cc]) vsetup; resetifacestats;;
             [Ee]) echo -e "${CClear}\n"; exit 0;;
-            [Ii]) amtmevents;; #resetifacestats;;
-            [Ll]) vlogs;; #resetifacestats;;
-            [Mm]) vpnslots;; #resetifacestats;;
-            [Pp]) maxping;; #resetifacestats;;
-            [Rr]) schedulevpnreset;; #resetifacestats;;
-            [Tt]) timerloopconfig;; #resetifacestats;;
-            [Uu]) vpnserverlistautomation;; #resetifacestats;;
-            [Vv]) vpnserverlistmaint;; #resetifacestats;;
-            [Ww]) wgserverlistmaint;; #resetifacestats;;
+            [Ii]) amtmevents; resetifacestats;;
+            [Ll]) vlogs; resetifacestats;;
+            [Mm]) vpnslots; resetifacestats;;
+            [Pp]) maxping; resetifacestats;;
+            [Rr]) schedulevpnreset; resetifacestats;;
+            [Tt]) timerloopconfig; resetifacestats;;
+            [Uu]) vpnserverlistautomation; resetifacestats;;
+            [Vv]) vpnserverlistmaint; resetifacestats;;
+            [Ww]) wgserverlistmaint; resetifacestats;;
             [Nn]) exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             *) exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
         esac
@@ -911,10 +906,8 @@ do
 
   if [ "$monitorwan" -eq 0 ]; then
      monitorwandisp="${CDkGray}Disabled"
-     wantimersdisp="${CDkGray}Disabled"
   else
      monitorwandisp="Enabled"
-     wantimersdisp="${CGreen}$recoverytimer | $wandowntimer | $reconnecttimer sec"
   fi
 
   if [ "$useovpn" -eq 0 ] && [ "$usewg" -eq 0 ]; then
@@ -988,7 +981,7 @@ do
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 1)${CClear} : Number of VPN/WG Client Slots available      : ${CGreen}$availableslotsdisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 2)${CClear} : Custom PING hosts for connectivity checks    : ${CGreen}$PINGHOST | $PINGHOST2"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 2)${CClear} : Custom PING host to determine VPN health     : ${CGreen}$PINGHOST"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 3)${CClear} : Custom Event Log size (rows)                 : ${CGreen}$logsize"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 4)${CClear} : Unbound DNS Lookups over VPN Integration     : ${CGreen}$unboundclientexp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 5)${CClear} : Unbound DNS Lookups over WG Integration      : ${CGreen}$unboundwgclientexp"
@@ -1007,13 +1000,12 @@ do
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(14)${CClear} : Connection Throughput Threshold Selections   : $utilspddisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  |-${CClear}---                                             : $utilspdupdisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(15)${CClear} : Connection Throughput Display Method         : ${CGreen}$throughputmethoddisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(16)${CClear} : WAN Recovery, Down, Reconnect Timers         : $wantimersdisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  | ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( e)${CClear} : Exit${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo ""
-  read -p "Please select? (1-16, e=Exit): " SelectSlot
+  read -p "Please select? (1-15, e=Exit): " SelectSlot
     case $SelectSlot in
       1)
         clear
@@ -1070,45 +1062,31 @@ do
 
       2)
         clear
-        echo -e "${InvGreen} ${InvDkGray}${CWhite} Custom PING Hosts (to determine WAN/VPN/WG health)                                    ${CClear}"
+        echo -e "${InvGreen} ${InvDkGray}${CWhite} Custom PING Host (to determine VPN health)                                            ${CClear}"
         echo -e "${InvGreen} ${CClear}"
-        echo -e "${InvGreen} ${CClear} Please indicate which hosts you want to PING in order to determine connectivity${CClear}"
-        echo -e "${InvGreen} ${CClear} health. By default, the script will ping 8.8.8.8 (Google DNS) and 1.1.1.1 (CloudFlare${CClear}"
-        echo -e "${InvGreen} ${CClear} DNS) as they are reliable, fairly standard, and typically available globally. You can${CClear}"
-        echo -e "${InvGreen} ${CClear} change these depending on your local access and connectivity situation. It is${CClear}"
-        echo -e "${InvGreen} ${CClear} advisable to choose 2 different DNS provider IP addresses for redundancy purposes. If${CClear}"
-        echo -e "${InvGreen} ${CClear} one fails to PING, the other will redundantly keep your connection from being reset.${CClear}"
+        echo -e "${InvGreen} ${CClear} Please indicate which host you want to PING in order to determine VPN Client health.${CClear}"
+        echo -e "${InvGreen} ${CClear} By default, the script will ping $PING_HOST_Deflt (Google DNS) as it's reliable, fairly${CClear}"
+        echo -e "${InvGreen} ${CClear} standard, and typically available globally. You can change this depending on your"
+        echo -e "${InvGreen} ${CClear} local access and connectivity situation."
         echo -e "${InvGreen} ${CClear}"
-        echo -e "${InvGreen} ${CClear} (Default = 8.8.8.8 | 1.1.1.1)${CClear}"
+        echo -e "${InvGreen} ${CClear} (Default = ${PING_HOST_Deflt})${CClear}"
         echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
         echo
-        echo -e "${CClear}Current Pinghost 1: ${CGreen}${PINGHOST}${CClear}"
-        echo -e "${CClear}Current Pinghost 2: ${CGreen}${PINGHOST2}${CClear}" ; echo
-        read -p "Please enter valid IPv4 address for Pinghost 1? (e=Exit): " newPingHost
+        echo -e "${CClear}Current: ${CGreen}${PINGHOST}${CClear}" ; echo
+        read -p "Please enter valid IPv4 address? (e=Exit): " newPingHost
         if [ "$newPingHost" = "e" ]
         then
-            echo -e "\n[Exiting]"; sleep 2; continue
+            echo -e "\n[Exiting]"; sleep 2
         elif [ -n "$newPingHost" ] && echo "$newPingHost" | grep -qE "^${IPv4addrs_RegEx}$"
         then
             PINGHOST="$newPingHost"
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New custom PING host 1 entered: $PINGHOST" >> $logfile
-        else
-            PINGHOST="8.8.8.8"
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Default PING host 1 entered: $PINGHOST" >> $logfile
-        fi
-        echo ""
-        read -p "Please enter valid IPv4 address for Pinghost 2? (e=Exit): " newPingHost2
-        if [ "$newPingHost2" = "e" ]
-        then
-            echo -e "\n[Exiting]"; sleep 2
-        elif [ -n "$newPingHost2" ] && echo "$newPingHost2" | grep -qE "^${IPv4addrs_RegEx}$"
-        then
-            PINGHOST2="$newPingHost2"
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New custom PING host 2 entered: $PINGHOST2" >> $logfile
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New custom PING host entered: $PINGHOST" >> $logfile
             saveconfig
         else
-            PINGHOST2="1.1.1.1"
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Default PING host 2 entered: $PINGHOST2" >> $logfile
+            previousValue="$PINGHOST"
+            PINGHOST="${PINGHOST:=$PING_HOST_Deflt}"
+            [ "$PINGHOST" != "$previousValue" ] && \
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New custom PING host entered: $PINGHOST" >> $logfile
             saveconfig
         fi
       ;;
@@ -1892,7 +1870,7 @@ do
         fi
       ;;
 
-      [Ee]) echo -e "${CClear}\n[Exiting]"; sleep 2; timer="$timerloop"; break ;;
+      [Ee]) echo -e "${CClear}\n[Exiting]"; sleep 2; break ;;
 
       11)
         amtmevents
@@ -2121,130 +2099,6 @@ do
             throughputmethoddisp="Average Throughput (in Mbps)"
             echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Connection Throughput Display Method set to: Average Throughput (in Mbps)" >> $logfile
             saveconfig
-        fi
-      ;;
-
-      16)
-        if [ "$monitorwan" -eq 1 ]; then
-          clear
-          while true
-          do
-            clear
-            echo -e "${InvGreen} ${InvDkGray}${CWhite} WAN Recovery Timer Configuration                                                      ${CClear}"
-            echo -e "${InvGreen} ${CClear}"
-            echo -e "${InvGreen} ${CClear} Please indicate how long the various WAN Recovery timers should last during the${CClear}"
-            echo -e "${InvGreen} ${CClear} different states as the WAN tries to recover, or goes out completely. Depending${CClear}"
-            echo -e "${InvGreen} ${CClear} on what timer values you choose will have impact on how long your WAN takes to${CClear}"
-            echo -e "${InvGreen} ${CClear} recover.${CClear}"
-            echo -e "${InvGreen} ${CClear}"
-            echo -e "${InvGreen} ${CClear} ${CYellow}Recovery timer${CClear}: The length of time between tries to determine if your router is${CClear}"
-            echo -e "${InvGreen} ${CClear} able to ping the IP address of your choosing and recover before declaring a WAN${CClear}"
-            echo -e "${InvGreen} ${CClear} DOWN situation. (Default = 10 sec)${CClear}"
-            echo -e "${InvGreen} ${CClear}"
-            echo -e "${InvGreen} ${CClear} ${CYellow}WAN DOWN Timer${CClear}: The length of time between tries while the WAN is DOWN, where${CClear}"
-            echo -e "${InvGreen} ${CClear} VPNMON-R3 tries to determine if the WAN is available again. (Default = 60 sec)${CClear}"
-            echo -e "${InvGreen} ${CClear}"
-            echo -e "${InvGreen} ${CClear} ${CYellow}Reconnect Timer${CClear}: The length of time from when the WAN is declared back up while${CClear}"
-            echo -e "${InvGreen} ${CClear} giving the router some time to stabilize before it restarts VPN/WG tunnels. You don't${CClear}"
-            echo -e "${InvGreen} ${CClear} want your router reconnecting tunnels while the router is bouncing up and down.${CClear}"
-            echo -e "${InvGreen} ${CClear} (Default = 300 sec).${CClear}"
-            echo -e "${InvGreen} ${CClear}"
-            echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-            echo -e "${InvGreen} ${CClear}"
-            echo -e "${InvGreen} ${CClear} Current:${CClear}"
-            echo -e "${InvGreen} ${CClear}"
-            echo -e "${InvGreen} ${CClear} Recovery Timer  ${CGreen}(1): $recoverytimer sec${CClear}"
-            echo -e "${InvGreen} ${CClear} WAN DOWN Timer  ${CGreen}(2): $wandowntimer sec ${CClear}"
-            echo -e "${InvGreen} ${CClear} Reconnect Timer ${CGreen}(3): $reconnecttimer sec ${CClear}"
-            echo -e "${InvGreen} ${CClear}"
-            echo
-            read -p "Please choose a Timer [1-3] and enter new Timer value in seconds (e=Exit): " newTimerChoice
-            case $newTimerChoice in
-                1) echo ""
-                   read -p "Enter new Recovery Timer value in seconds between [10-999] (default=10, e=Exit): " newRecoveryTimerChoice
-                      if [ -z "$newRecoveryTimerChoice" ] || echo "$newRecoveryTimerChoice" | grep -qE "^(e|E)$"
-                      then
-                          if echo "$recoverytimer" | grep -qE "^([1-9][0-9]{0,2})$" && \
-                             [ "$recoverytimer" -ge 10 ] && [ "$recoverytimer" -le 999 ]
-                          then
-                              printf "\n${CClear}[Exiting]\n"
-                              sleep 1 ; break
-                          else
-                              printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
-                              sleep 3
-                          fi
-                      elif echo "$newRecoveryTimerChoice" | grep -qE "^([1-9][0-9]{0,2})$" && \
-                           [ "$newRecoveryTimerChoice" -ge 10 ] && [ "$newRecoveryTimerChoice" -le 999 ]
-                      then
-                          recoverytimer="$newRecoveryTimerChoice"
-                          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Recovery Timer ($recoverytimer sec) configuration saved" >> $logfile
-                          saveconfig
-                          printf "\n${CClear}[OK]\n"
-                          sleep 1
-                      else
-                          printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
-                          sleep 3
-                      fi
-                ;;
-
-                2) echo ""
-                   read -p "Enter new WAN-DOWN Timer value in seconds between [10-999] (default=60, e=Exit): " newWANDOWNTimerChoice
-                      if [ -z "$newWANDOWNTimerChoice" ] || echo "$newWANDOWNTimerChoice" | grep -qE "^(e|E)$"
-                      then
-                          if echo "$wandowntimer" | grep -qE "^([1-9][0-9]{0,2})$" && \
-                             [ "$wandowntimer" -ge 10 ] && [ "$wandowntimer" -le 999 ]
-                          then
-                              printf "\n${CClear}[Exiting]\n"
-                              sleep 1 ; break
-                          else
-                              printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
-                              sleep 3
-                          fi
-                      elif echo "$newWANDOWNTimerChoice" | grep -qE "^([1-9][0-9]{0,2})$" && \
-                           [ "$newWANDOWNTimerChoice" -ge 10 ] && [ "$newWANDOWNTimerChoice" -le 999 ]
-                      then
-                          wandowntimer="$newWANDOWNTimerChoice"
-                          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New WAN-DOWN Timer ($recoverytimer sec) configuration saved" >> $logfile
-                          saveconfig
-                          printf "\n${CClear}[OK]\n"
-                          sleep 1
-                      else
-                          printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
-                          sleep 3
-                      fi
-                ;;
-
-                3) echo ""
-                   read -p "Enter new Reconnect Timer value in seconds between [10-999] (default=300, e=Exit): " newReconnectTimerChoice
-                      if [ -z "$newReconnectTimerChoice" ] || echo "$newReconnectTimerChoice" | grep -qE "^(e|E)$"
-                      then
-                          if echo "$reconnecttimer" | grep -qE "^([1-9][0-9]{0,2})$" && \
-                             [ "$reconnecttimer" -ge 10 ] && [ "$reconnecttimer" -le 999 ]
-                          then
-                              printf "\n${CClear}[Exiting]\n"
-                              sleep 1 ; break
-                          else
-                              printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
-                              sleep 3
-                          fi
-                      elif echo "$newReconnectTimerChoice" | grep -qE "^([1-9][0-9]{0,2})$" && \
-                           [ "$newReconnectTimerChoice" -ge 10 ] && [ "$newReconnectTimerChoice" -le 999 ]
-                      then
-                          reconnecttimer="$newReconnectTimerChoice"
-                          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New Reconnect Timer ($recoverytimer sec) configuration saved" >> $logfile
-                          saveconfig
-                          printf "\n${CClear}[OK]\n"
-                          sleep 1
-                      else
-                          printf "\n${CRed}*ERROR*: Please enter a valid number between 10 and 999.${CClear}\n"
-                          sleep 3
-                      fi
-                ;;
-
-                [Ee]) printf "\n${CClear}[Exiting]\n"
-                      sleep 1 ; break
-            esac
-          done
         fi
       ;;
 
@@ -2984,7 +2838,7 @@ do
       s1)
          echo ""
          echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
-         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr1.txt "VPNMON-R3 VPN Slot 1 Manually Whitelisted on $date" >/dev/null 2>&1
+         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr1.txt "VPNMON-R3 VPN Slot 1 Import" >/dev/null 2>&1
          echo ""
          echo -e "${CGreen}[Contents of VPN Slot 1 Imported]${CClear}"
          echo ""
@@ -3065,7 +2919,7 @@ do
       s2)
          echo ""
          echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
-         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr2.txt "VPNMON-R3 VPN Slot 2 Manually Whitelisted on $date" >/dev/null 2>&1
+         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr2.txt "VPNMON-R3 VPN Slot 2 Import" >/dev/null 2>&1
          echo ""
          echo -e "${CGreen}[Contents of VPN Slot 2 Imported]${CClear}"
          echo ""
@@ -3224,7 +3078,7 @@ do
       s1)
          echo ""
          echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
-         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr1.txt "VPNMON-R3 VPN Slot 1 Manually Whitelisted on $date" >/dev/null 2>&1
+         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr1.txt "VPNMON-R3 VPN Slot 1 Import" >/dev/null 2>&1
          echo ""
          echo -e "${CGreen}[Contents of VPN Slot 1 Imported]${CClear}"
          echo ""
@@ -3305,7 +3159,7 @@ do
       s2)
          echo ""
          echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
-         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr2.txt "VPNMON-R3 VPN Slot 2 Manually Whitelisted on $date" >/dev/null 2>&1
+         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr2.txt "VPNMON-R3 VPN Slot 2 Import" >/dev/null 2>&1
          echo ""
          echo -e "${CGreen}[Contents of VPN Slot 2 Imported]${CClear}"
          echo ""
@@ -3386,7 +3240,7 @@ do
       s3)
          echo ""
          echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
-         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr3.txt "VPNMON-R3 VPN Slot 3 Manually Whitelisted on $date" >/dev/null 2>&1
+         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr3.txt "VPNMON-R3 VPN Slot 3 Import" >/dev/null 2>&1
          echo ""
          echo -e "${CGreen}[Contents of VPN Slot 3 Imported]${CClear}"
          echo ""
@@ -3467,7 +3321,7 @@ do
       s4)
          echo ""
          echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
-         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr4.txt "VPNMON-R3 VPN Slot 4 Manually Whitelisted on $date" >/dev/null 2>&1
+         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr4.txt "VPNMON-R3 VPN Slot 4 Import" >/dev/null 2>&1
          echo ""
          echo -e "${CGreen}[Contents of VPN Slot 4 Imported]${CClear}"
          echo ""
@@ -3548,7 +3402,7 @@ do
       s5)
          echo ""
          echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
-         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr5.txt "VPNMON-R3 VPN Slot 5 Manually Whitelisted on $date" >/dev/null 2>&1
+         firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr5.txt "VPNMON-R3 VPN Slot 5 Import" >/dev/null 2>&1
          echo ""
          echo -e "${CGreen}[Contents of VPN Slot 5 Imported]${CClear}"
          echo ""
@@ -3630,7 +3484,7 @@ do
        echo ""
        echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
        awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr1.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 1 Manually Whitelisted on $date" >/dev/null 2>&1
+       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 1 Import" >/dev/null 2>&1
        rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
        echo ""
        echo -e "${CGreen}[Contents of WG Slot 1 Imported]${CClear}"
@@ -3713,7 +3567,7 @@ do
        echo ""
        echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
        awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr2.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 2 Manually Whitelisted on $date" >/dev/null 2>&1
+       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 2 Import" >/dev/null 2>&1
        rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
        echo ""
        echo -e "${CGreen}[Contents of WG Slot 2 Imported]${CClear}"
@@ -3796,7 +3650,7 @@ do
        echo ""
        echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
        awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr3.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 3 Manually Whitelisted on $date" >/dev/null 2>&1
+       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 3 Import" >/dev/null 2>&1
        rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
        echo ""
        echo -e "${CGreen}[Contents of WG Slot 3 Imported]${CClear}"
@@ -3879,7 +3733,7 @@ do
        echo ""
        echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
        awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr4.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 4 Manually Whitelisted on $date" >/dev/null 2>&1
+       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 4 Import" >/dev/null 2>&1
        rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
        echo ""
        echo -e "${CGreen}[Contents of WG Slot 4 Imported]${CClear}"
@@ -3962,7 +3816,7 @@ do
        echo ""
        echo -e "${CGreen}[Executing Skynet Whitelist Import]${CClear}"
        awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr5.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 5 Manually Whitelisted on $date" >/dev/null 2>&1
+       firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 WG Slot 5 Import" >/dev/null 2>&1
        rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
        echo ""
        echo -e "${CGreen}[Contents of WG Slot 5 Imported]${CClear}"
@@ -4394,13 +4248,12 @@ trimlogs()
 {
   if [ "$logsize" -gt 0 ]
   then
-      currlogsize="$(wc -l "$logfile" | awk '{ print $1 }')" # Determine the number of rows in the log
+      currlogsize="$(wc -l $logfile | awk '{ print $1 }')" # Determine the number of rows in the log
 
       if [ "$currlogsize" -gt "$logsize" ] # If it's bigger than the max allowed, tail/trim it!
       then
-          tail -"$logsize" "$logfile" > "${logfile}.tmp"
-          mv "${logfile}.tmp" "$logfile"
-          echo "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Trimmed the log file down to $logsize lines" >> "$logfile"
+          echo "$(tail -$logsize $logfile)" > $logfile
+          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Trimmed the log file down to $logsize lines" >> $logfile
       fi
   fi
 }
@@ -4412,7 +4265,6 @@ saveconfig()
 {
    { echo 'availableslots="'"$availableslots"'"'
      echo 'PINGHOST="'"$PINGHOST"'"'
-     echo 'PINGHOST2="'"$PINGHOST2"'"'
      echo 'logsize='$logsize
      echo 'timerloop='$timerloop
      echo 'recover='$recover
@@ -4449,9 +4301,6 @@ saveconfig()
      echo 'lowutilspdup='$lowutilspdup
      echo 'medutilspdup='$medutilspdup
      echo 'bwdisp='$bwdisp
-     echo 'recoverytimer='$recoverytimer
-     echo 'wandowntimer='$wandowntimer
-     echo 'reconnecttimer='$reconnecttimer
    } > "$config"
 
    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: New vpnmon-r3.cfg File Saved" >> $logfile
@@ -4964,7 +4813,7 @@ restartvpn()
   if [ "$currvpnstate" -ne 0 ]; then
     printf "${CGreen}\r[Stopping VPN Client $1]"
     service stop_vpnclient$1 >/dev/null 2>&1
-    sleep 10
+    sleep 20
     if [ "$currvpnstate" = "-1" ]; then
       nvram set vpn_client$1_state=0
     fi
@@ -4984,10 +4833,10 @@ restartvpn()
       service start_vpnclient$1 >/dev/null 2>&1
       echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN$1 Connection Restarted - Current Server: $currvpnhost" >> $logfile
       resettimer $1 "VPN"
-      sleep 5
+      sleep 10
       printf "\33[2K\r"
       printf "${CGreen}\r[Letting VPN$1 Settle]"
-      sleep 5
+      sleep 10
       return
 
     elif [ "$selectionmethod" -eq 1 ] # 1=roundrobin
@@ -5031,7 +4880,7 @@ restartvpn()
         RNDVPNIP=$(sed -n "${nextup}p" /jffs/addons/vpnmon-r3.d/vr3svr$1.txt)
         nvram set vpn_client"$1"_addr="$RNDVPNIP"
         nvram set vpn_client"$1"_desc="VPN$1 - $RNDVPNIP added by VPNMON-R3"
-        sleep 1
+        sleep 2
 
         #---------OVPN-specific nvram values
 
@@ -5044,10 +4893,10 @@ restartvpn()
         service start_vpnclient$1 >/dev/null 2>&1
         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN$1 Connection Restarted [SEQ] - New Server: $RNDVPNIP" >> $logfile
         resettimer $1 "VPN"
-        sleep 5
+        sleep 10
         printf "\33[2K\r"
         printf "${CGreen}\r[Letting VPN$1 Settle]"
-        sleep 5
+        sleep 10
 
     elif [ "$selectionmethod" -eq 0 ] # 0=Random
       then
@@ -5062,7 +4911,7 @@ restartvpn()
         RNDVPNIP=$(sed -n "${R_LINE}p" /jffs/addons/vpnmon-r3.d/vr3svr$1.txt)
         nvram set vpn_client"$1"_addr="$RNDVPNIP"
         nvram set vpn_client"$1"_desc="VPN$1 - $RNDVPNIP added by VPNMON-R3"
-        sleep 1
+        sleep 2
 
         #---------OVPN-specific nvram values
 
@@ -5072,10 +4921,10 @@ restartvpn()
         service start_vpnclient$1 >/dev/null 2>&1
         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN$1 Connection Restarted [RND] - New Server: $RNDVPNIP" >> $logfile
         resettimer $1 "VPN"
-        sleep 5
+        sleep 10
         printf "\33[2K\r"
         printf "${CGreen}\r[Letting VPN$1 Settle]"
-        sleep 5
+        sleep 10
     fi
 
   else
@@ -5086,10 +4935,10 @@ restartvpn()
     service start_vpnclient$1 >/dev/null 2>&1
     echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN$1 Connection Restarted - Current Server: $currvpnhost" >> $logfile
     resettimer $1 "VPN"
-    sleep 5
+    sleep 10
     printf "\33[2K\r"
     printf "${CGreen}\r[Letting VPN$1 Settle]"
-    sleep 5
+    sleep 10
   fi
 
 }
@@ -5109,7 +4958,7 @@ restartwg()
   if [ "$currwgstate" -ne 0 ]; then
     printf "${CGreen}\r[Stopping WG Client $1]"
     service "stop_wgc $1" >/dev/null 2>&1
-    sleep 10
+    sleep 20
     printf "\33[2K\r"
   fi
 
@@ -5127,10 +4976,10 @@ restartwg()
       service "start_wgc $1" >/dev/null 2>&1
       echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WGC$1 Connection Restarted - Current Server: $currwghostname | $currwghost" >> $logfile
       resettimer $1 "WG"
-      sleep 5
+      sleep 10
       printf "\33[2K\r"
       printf "${CGreen}\r[Letting WGC$1 Settle]"
-      sleep 5
+      sleep 10
       return
 
     elif [ "$selectionmethod" -eq 1 ] # 1=roundrobin
@@ -5187,7 +5036,7 @@ restartwg()
         nvram set wgc"$1"_priv="${privatekey}"
         nvram set wgc"$1"_ppub="${publickey}"
         nvram set wgc"$1"_psk="${presharedkey}" #Optional, required by AirVPN
-        sleep 1
+        sleep 2
 
         #---------WG-specific nvram values
 
@@ -5200,10 +5049,10 @@ restartwg()
         service "start_wgc $1" >/dev/null 2>&1
         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WGC$1 Connection Restarted [SEQ] - New Server: $wgdescription | $endpointip" >> $logfile
         resettimer $1 "WG"
-        sleep 5
+        sleep 10
         printf "\33[2K\r"
         printf "${CGreen}\r[Letting WGC$1 Settle]"
-        sleep 5
+        sleep 10
 
     elif [ "$selectionmethod" -eq 0 ] # 0=random
       then
@@ -5232,7 +5081,7 @@ restartwg()
         nvram set wgc"$1"_priv="${privatekey}"
         nvram set wgc"$1"_ppub="${publickey}"
         nvram set wgc"$1"_psk="${presharedkey}" #Optional, required by AirVPN
-        sleep 1
+        sleep 2
 
         #---------WG-specific nvram values
 
@@ -5242,10 +5091,10 @@ restartwg()
         service "start_wgc $1" >/dev/null 2>&1
         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WGC$1 Connection Restarted [RND] - New Server: $wgdescription | $endpointip" >> $logfile
         resettimer $1 "WG"
-        sleep 5
+        sleep 10
         printf "\33[2K\r"
         printf "${CGreen}\r[Letting WGC$1 Settle]"
-        sleep 5
+        sleep 10
     fi
 
   else
@@ -5256,10 +5105,10 @@ restartwg()
     service "start_wgc $1" >/dev/null 2>&1
     echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WGC$1 Connection Restarted - Current Server: $currwghost" >> $logfile
     resettimer $1 "WG"
-    sleep 5
+    sleep 10
     printf "\33[2K\r"
     printf "${CGreen}\r[Letting WGC$1 Settle]"
-    sleep 5
+    sleep 10
   fi
 
 }
@@ -5309,7 +5158,7 @@ killunmonvpn()
   printf "${CGreen}\r[Stopping VPN Client $1]"
   service stop_vpnclient$1 >/dev/null 2>&1
   echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN$1 has been stopped and no longer being monitored" >> $logfile
-  sleep 10
+  sleep 15
   printf "\33[2K\r"
   printf "${CGreen}\r[Unmonitoring VPN Client $1]"
 
@@ -5335,7 +5184,7 @@ killunmonwg()
   printf "${CGreen}\r[Stopping WG Client $1]"
   service "stop_wgc $1" >/dev/null 2>&1
   echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WGC$1 has been stopped and no longer being monitored" >> $logfile
-  sleep 10
+  sleep 15
   printf "\33[2K\r"
   printf "${CGreen}\r[Unmonitoring WG Client $1]"
 
@@ -5363,12 +5212,12 @@ skynetwhitelist()
       slotnum=$(echo "$1" | tr -cd '0-9')
       printf "${CGreen}\r[Whitelisting WG Server Slot $slotnum List in the Skynet Firewall]${CClear}\n"
       awk -F',' '{print $2}' /jffs/addons/vpnmon-r3.d/vr3wgsvr${slotnum}.txt > /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt
-      firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 - WG Server Slot $slotnum Whitelisted on $date" >/dev/null 2>&1
+      firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svrtmp.txt "VPNMON-R3 - WG Server Slot $slotnum Whitelist" >/dev/null 2>&1
       rm -f "/jffs/addons/vpnmon-r3.d/vr3svrtmp.txt" >/dev/null 2>&1
       echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: WG Server Slot $slotnum List has been whitelisted in Skynet" >> $logfile
     else
       printf "${CGreen}\r[Whitelisting VPN Server Slot $1 List in the Skynet Firewall]${CClear}\n"
-      firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr$1.txt "VPNMON-R3 - VPN Server Slot $1 Whitelisted on $date" >/dev/null 2>&1
+      firewall import whitelist /jffs/addons/vpnmon-r3.d/vr3svr$1.txt "VPNMON-R3 - VPN Server Slot $1 Whitelist" >/dev/null 2>&1
       echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: VPN Server Slot $1 List has been whitelisted in Skynet" >> $logfile
     fi
     sleep 5
@@ -5973,23 +5822,16 @@ getwgcity()
 checkvpn()
 {
   CNT=0
-  #TRIES=3
+  TRIES=3
   TUN="tun1$1"
 
-  while [ "$CNT" -lt "$recover" ]; do # Loop through number of tries
-    ping -I $TUN -q -c 1 -W 2 $PINGHOST > /dev/null 2>&1 # First try pings to Primary PING Host
+  while [ "$CNT" -lt "$TRIES" ]; do # Loop through number of tries
+    ping -I $TUN -q -c 1 -W 2 $PINGHOST > /dev/null 2>&1 # First try pings
     RC=$?
-    ping -I $TUN -q -c 1 -W 2 $PINGHOST2 > /dev/null 2>&1 # Then try pings to Secondary PING Host
-    SC=$?
-    if [ "$RC" -eq 0 ] || [ "$SC" -eq 0 ]; then # Grab the public IP of the VPN Connection #
-      COMBOPING=0
-      ICANHAZIP="$(curl --silent --retry 3 --retry-delay 2 --retry-all-errors --fail --interface "$TUN" --request GET --url https://ipv4.icanhazip.com)"
-      IC=$?
-    else
-      COMBOPING=1
-      IC=2
-    fi
-    if [ "$COMBOPING" -eq 0 ] && [ "$IC" -eq 0 ]; then  # If both ping/curl come back successful, then proceed
+    # Grab the public IP of the VPN Connection #
+    ICANHAZIP="$(curl --silent --retry 3 --retry-delay 2 --retry-all-errors --fail --interface "$TUN" --request GET --url https://ipv4.icanhazip.com)"
+    IC=$?
+    if [ "$RC" -eq 0 ] && [ "$IC" -eq 0 ]; then  # If both ping/curl come back successful, then proceed
       vpnping=$(ping -I $TUN -c 1 -W 2 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1
       VP=$?
       if [ "$VP" -eq 0 ]; then
@@ -6012,7 +5854,7 @@ checkvpn()
       printf "\r${InvDkGray} ${CWhite} VPN$1${CClear} [Attempt $CNT]"
       sleep 1 # Giving the VPN a chance to recover a certain number of times
 
-      if [ "$CNT" -eq "$recover" ];then # But if it fails, report back that we have an issue requiring a VPN reset
+      if [ "$CNT" -eq "$TRIES" ];then # But if it fails, report back that we have an issue requiring a VPN reset
         printf "\33[2K\r"
         vpnping=0
         vpnhealth="${CRed}[FAIL]${CClear}"
@@ -6044,27 +5886,20 @@ checkvpn()
 checkwg()
 {
   CNT=0
-  #TRIES=3
+  TRIES=3
   TUN="wgc$1"
 
   # Added ping workaround for site2site scenarios based on suggestion from @ZebMcKayhan
   TUN_IP=$($timeoutcmd$timeoutsec nvram get "$TUN"_addr | cut -d '/' -f1)
   ip rule add from $TUN_IP lookup $TUN prio 10 >/dev/null 2>&1
 
-  while [ "$CNT" -lt "$recover" ]; do # Loop through number of tries
-    ping -I $TUN -q -c 1 -W 2 $PINGHOST > /dev/null 2>&1 # First try pings to Primary PING Host
+  while [ "$CNT" -lt "$TRIES" ]; do # Loop through number of tries
+    ping -I $TUN -q -c 1 -W 2 $PINGHOST > /dev/null 2>&1 # First try pings
     RC=$?
-    ping -I $TUN -q -c 1 -W 2 $PINGHOST2 > /dev/null 2>&1 # Then try pings to Secondary PING Host
-    SC=$?
-    if [ "$RC" -eq 0 ] || [ "$SC" -eq 0 ]; then # Grab the public IP of the VPN Connection #
-      COMBOPING=0
-      ICANHAZIP="$(curl --silent --retry 3 --retry-delay 2 --retry-all-errors --fail --interface "$TUN" --request GET --url https://ipv4.icanhazip.com)"
-      IC=$?
-    else
-      COMBOPING=1
-      IC=2
-    fi
-    if [ "$COMBOPING" -eq 0 ] && [ "$IC" -eq 0 ]; then  # If both ping/curl come back successful, then proceed
+    # Grab the public IP of the VPN Connection #
+    ICANHAZIP="$(curl --silent --retry 3 --retry-delay 2 --retry-all-errors --fail --interface "$TUN" --request GET --url https://ipv4.icanhazip.com)"
+    IC=$?
+    if [ "$RC" -eq 0 ] && [ "$IC" -eq 0 ]; then  # If both ping/curl come back successful, then proceed
       wgping=$(ping -I $TUN -c 1 -W 2 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1
       VP=$?
       if [ "$VP" -eq 0 ]; then
@@ -6087,7 +5922,7 @@ checkwg()
       printf "\r${InvDkGray} ${CWhite} WGC$1${CClear} [Attempt $CNT]"
       sleep 1 # Giving the VPN a chance to recover a certain number of times
 
-      if [ "$CNT" -eq "$recover" ]; then # But if it fails, report back that we have an issue requiring a VPN reset
+      if [ "$CNT" -eq "$TRIES" ]; then # But if it fails, report back that we have an issue requiring a VPN reset
         printf "\33[2K\r"
         wgping=0
         wghealth="${CRed}[FAIL]${CClear}"
@@ -6124,7 +5959,7 @@ checkwan()
 {
   # Using Google's DNS server as default to test for WAN connectivity over verified SSL Handshake
   wandownbreakertrip=0
-  testssl="$PINGHOST"
+  testssl="$PING_HOST_Deflt"
 
   printf "\33[2K\r"
   printf "\r${InvYellow} ${CClear} [Checking WAN Connectivity]..."
@@ -6141,32 +5976,19 @@ checkwan()
         then
             printf "\r${InvGreen} ${CClear} [Checking WAN Connectivity]...ACTIVE"
             sleep 1
-            WCNT=0
             printf "\33[2K\r"
             return
         else
             wandownbreakertrip=1
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: WAN Connectivity Issue Detected - Unable to establish SSL connection with $testssl" >> $logfile
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: WAN Connectivity Issue Detected" >> $logfile
         fi
     else
         wandownbreakertrip=1
-        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: WAN Connectivity Issue Detected - Unable to establish SSL connection with $testssl" >> $logfile
+        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ERROR: WAN Connectivity Issue Detected" >> $logfile
     fi
 
     if [ "$wandownbreakertrip" = "1" ]
     then
-
-      WCNT="$((WCNT+1))"
-      printf "\33[2K\r"
-      printf "\r${InvRed} ${CClear} WAN Connectivity Failure Detected [Attempt $WCNT | $recoverytimer sec/attempt]"
-      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WAN attempt $WCNT of $recover to allow connection to recover" >> $logfile
-      sleep $recoverytimer # Giving the WAN a chance to recover a certain number of times - default: recoverytimer=10
-
-      if [ "$WCNT" -eq "$recover" ] # But if it fails, report back that we have an issue requiring a WAN DOWN event
-      then
-        printf "\33[2K\r"
-        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WAN failed to respond after $recover attempts" >> $logfile
-
         # The WAN is most likely down, and keep looping through until NVRAM reports that it's back up
         while [ "$wandownbreakertrip" = "1" ]
         do
@@ -6231,19 +6053,16 @@ checkwan()
               echo -e "${InvGreen} ${CClear} check with your ISP, or perform general internet connectivity troubleshooting${CClear}"
               echo -e "${InvGreen} ${CClear} in order to re-establish a stable VPN connection.${CClear}"
               echo -e "${InvGreen} ${CClear}"
-              echo -e "${InvGreen} ${CClear} [Retrying to resume normal operations roughly every $wandowntimer seconds]${CClear}"
+              echo -e "${InvGreen} ${CClear} [Retrying to resume normal operations roughly every 60 seconds]${CClear}"
               echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
               echo ""
-              spinner $wandowntimer # Time between attempts to determine if WAN becomes available again - Default: wandowntimer=60
+              spinner 60
               wandownbreakertrip=1
           else
               wandownbreakertrip=2
               break
           fi
         done
-      else
-        wandownbreakertrip=0
-      fi
     fi
 
       # If the WAN was down, and now it has just reset, then run a VPN Reset, and try to establish a new VPN connection
@@ -6254,13 +6073,13 @@ checkwan()
           clear
           echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 is currently recovering from a WAN Down Situation                           ${CClear}"
           echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Router has detected a WAN Link/Modem and waiting $reconnecttimer seconds for general network${CClear}"
+          echo -e "${InvGreen} ${CClear} Router has detected a WAN Link/Modem and waiting 300 seconds for general network${CClear}"
           echo -e "${InvGreen} ${CClear} connectivity to stabilize before re-establishing VPN/WG connectivity.${CClear}"
           echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} [Retrying to resume normal operations in roughly $reconnecttimer seconds...Please stand by!]${CClear}"
+          echo -e "${InvGreen} ${CClear} [Retrying to resume normal operations in roughly 300 seconds...Please stand by!]${CClear}"
           echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
           echo ""
-          spinner $reconnecttimer  # Time allotted to give router chance to recover before reconnecting tunnels - Default: reconnecttimer=300
+          spinner 300
           #sendmessage 1 "Recovering from WAN Down" - this doesn't work when the internet is down
           exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
       fi
@@ -6379,30 +6198,22 @@ wancheck()
           WAN0TX2="${CRed}[$WAN0TPTX]${CClear}"
         fi
 
-        if [ "$WCNT" -ge 1 ]; then
-          wan0status="${CRed}[$WCNT]${CClear}"
-          wan0health="${CRed}[FAIL]${CClear}"
-        else
-          wan0status="${CGreen}[X]${CClear}"
-          wan0health="${CGreen}[ OK ]${CClear}"
-        fi
-
         if [ "$WAN0PING" = "[FAILOVER]" ]
         then
-           echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN0${CClear} | $wan0status | "
-           printf "%-6s" "${WAN0IFNAME:0:6}"
-           if [ "$bwdisp" = "1" ]; then
-             echo -e " | $wan0health | Failover     | $WAN0IP | $WAN0PING | $WAN0RX1 | $WAN0TX1 | $WAN0CITY: $uptimeStr"
-           else
-             echo -e " | $wan0health | Failover     | $WAN0IP | $WAN0PING | $WAN0RX2 | $WAN0TX2 | $WAN0CITY: $uptimeStr"
-           fi
-        else
-           echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN0${CClear} | $wan0status | "
+           echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN0${CClear} | ${CGreen}[X]${CClear} | "
            printf "%-6s" "$WAN0IFNAME"
            if [ "$bwdisp" = "1" ]; then
-             echo -e " | $wan0health | Active       | $WAN0IP | $WAN0PING | $WAN0RX1 | $WAN0TX1 | $WAN0CITY: $uptimeStr"
+             echo -e " | ${CGreen}[ OK ]${CClear} | Failover     | $WAN0IP | $WAN0PING | $WAN0RX1 | $WAN0TX1 | $WAN0CITY: $uptimeStr"
            else
-             echo -e " | $wan0health | Active       | $WAN0IP | $WAN0PING | $WAN0RX2 | $WAN0TX2 | $WAN0CITY: $uptimeStr"
+             echo -e " | ${CGreen}[ OK ]${CClear} | Failover     | $WAN0IP | $WAN0PING | $WAN0RX2 | $WAN0TX2 | $WAN0CITY: $uptimeStr"
+           fi
+        else
+           echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN0${CClear} | ${CGreen}[X]${CClear} | "
+           printf "%-6s" "$WAN0IFNAME"
+           if [ "$bwdisp" = "1" ]; then
+             echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN0IP | $WAN0PING | $WAN0RX1 | $WAN0TX1 | $WAN0CITY: $uptimeStr"
+           else
+             echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN0IP | $WAN0PING | $WAN0RX2 | $WAN0TX2 | $WAN0CITY: $uptimeStr"
            fi
         fi
      else
@@ -6500,30 +6311,22 @@ wancheck()
           WAN1TX2="${CRed}[$WAN1TPTX]${CClear}"
         fi
 
-        if [ "$WCNT" -ge 1 ]; then
-          wan1status="${CRed}[$WCNT]${CClear}"
-          wan1health="${CRed}[FAIL]${CClear}"
-        else
-          wan1status="${CGreen}[X]${CClear}"
-          wan1health="${CGreen}[ OK ]${CClear}"
-        fi
-
         if [ "$WAN1PING" = "[FAILOVER]" ]
         then
-           echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN1${CClear} | $wan1status | "
-           printf "%-6s" "${WAN1IFNAME:0:6}"
-           if [ "$bwdisp" = "1" ]; then
-             echo -e " | $wan1health | Failover     | $WAN1IP | $WAN1PING | $WAN1RX1 | $WAN1TX1 | $WAN1CITY: $uptimeStr"
-           else
-             echo -e " | $wan1health | Failover     | $WAN1IP | $WAN1PING | $WAN1RX2 | $WAN1TX2 | $WAN1CITY: $uptimeStr"
-           fi
-        else
-           echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN1${CClear} | $wan1status | "
+           echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN1${CClear} | ${CGreen}[X]${CClear} | "
            printf "%-6s" "$WAN1IFNAME"
            if [ "$bwdisp" = "1" ]; then
-             echo -e " | $wan1health | Active       | $WAN1IP | $WAN1PING | $WAN1RX1 | $WAN1TX1 | $WAN1CITY: $uptimeStr"
+             echo -e " | ${CGreen}[ OK ]${CClear} | Failover     | $WAN1IP | $WAN1PING | $WAN1RX1 | $WAN1TX1 | $WAN1CITY: $uptimeStr"
            else
-             echo -e " | $wan1health | Active       | $WAN1IP | $WAN1PING | $WAN1RX2 | $WAN1TX2 | $WAN1CITY: $uptimeStr"
+             echo -e " | ${CGreen}[ OK ]${CClear} | Failover     | $WAN1IP | $WAN1PING | $WAN1RX2 | $WAN1TX2 | $WAN1CITY: $uptimeStr"
+           fi
+        else
+           echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN1${CClear} | ${CGreen}[X]${CClear} | "
+           printf "%-6s" "$WAN1IFNAME"
+           if [ "$bwdisp" = "1" ]; then
+             echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN1IP | $WAN1PING | $WAN1RX1 | $WAN1TX1 | $WAN1CITY: $uptimeStr"
+           else
+             echo -e " | ${CGreen}[ OK ]${CClear} | Active       | $WAN1IP | $WAN1PING | $WAN1RX2 | $WAN1TX2 | $WAN1CITY: $uptimeStr"
            fi
         fi
      else
@@ -6668,14 +6471,6 @@ get_wan_setting1()
 getifacestats()
 {
 
-  if [ $loopexit -eq 1 ]
-  then
-    loopexit=0
-    return
-  else
-    echo $(date +%s) > "/jffs/addons/vpnmon-r3.d/vr3start.txt"
-  fi
-
   if [ ! -z "$WAN0IFNAME" ]
   then
     oldwan0rxbytes="$($timeoutcmd$timeoutsec cat /sys/class/net/$WAN0IFNAME/statistics/rx_bytes)"
@@ -6805,32 +6600,12 @@ calcifacestats()
     return
   fi
 
-  if [ $loopexit -eq 1 ]
-  then
-    return
-  fi
-
-  if [ -f "/jffs/addons/vpnmon-r3.d/vr3start.txt" ]
-  then
-    timerstart=$(cat "/jffs/addons/vpnmon-r3.d/vr3start.txt")
-    timernow=$(date +%s)
-    timerdiff=$((timernow-timerstart))
-    if [ $timerdiff -gt $timerloop ]
-    then
-      newtimer=$timerdiff
-    else
-      newtimer=$timerloop
-    fi
-  else
-    newtimer=$timerloop
-  fi
-
   if [ ! -z "$WAN0IFNAME" ]
   then
     newwan0rxbytes="$($timeoutcmd$timeoutsec cat /sys/class/net/$WAN0IFNAME/statistics/rx_bytes)"
     newwan0txbytes="$($timeoutcmd$timeoutsec cat /sys/class/net/$WAN0IFNAME/statistics/tx_bytes)"
-    diffwan0rxbytes=$(awk -v new=$newwan0rxbytes -v old=$oldwan0rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffwan0txbytes=$(awk -v new=$newwan0txbytes -v old=$oldwan0txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwan0rxbytes=$(awk -v new=$newwan0rxbytes -v old=$oldwan0rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwan0txbytes=$(awk -v new=$newwan0txbytes -v old=$oldwan0txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruwan0rxbytes=$(awk -v new=$newwan0rxbytes -v old=$oldwan0rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruwan0txbytes=$(awk -v new=$newwan0txbytes -v old=$oldwan0txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   fi
@@ -6839,8 +6614,8 @@ calcifacestats()
   then
     newwan1rxbytes="$($timeoutcmd$timeoutsec cat /sys/class/net/$WAN1IFNAME/statistics/rx_bytes)"
     newwan1txbytes="$($timeoutcmd$timeoutsec cat /sys/class/net/$WAN1IFNAME/statistics/tx_bytes)"
-    diffwan1rxbytes=$(awk -v new=$newwan1rxbytes -v old=$oldwan1rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffwan1txbytes=$(awk -v new=$newwan1txbytes -v old=$oldwan1txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwan1rxbytes=$(awk -v new=$newwan1rxbytes -v old=$oldwan1rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwan1txbytes=$(awk -v new=$newwan1txbytes -v old=$oldwan1txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruwan1rxbytes=$(awk -v new=$newwan1rxbytes -v old=$oldwan1rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruwan1txbytes=$(awk -v new=$newwan1txbytes -v old=$oldwan1txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   fi
@@ -6869,8 +6644,8 @@ calcifacestats()
     newvpn1txbytes="$(echo $newvpn1txrxbytes | cut -d' ' -f2)"
     if [ -z $newvpn1rxbytes ]; then newvpn1rxbytes=0; fi
     if [ -z $newvpn1txbytes ]; then newvpn1txbytes=0; fi
-    diffvpn1rxbytes=$(awk -v new=$newvpn1rxbytes -v old=$oldvpn1rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffvpn1txbytes=$(awk -v new=$newvpn1txbytes -v old=$oldvpn1txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffvpn1rxbytes=$(awk -v new=$newvpn1rxbytes -v old=$oldvpn1rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffvpn1txbytes=$(awk -v new=$newvpn1txbytes -v old=$oldvpn1txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruvpn1rxbytes=$(awk -v new=$newvpn1rxbytes -v old=$oldvpn1rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruvpn1txbytes=$(awk -v new=$newvpn1txbytes -v old=$oldvpn1txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
@@ -6886,8 +6661,8 @@ calcifacestats()
     newvpn2txbytes="$(echo $newvpn2txrxbytes | cut -d' ' -f2)"
     if [ -z $newvpn2rxbytes ]; then newvpn2rxbytes=0; fi
     if [ -z $newvpn2txbytes ]; then newvpn2txbytes=0; fi
-    diffvpn2rxbytes=$(awk -v new=$newvpn2rxbytes -v old=$oldvpn2rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffvpn2txbytes=$(awk -v new=$newvpn2txbytes -v old=$oldvpn2txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffvpn2rxbytes=$(awk -v new=$newvpn2rxbytes -v old=$oldvpn2rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffvpn2txbytes=$(awk -v new=$newvpn2txbytes -v old=$oldvpn2txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruvpn2rxbytes=$(awk -v new=$newvpn2rxbytes -v old=$oldvpn2rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruvpn2txbytes=$(awk -v new=$newvpn2txbytes -v old=$oldvpn2txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
@@ -6903,8 +6678,8 @@ calcifacestats()
     newvpn3txbytes="$(echo $newvpn3txrxbytes | cut -d' ' -f2)"
     if [ -z $newvpn3rxbytes ]; then newvpn3rxbytes=0; fi
     if [ -z $newvpn3txbytes ]; then newvpn3txbytes=0; fi
-    diffvpn3rxbytes=$(awk -v new=$newvpn3rxbytes -v old=$oldvpn3rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffvpn3txbytes=$(awk -v new=$newvpn3txbytes -v old=$oldvpn3txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffvpn3rxbytes=$(awk -v new=$newvpn3rxbytes -v old=$oldvpn3rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffvpn3txbytes=$(awk -v new=$newvpn3txbytes -v old=$oldvpn3txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruvpn3rxbytes=$(awk -v new=$newvpn3rxbytes -v old=$oldvpn3rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruvpn3txbytes=$(awk -v new=$newvpn3txbytes -v old=$oldvpn3txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
@@ -6920,8 +6695,8 @@ calcifacestats()
     newvpn4txbytes="$(echo $newvpn4txrxbytes | cut -d' ' -f2)"
     if [ -z $newvpn4rxbytes ]; then newvpn4rxbytes=0; fi
     if [ -z $newvpn4txbytes ]; then newvpn4txbytes=0; fi
-    diffvpn4rxbytes=$(awk -v new=$newvpn4rxbytes -v old=$oldvpn4rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffvpn4txbytes=$(awk -v new=$newvpn4txbytes -v old=$oldvpn4txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffvpn4rxbytes=$(awk -v new=$newvpn4rxbytes -v old=$oldvpn4rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffvpn4txbytes=$(awk -v new=$newvpn4txbytes -v old=$oldvpn4txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruvpn4rxbytes=$(awk -v new=$newvpn4rxbytes -v old=$oldvpn4rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruvpn4txbytes=$(awk -v new=$newvpn4txbytes -v old=$oldvpn4txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
@@ -6937,8 +6712,8 @@ calcifacestats()
     newvpn5txbytes="$(echo $newvpn5txrxbytes | cut -d' ' -f2)"
     if [ -z $newvpn5rxbytes ]; then newvpn5rxbytes=0; fi
     if [ -z $newvpn5txbytes ]; then newvpn5txbytes=0; fi
-    diffvpn5rxbytes=$(awk -v new=$newvpn5rxbytes -v old=$oldvpn5rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffvpn5txbytes=$(awk -v new=$newvpn5txbytes -v old=$oldvpn5txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffvpn5rxbytes=$(awk -v new=$newvpn5rxbytes -v old=$oldvpn5rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffvpn5txbytes=$(awk -v new=$newvpn5txbytes -v old=$oldvpn5txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruvpn5rxbytes=$(awk -v new=$newvpn5rxbytes -v old=$oldvpn5rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruvpn5txbytes=$(awk -v new=$newvpn5txbytes -v old=$oldvpn5txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
@@ -6954,8 +6729,8 @@ calcifacestats()
     newwg1txbytes="$(echo $newwg1txrxbytes | cut -d' ' -f3)"
     if [ -z $newwg1rxbytes ] || [ $newwg1rxbytes -le 0 ]; then newwg1rxbytes=0; fi
     if [ -z $newwg1txbytes ] || [ $newwg1txbytes -le 0 ]; then newwg1txbytes=0; fi
-    diffwg1rxbytes=$(awk -v new=$newwg1rxbytes -v old=$oldwg1rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffwg1txbytes=$(awk -v new=$newwg1txbytes -v old=$oldwg1txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwg1rxbytes=$(awk -v new=$newwg1rxbytes -v old=$oldwg1rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwg1txbytes=$(awk -v new=$newwg1txbytes -v old=$oldwg1txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruwg1rxbytes=$(awk -v new=$newwg1rxbytes -v old=$oldwg1rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruwg1txbytes=$(awk -v new=$newwg1txbytes -v old=$oldwg1txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
@@ -6971,8 +6746,8 @@ calcifacestats()
     newwg2txbytes="$(echo $newwg2txrxbytes | cut -d' ' -f3)"
     if [ -z $newwg2rxbytes ] || [ $newwg2rxbytes -le 0 ]; then newwg2rxbytes=0; fi
     if [ -z $newwg2txbytes ] || [ $newwg2txbytes -le 0 ]; then newwg2txbytes=0; fi
-    diffwg2rxbytes=$(awk -v new=$newwg2rxbytes -v old=$oldwg2rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffwg2txbytes=$(awk -v new=$newwg2txbytes -v old=$oldwg2txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwg2rxbytes=$(awk -v new=$newwg2rxbytes -v old=$oldwg2rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwg2txbytes=$(awk -v new=$newwg2txbytes -v old=$oldwg2txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruwg2rxbytes=$(awk -v new=$newwg2rxbytes -v old=$oldwg2rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruwg2txbytes=$(awk -v new=$newwg2txbytes -v old=$oldwg2txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
@@ -6988,8 +6763,8 @@ calcifacestats()
     newwg3txbytes="$(echo $newwg3txrxbytes | cut -d' ' -f3)"
     if [ -z $newwg3rxbytes ] || [ $newwg3rxbytes -le 0 ]; then newwg3rxbytes=0; fi
     if [ -z $newwg3txbytes ] || [ $newwg3txbytes -le 0 ]; then newwg3txbytes=0; fi
-    diffwg3rxbytes=$(awk -v new=$newwg3rxbytes -v old=$oldwg3rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffwg3txbytes=$(awk -v new=$newwg3txbytes -v old=$oldwg3txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwg3rxbytes=$(awk -v new=$newwg3rxbytes -v old=$oldwg3rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwg3txbytes=$(awk -v new=$newwg3txbytes -v old=$oldwg3txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruwg3rxbytes=$(awk -v new=$newwg3rxbytes -v old=$oldwg3rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruwg3txbytes=$(awk -v new=$newwg3txbytes -v old=$oldwg3txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
@@ -7005,8 +6780,8 @@ calcifacestats()
     newwg4txbytes="$(echo $newwg4txrxbytes | cut -d' ' -f3)"
     if [ -z $newwg4rxbytes ] || [ $newwg4rxbytes -le 0 ]; then newwg4rxbytes=0; fi
     if [ -z $newwg4txbytes ] || [ $newwg4txbytes -le 0 ]; then newwg4txbytes=0; fi
-    diffwg4rxbytes=$(awk -v new=$newwg4rxbytes -v old=$oldwg4rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffwg4txbytes=$(awk -v new=$newwg4txbytes -v old=$oldwg4txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwg4rxbytes=$(awk -v new=$newwg4rxbytes -v old=$oldwg4rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwg4txbytes=$(awk -v new=$newwg4txbytes -v old=$oldwg4txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruwg4rxbytes=$(awk -v new=$newwg4rxbytes -v old=$oldwg4rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruwg4txbytes=$(awk -v new=$newwg4txbytes -v old=$oldwg4txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
@@ -7022,8 +6797,8 @@ calcifacestats()
     newwg5txbytes="$(echo $newwg5txrxbytes | cut -d' ' -f3)"
     if [ -z $newwg5rxbytes ] || [ $newwg5rxbytes -le 0 ]; then newwg5rxbytes=0; fi
     if [ -z $newwg5txbytes ] || [ $newwg5txbytes -le 0 ]; then newwg5txbytes=0; fi
-    diffwg5rxbytes=$(awk -v new=$newwg5rxbytes -v old=$oldwg5rxbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
-    diffwg5txbytes=$(awk -v new=$newwg5txbytes -v old=$oldwg5txbytes -v mb=125000 -v lp=$newtimer 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwg5rxbytes=$(awk -v new=$newwg5rxbytes -v old=$oldwg5rxbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
+    diffwg5txbytes=$(awk -v new=$newwg5txbytes -v old=$oldwg5txbytes -v mb=125000 -v lp=$timerloop 'BEGIN{printf "%.0f\n", ((new-old)/mb)/lp}')
     thruwg5rxbytes=$(awk -v new=$newwg5rxbytes -v old=$oldwg5rxbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
     thruwg5txbytes=$(awk -v new=$newwg5txbytes -v old=$oldwg5txbytes -v mb=1000000 'BEGIN{printf "%.0f\n", (new-old)/mb}')
   else
@@ -7364,9 +7139,8 @@ then
     clear #last switch before the main program starts
     firstrun=1
 
-    # Clean up lockfile and other files
+    # Clean up lockfile
     rm -f $lockfile >/dev/null 2>&1
-    rm -f /jffs/addons/vpnmon-r3.d/vr3start.txt >/dev/null 2>&1
 
     if [ ! -f "$config" ] && [ ! -f "/opt/bin/timeout" ] && [ ! -f "/opt/sbin/screen" ] && [ ! -f "/opt/bin/jq" ]
     then
@@ -7460,7 +7234,7 @@ do
   #Display VPNMON-R3 client header
   echo -en "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 - v"
   printf "%-8s" $version
-  echo -e "                      ${CGreen}(S)${CWhite}how/${CGreen}(H)${CWhite}ide Operations Menu ${InvDkGray}            $tzspaces$(date +"%a %b %d, %Y %H:%M:%S %Z %z") ${CClear}"
+  echo -e "                        ${CGreen}(S)${CWhite}how/${CGreen}(H)${CWhite}ide Operations Menu ${InvDkGray}                 $tzspaces$(date) ${CClear}"
 
   #Display VPNMON-R2 Found Warning
   if [ -f /jffs/scripts/vpnmon-r2.sh ]; then

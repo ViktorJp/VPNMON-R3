@@ -1,3 +1,45 @@
+v1.8.3   - (January 17, 2026)
+         - PATCH: The Recovery Timeout should be defaulting to 1x, but it was inadvertently set to 3x. Thank
+           you to @Tarek Yag for reporting this. Fixed!
+         - PATCH: Changed the wording for the custom PING host to "Custom PING host for connectivity checks"
+           to bring more clarity that it wasn't just for VPN checks, but WAN and WG as well. Thanks to
+           @scootertramp for reporting.
+         - PATCH: Changed the date/time to include the offset alongside the timezone. This is to give more
+           visibility for those who aren't assigned a standard timezone name, and in some cases would fall
+           back to using "GMT". Thanks to @Tarek Yag for reporting this, and for @EmeraldDeer providing a
+           deep dive into the date command options.
+         - PATCH: Fixed some hardcoded instances where the recovery timeouts were set to 3, instead of using
+           user-selected values.
+         - PATCH: Fixed some instances where PINGHOST was hardcoded to 8.8.8.8, instead of using user-selected
+           values.
+         - PATCH: Recovery timeouts (if configured) will apply to the WAN as well. Should the WAN have issues
+           establishing an SSL connection with the user-selected PINGHOST, it will attempt to try the number
+           of times that is user-specified.
+         - PATCH: Cut down all VPN/WG connection and reset times by half. Will continue to monitor closely 
+           for misbehavior. Done in response to @scootertramp noting the long time it takes to reconnect all
+           VPN/WG connections after a WAN DOWN event.
+         - PATCH: Removed the functionality that would reset the Rx/Tx indicators to [UNKN] each time you
+           went into a different menu item. It will now just show live stats no matter what. For consistent
+           and more accurate results, wait your full 60 seconds (or whatever you've set your timer value to).
+         - PATCH: Added Config Menu option #16: "WAN Recovery, Down, Reconnect Timers", giving you more
+           control over the amount of time the various stages of dealing with a WAN DOWN situation, from the
+           amount of time your WAN can try to recover on its own, to how long between checking to see if the
+           WAN has become available again, to the amount of time given to let the router recover after the
+           WAN has come back up again before reconnecting all tunnels.
+         - PATCH: Improved the tracking of the timer, plus any time spent in other menus outside of the
+           regular timer, to provide a more accurate view of the Tx/Rx stats.
+         - PATCH: Based on some feedback that @ComputerSteve was experiencing, I've optimized both the VPN
+           and WG connectivity tests to fail the curl test if the ping test fails. It seems the ping test
+           will fail pretty quickly, while the curl test could hang in there for quite some time before
+           indicating a fail. This should help resolve some of the sluggishness you would see if any of
+           your tunnels are misbehaving.
+         - PATCH: Built in the capability to now use redundant Pinghosts under the configuration menu, using
+           option #2 "Custom Ping Hosts for Connectivity Checks". By default, Pinghost 1 uses 8.8.8.8 and
+           Pinghost 2 uses 1.1.1.1. Pinging these hosts through the VPN/WG tunnel is used to determine if the
+           tunnel is healthy. This now also provides some redundancy, should Pinghost 1 not respond, but
+           Pinghost 2 does, then the tunnel will not get reset, and should help with those dealing with more
+           frequent resets.
+
 v1.8.2   - (November 23, 2025)
          - PATCH: Thanks to @JTnola for sharing a "[: bad number" bug he was experiencing. This hard-to-find
            bug only seemed to come up in certain scenarios when using the limited 2-OVPN slot configuration.
