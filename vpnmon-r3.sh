@@ -2047,7 +2047,7 @@ dvpn_setup()
           clear
           echo -e "${InvGreen} ${InvDkGray}${CWhite} Tear Down Routing Rules                                                               ${CClear}"
           echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Please indicate below if you would like to tear down and removed all Double-Hop${CClear}"
+          echo -e "${InvGreen} ${CClear} Please indicate below if you would like to tear down and remove all Double-Hop${CClear}"
           echo -e "${InvGreen} ${CClear} Routing Rules. This is the last step that you would need to take when disabling${CClear}"
           echo -e "${InvGreen} ${CClear} the Double-Hop functionality. This removes all Double-Hop routing rules (ip rules,${CClear}"
           echo -e "${InvGreen} ${CClear} routing tables, iptables marks) and restores any VPN Director rules that were${CClear}"
