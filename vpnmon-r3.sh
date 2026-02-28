@@ -1,13 +1,13 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.8.3 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.9.0 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2026-Jan-17
+# Last Modified: 2026-Feb-28
 ##########################################################################################
 
 #Preferred standard router binaries path
@@ -2748,6 +2748,10 @@ echo -e "  ${CWhite}Tunnel 2 (Inner):${CClear} ${DVPN_TUNNEL2_TYPE} Slot ${DVPN_
 echo -e "  ${CWhite}Hop Mark:${CClear}         ${DVPN_HOP_MARK} -> table ${DVPN_TUNNEL2_TABLE}"
 echo -e "  ${CWhite}WG Max HS Age:${CClear}    ${DVPN_WG_MAX_AGE}s"
 
+echo ""
+read -rsp $'Press any key to continue (2/7)... ' -n1 key
+printf "\r\033[2K"
+
 ##############################################################################
 # SECTION 2 - Interface Status
 ##############################################################################
@@ -2762,6 +2766,10 @@ fi
 
 check_iface "Tunnel 1 (Outer)" "$DVPN_TUNNEL1_IF" "$DVPN_TUNNEL1_TYPE" "$DVPN_TUNNEL1_SLOT"
 check_iface "Tunnel 2 (Inner)" "$DVPN_TUNNEL2_IF" "$DVPN_TUNNEL2_TYPE" "$DVPN_TUNNEL2_SLOT"
+
+echo ""
+read -rsp $'Press any key to continue (3/7)... ' -n1 key
+printf "\r\033[2K"
 
 ##############################################################################
 # SECTION 3 - Endpoint Host Routes
@@ -2828,6 +2836,10 @@ else
   fi
 fi
 
+echo ""
+read -rsp $'Press any key to continue (4/7)... ' -n1 key
+printf "\r\033[2K"
+
 ##############################################################################
 # SECTION 4 - Routing Tables
 ##############################################################################
@@ -2851,6 +2863,10 @@ else
   fail "No ip rule found for hop mark ${DVPN_HOP_MARK} -> table ${DVPN_TUNNEL2_TABLE}"
   info "This is the critical rule - without it hop clients go to the wrong table"
 fi
+
+echo ""
+read -rsp $'Press any key to continue (5/7)... ' -n1 key
+printf "\r\033[2K"
 
 ##############################################################################
 # SECTION 5 - iptables Mangle Rules
@@ -2895,6 +2911,9 @@ for entry in $DVPN_HOP_IPS; do
 
   echo ""
 done
+
+read -rsp $'Press any key to continue (6/7)... ' -n1 key
+printf "\r\033[2K"
 
 ##############################################################################
 # SECTION 6 - End-to-End Routing Chain Proof Per Hop Client
@@ -3027,6 +3046,9 @@ EOF
   echo ""
 done
 
+read -rsp $'Press any key to continue (7/7)... ' -n1 key
+printf "\r\033[2K"
+
 ##############################################################################
 # SECTION 7 - State File
 ##############################################################################
@@ -3054,6 +3076,10 @@ else
   warn "State file not found at $STATE"
   info "dvpn_check_and_apply has not run yet, or state was cleared"
 fi
+
+echo ""
+read -rsp $'Press any key to continue (Diagnostic Summary)... ' -n1 key
+printf "\r\033[2K"
 
 ##############################################################################
 # SUMMARY
