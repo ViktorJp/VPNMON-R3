@@ -7,7 +7,7 @@
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2026-Mar-6
+# Last Modified: 2026-Mar-7
 ##########################################################################################
 
 #Preferred standard router binaries path
@@ -1650,7 +1650,7 @@ dvpn_display_status()
 
   if [ "$ST1_UP" = "1" ]; then
     t1_color="$CGreen"
-    t1_label="ACTIVE"
+    t1_label="Active"
     t1_ep_disp="${ST1_EP:-unknown}"
 
     if [ "$DVPN_TUNNEL1_TYPE" = "wg" ] && [ -n "$wgbin" ]; then
@@ -1670,7 +1670,7 @@ dvpn_display_status()
     fi
   else
     t1_color="$CRed"
-    t1_label="DOWN  "
+    t1_label="Down  "
     t1_detail="Waiting..."
     t1_ep_disp="---"
   fi
@@ -1681,7 +1681,7 @@ dvpn_display_status()
 
   if [ "$ST2_UP" = "1" ]; then
     t2_color="$CGreen"
-    t2_label="ACTIVE"
+    t2_label="Active"
     t2_ep_disp="${ST2_EP:-unknown}"
 
     if [ "$DVPN_TUNNEL2_TYPE" = "wg" ] && [ -n "$wgbin" ]; then
@@ -1701,7 +1701,7 @@ dvpn_display_status()
     fi
   else
     t2_color="$CRed"
-    t2_label="DOWN  "
+    t2_label="Down  "
     t2_detail="Waiting..."
     t2_ep_disp="---"
   fi
@@ -8891,9 +8891,9 @@ wancheck()
            echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN0${CClear} | $wan0status | "
            printf "%-6s" "$WAN0IFNAME"
            if [ "$bwdisp" = "1" ]; then
-             echo -e " | $wan0health | Active       | $WAN0IP | $WAN0PING | $WAN0RX1 | $WAN0TX1 | $WAN0CITY: $uptimeStr"
+             echo -e " | $wan0health | ${CGreen}Active${CClear}       | $WAN0IP | $WAN0PING | $WAN0RX1 | $WAN0TX1 | $WAN0CITY: $uptimeStr"
            else
-             echo -e " | $wan0health | Active       | $WAN0IP | $WAN0PING | $WAN0RX2 | $WAN0TX2 | $WAN0CITY: $uptimeStr"
+             echo -e " | $wan0health | ${CGreen}Active${CClear}       | $WAN0IP | $WAN0PING | $WAN0RX2 | $WAN0TX2 | $WAN0CITY: $uptimeStr"
            fi
         fi
      else
@@ -9012,9 +9012,9 @@ wancheck()
            echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN1${CClear} | $wan1status | "
            printf "%-6s" "$WAN1IFNAME"
            if [ "$bwdisp" = "1" ]; then
-             echo -e " | $wan1health | Active       | $WAN1IP | $WAN1PING | $WAN1RX1 | $WAN1TX1 | $WAN1CITY: $uptimeStr"
+             echo -e " | $wan1health | ${CGreen}Active${CClear}       | $WAN1IP | $WAN1PING | $WAN1RX1 | $WAN1TX1 | $WAN1CITY: $uptimeStr"
            else
-             echo -e " | $wan1health | Active       | $WAN1IP | $WAN1PING | $WAN1RX2 | $WAN1TX2 | $WAN1CITY: $uptimeStr"
+             echo -e " | $wan1health | ${CGreen}Active${CClear}       | $WAN1IP | $WAN1PING | $WAN1RX2 | $WAN1TX2 | $WAN1CITY: $uptimeStr"
            fi
         fi
      else
@@ -10075,7 +10075,7 @@ do
            vpntx2="${CDkGray}[n/a ]${CClear}"
         elif [ "$vpnstate" = "2" ]
         then
-           vpnstate="Connected   "
+           vpnstate="${CGreen}Connected${CClear}   "
            checkvpn "$i"
            getvpnip "$i"
            getvpncity "$i"
@@ -10407,7 +10407,7 @@ do
            wgtx2="${CDkGray}[n/a ]${CClear}"
         elif [ "$wgstate" = "2" ]
         then
-           wgstate="Connected   "
+           wgstate="${CGreen}Connected${CClear}   "
            checkwg "$i"
            getwgip "$i"
            getwgcity "$i"
