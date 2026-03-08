@@ -10,7 +10,7 @@ v1.9.0b1 - (February 28, 2026)
            if need be, along with the ability to enable/disable, rebuild, and tear down routing rules.
            PLEASE NOTE: Double-Hop VPN Client redirection is handled within the VPNMON-R3 interface, not
            through the VPN Director in the main Merlin UI. 
-         - PATCH: Various inconsistencies and bug fixes.
+         - PATCH: Various inconsistencies and bug fixes around bandwidth measurements.
 
 v1.8.3   - (January 17, 2026)
          - PATCH: The Recovery Timeout should be defaulting to 1x, but it was inadvertently set to 3x. Thank
