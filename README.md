@@ -5,7 +5,7 @@ Updated on 2026-Mar-8
 
 ---
 
-<img width="1174" height="715" alt="image" src="https://github.com/user-attachments/assets/e4694707-2c40-4d1b-a921-7d1e82f68b5f" />
+<img width="1170" height="822" alt="image" src="https://github.com/user-attachments/assets/4a96a7e6-f930-4409-a9b4-dffda8d1165b" />
 
 ---
 
