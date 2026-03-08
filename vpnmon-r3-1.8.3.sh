@@ -1,20 +1,20 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.9.0 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.8.3 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2026-Mar-8
+# Last Modified: 2026-Jan-17
 ##########################################################################################
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.9.0"                                                 # Version tracker
+version="1.8.3"                                                 # Version tracker
 beta=0                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -23,7 +23,6 @@ dlverpath="/jffs/addons/vpnmon-r3.d/version.txt"                # Static path to
 config="/jffs/addons/vpnmon-r3.d/vpnmon-r3.cfg"                 # Static path to the config file
 lockfile="/jffs/addons/vpnmon-r3.d/resetlock.txt"               # Static path to the reset lock file
 vr3emails="/jffs/addons/vpnmon-r3.d/vr3emails.txt"              # Static path to email rate limit file
-dvpnconfig="/jffs/addons/vpnmon-r3.d/vr3dblvpn.cfg"             # Double-hop config file path
 availableslots="1 2 3 4 5"                                      # Available slots tracker
 logsize=2000                                                    # Log file size in rows
 timerloop=60                                                    # Timer loop in sec
@@ -70,25 +69,7 @@ recoverytimer=10                                                # Time between r
 wandowntimer=60                                                 # Time between attempts to determine if WAN is available again
 reconnecttimer=300                                              # Time allotted to giving router time to stabilize before reconnecting tunnels
 loopexit=0                                                      # Switch to determine if the timerloop was exited early
-DVPN_ENABLED=0                                                  # Master switch: 1=active 0=disabled
-DVPN_TUNNEL1_TYPE="wg"                                          # Tunnel 1 type: wg or ovpn
-DVPN_TUNNEL1_SLOT="1"                                           # Tunnel 1 VPN slot number (1-5)
-DVPN_TUNNEL1_IF="wgc1"                                          # Tunnel 1 interface (wgN or tun1N)
-DVPN_TUNNEL1_TABLE="201"                                        # Tunnel 1 routing table number
-DVPN_TUNNEL1_MARK="0x201"                                       # Tunnel 1 fwmark (hex of table)
-DVPN_TUNNEL2_TYPE="wg"                                          # Tunnel 2 type: wg or ovpn
-DVPN_TUNNEL2_SLOT="2"                                           # Tunnel 2 VPN slot number (1-5)
-DVPN_TUNNEL2_IF="wgc2"                                          # Tunnel 2 interface
-DVPN_TUNNEL2_TABLE="202"                                        # Tunnel 2 routing table number
-DVPN_TUNNEL2_MARK="0x202"                                       # Tunnel 2 fwmark
-DVPN_HOP_IPS=""                                                 # Space-separated client IPs/CIDRs/ranges
-DVPN_HOP_MARK="0x1CC"                                           # fwmark applied to double-hop clients
-DVPN_WG_MAX_AGE=180                                             # Max WG handshake age (sec) before DOWN
-DVPN_STATE_FILE="/tmp/doublevpn-state"                          # Runtime state across loop iterations
-DVPN_SAVED_RULES="/tmp/doublevpn-saved-rules.txt"               # VPN Director rules suspended by us
-DVPN_INSTALLED_IPS_FILE="/tmp/doublevpn-installed-ips"          # Tracks the exact IP entries that had rules
-DVPN_LOCK="/tmp/doublevpn.lock"                                 # Mutual-exclusion lock file
-DVPN_HOP_PRIO=99                                                # Hop Priority
+
 ##-------------------------------------##
 ## Added by Martinski W. [2024-Oct-05] ##
 ##-------------------------------------##
@@ -222,11 +203,10 @@ logoNMexit () {
 # -------------------------------------------------------------------------------------------------------------------------
 # Promptyn is a simple function that accepts y/n input
 
-promptyn()
-{   # No defaults, just y or n
+promptyn () {   # No defaults, just y or n
   while true; do
-    read -p "$1" -n 1 -r yn
-      case "${yn}" in
+    read -p '[y/n]? ' YESNO
+      case "$YESNO" in
         [Yy]* ) return 0 ;;
         [Nn]* ) return 1 ;;
         * ) echo -e "\nPlease answer y or n.";;
@@ -271,14 +251,12 @@ preparebar()
 ##----------------------------------------##
 ## Modified by Martinski W. [2024-Nov-02] ##
 ##----------------------------------------##
-
-_GetPercent_() { printf "%.1f" "$(awk "BEGIN{print $1}")" ; }
-#_GetPercent_() { printf "%.1f" "$(echo "$1" | awk "{print $1}")" ; }
-
 progressbaroverride()
 {
   insertspc=" "
   bypasswancheck=0
+
+  _GetPercent_() { printf "%.1f" "$(echo "$1" | awk "{print $1}")" ; }
 
   if [ "$1" -eq -1 ]
   then
@@ -309,16 +287,16 @@ progressbaroverride()
   if [ "$key_press" ]
   then
       case "$key_press" in
-          [1]) echo ""; restartvpn 1; dvpn_on_tunnel_restart "ovpn" "1"; sendmessage 0 "VPN Reset" 1; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [2]) echo ""; restartvpn 2; dvpn_on_tunnel_restart "ovpn" "2"; sendmessage 0 "VPN Reset" 2; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [3]) echo ""; restartvpn 3; dvpn_on_tunnel_restart "ovpn" "3"; sendmessage 0 "VPN Reset" 3; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [4]) echo ""; restartvpn 4; dvpn_on_tunnel_restart "ovpn" "4"; sendmessage 0 "VPN Reset" 4; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [5]) echo ""; restartvpn 5; dvpn_on_tunnel_restart "ovpn" "5"; sendmessage 0 "VPN Reset" 5; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [6]) echo ""; restartwg 1; dvpn_on_tunnel_restart "wg" "1"; sendmessage 0 "WG Reset" 1; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [7]) echo ""; restartwg 2; dvpn_on_tunnel_restart "wg" "2"; sendmessage 0 "WG Reset" 2; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [8]) echo ""; restartwg 3; dvpn_on_tunnel_restart "wg" "3"; sendmessage 0 "WG Reset" 3; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [9]) echo ""; restartwg 4; dvpn_on_tunnel_restart "wg" "4"; sendmessage 0 "WG Reset" 4; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-          [0]) echo ""; restartwg 5; dvpn_on_tunnel_restart "wg" "5"; sendmessage 0 "WG Reset" 5; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [1]) echo ""; restartvpn 1; sendmessage 0 "VPN Reset" 1; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [2]) echo ""; restartvpn 2; sendmessage 0 "VPN Reset" 2; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [3]) echo ""; restartvpn 3; sendmessage 0 "VPN Reset" 3; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [4]) echo ""; restartvpn 4; sendmessage 0 "VPN Reset" 4; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [5]) echo ""; restartvpn 5; sendmessage 0 "VPN Reset" 5; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [6]) echo ""; restartwg 1; sendmessage 0 "WG Reset" 1; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [7]) echo ""; restartwg 2; sendmessage 0 "WG Reset" 2; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [8]) echo ""; restartwg 3; sendmessage 0 "WG Reset" 3; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [9]) echo ""; restartwg 4; sendmessage 0 "WG Reset" 4; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+          [0]) echo ""; restartwg 5; sendmessage 0 "WG Reset" 5; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
           [\!]) echo ""; killunmonvpn 1; sendmessage 0 "VPN Killed" 1; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
           [\@]) echo ""; killunmonvpn 2; sendmessage 0 "VPN Killed" 2; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
           [\#]) echo ""; killunmonvpn 3; sendmessage 0 "VPN Killed" 3; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
@@ -417,7 +395,7 @@ then
     case $SelectR2 in
       [Uu])
         echo -e "\n${CClear}Please type 'Y' to validate you wish to proceed with the uninstall of VPNMON-R2.${CClear}"
-        if promptyn "[y/n]: "
+        if promptyn "(y/n): "
         then
           echo -e "\n${CClear}Uninstalling VPNMON-R2 components...${CClear}"
 
@@ -493,8 +471,8 @@ do
     printf "${CClear}Please select? (${CGreen}n${CClear}=UNpause, ${CGreen}e${CClear}=Exit)"
     read -p ": " SelectSlot
       case $SelectSlot in
-            [1]) echo ""; restartvpn 1; dvpn_on_tunnel_restart "ovpn" "1"; sendmessage 0 "VPN Reset" 1; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [2]) echo ""; restartvpn 2; dvpn_on_tunnel_restart "ovpn" "2"; sendmessage 0 "VPN Reset" 2; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [1]) echo ""; restartvpn 1; sendmessage 0 "VPN Reset" 1; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [2]) echo ""; restartvpn 2; sendmessage 0 "VPN Reset" 2; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [\!]) echo ""; killunmonvpn 1; sendmessage 0 "VPN Killed" 1; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [\@]) echo ""; killunmonvpn 2; sendmessage 0 "VPN Killed" 2; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [Aa]) autostart;; #resetifacestats;;
@@ -518,16 +496,16 @@ do
     printf "${CClear}Please select? (${CGreen}n${CClear}=UNpause, ${CGreen}e${CClear}=Exit)"
     read -p ": " SelectSlot
       case $SelectSlot in
-            [1]) echo ""; restartvpn 1; dvpn_on_tunnel_restart "ovpn" "1"; sendmessage 0 "VPN Reset" 1; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [2]) echo ""; restartvpn 2; dvpn_on_tunnel_restart "ovpn" "2"; sendmessage 0 "VPN Reset" 2; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [3]) echo ""; restartvpn 3; dvpn_on_tunnel_restart "ovpn" "3"; sendmessage 0 "VPN Reset" 3; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [4]) echo ""; restartvpn 4; dvpn_on_tunnel_restart "ovpn" "4"; sendmessage 0 "VPN Reset" 4; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [5]) echo ""; restartvpn 5; dvpn_on_tunnel_restart "ovpn" "5"; sendmessage 0 "VPN Reset" 5; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [6]) echo ""; restartwg 1; dvpn_on_tunnel_restart "wg" "1"; sendmessage 0 "WG Reset" 1; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [7]) echo ""; restartwg 2; dvpn_on_tunnel_restart "wg" "2"; sendmessage 0 "WG Reset" 2; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [8]) echo ""; restartwg 3; dvpn_on_tunnel_restart "wg" "3"; sendmessage 0 "WG Reset" 3; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [9]) echo ""; restartwg 4; dvpn_on_tunnel_restart "wg" "4"; sendmessage 0 "WG Reset" 4; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
-            [0]) echo ""; restartwg 5; dvpn_on_tunnel_restart "wg" "5"; sendmessage 0 "WG Reset" 5; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [1]) echo ""; restartvpn 1; sendmessage 0 "VPN Reset" 1; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [2]) echo ""; restartvpn 2; sendmessage 0 "VPN Reset" 2; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [3]) echo ""; restartvpn 3; sendmessage 0 "VPN Reset" 3; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [4]) echo ""; restartvpn 4; sendmessage 0 "VPN Reset" 4; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [5]) echo ""; restartvpn 5; sendmessage 0 "VPN Reset" 5; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [6]) echo ""; restartwg 1; sendmessage 0 "WG Reset" 1; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [7]) echo ""; restartwg 2; sendmessage 0 "WG Reset" 2; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [8]) echo ""; restartwg 3; sendmessage 0 "WG Reset" 3; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [9]) echo ""; restartwg 4; sendmessage 0 "WG Reset" 4; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
+            [0]) echo ""; restartwg 5; sendmessage 0 "WG Reset" 5; restartrouting; resetspdmerlin; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [\!]) echo ""; killunmonvpn 1; sendmessage 0 "VPN Killed" 1; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [\@]) echo ""; killunmonvpn 2; sendmessage 0 "VPN Killed" 2; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [\#]) echo ""; killunmonvpn 3; sendmessage 0 "VPN Killed" 3; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
@@ -562,6 +540,15 @@ done
 
 createconfigs()
 {
+
+  # Fix older versions using incorrect client slots
+  if [ "$availableslots" = "1 2 3" ]
+  then
+    availableslots="1 2"
+    rm -f /jffs/addons/vpnmon-r3.d/vr3clients.txt
+    rm -f /jffs/addons/vpnmon-r3.d/vr3timers.txt
+    saveconfig
+  fi
 
   # Create initial vr3clients.txt & vr3timers.txt file
   if [ ! -f /jffs/addons/vpnmon-r3.d/vr3clients.txt ]
@@ -651,2476 +638,6 @@ EOF
 
       fi
   fi
-
-  # Create new DoubleVPN config
-  if [ ! -f "$dvpnconfig" ]
-  then
-    dvpn_saveconfig
-  fi
-
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_saveconfig - write vr3dblvpn.cfg to /jffs/addons/vpnmon-r3.d
-
-dvpn_saveconfig()
-{
-  {
-    echo "DVPN_ENABLED=$DVPN_ENABLED"
-    echo "DVPN_TUNNEL1_TYPE=\"$DVPN_TUNNEL1_TYPE\""
-    echo "DVPN_TUNNEL1_SLOT=\"$DVPN_TUNNEL1_SLOT\""
-    echo "DVPN_TUNNEL1_IF=\"$DVPN_TUNNEL1_IF\""
-    echo "DVPN_TUNNEL1_TABLE=\"$DVPN_TUNNEL1_TABLE\""
-    echo "DVPN_TUNNEL1_MARK=\"$DVPN_TUNNEL1_MARK\""
-    echo "DVPN_TUNNEL2_TYPE=\"$DVPN_TUNNEL2_TYPE\""
-    echo "DVPN_TUNNEL2_SLOT=\"$DVPN_TUNNEL2_SLOT\""
-    echo "DVPN_TUNNEL2_IF=\"$DVPN_TUNNEL2_IF\""
-    echo "DVPN_TUNNEL2_TABLE=\"$DVPN_TUNNEL2_TABLE\""
-    echo "DVPN_TUNNEL2_MARK=\"$DVPN_TUNNEL2_MARK\""
-    echo "DVPN_HOP_IPS=\"$DVPN_HOP_IPS\""
-    echo "DVPN_HOP_MARK=\"$DVPN_HOP_MARK\""
-    echo "DVPN_WG_MAX_AGE=$DVPN_WG_MAX_AGE"
-  } > "$dvpnconfig"
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_loadconfig - load vr3dblvpn.cfg if it exists
-
-dvpn_loadconfig()
-{
-  [ -f "$dvpnconfig" ] && . "$dvpnconfig"
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_log - write a timestamped entry to the VPNMON-R3 log and trim
-
-dvpn_log()
-{
-  # DH = DoubleHop VPN notation in logs
-  echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - DH $*" >> "$logfile"
-  # Trim log to logsize lines
-  if [ -f "$logfile" ] && [ "$(wc -l < "$logfile")" -gt "$logsize" ]; then
-    tail -n "$logsize" "$logfile" > /tmp/dvpn_log_trim.tmp
-    mv /tmp/dvpn_log_trim.tmp "$logfile"
-  fi
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_ip_format - detect format of an IP entry
-# Output: single | cidr | range | invalid
-
-dvpn_ip_format()
-{
-  local entry="$1"
-  if echo "$entry" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$'; then
-    echo "cidr"; return
-  fi
-  if echo "$entry" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
-    echo "range"; return
-  fi
-  if echo "$entry" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
-    echo "single"; return
-  fi
-  echo "invalid"
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_ip_to_int - convert dotted-decimal to 32-bit integer
-
-dvpn_ip_to_int()
-{
-  local ip="$1"
-  local a b c d
-  IFS='.' read -r a b c d <<EOF
-$ip
-EOF
-  echo $(( (a<<24) + (b<<16) + (c<<8) + d ))
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_mangle_rule - add or remove iptables mangle PREROUTING mark rule
-# Usage: dvpn_mangle_rule <add|del> <ip_entry> <mark>
-
-dvpn_mangle_rule()
-{
-  local action="$1" entry="$2" mark="$3"
-  local fmt ipt_action
-  fmt=$(dvpn_ip_format "$entry")
-  [ "$action" = "add" ] && ipt_action="-A" || ipt_action="-D"
-
-  case "$fmt" in
-    single|cidr)
-      iptables -t mangle $ipt_action PREROUTING \
-        -s "$entry" -j MARK --set-mark "$mark" 2>/dev/null
-      ;;
-    range)
-      local start end
-      start=$(echo "$entry" | cut -d- -f1)
-      end=$(echo "$entry" | cut -d- -f2)
-      if lsmod 2>/dev/null | grep -qE "xt_iprange|ipt_iprange"; then
-        iptables -t mangle $ipt_action PREROUTING \
-          -m iprange --src-range "${start}-${end}" \
-          -j MARK --set-mark "$mark" 2>/dev/null
-      else
-        # iprange module unavailable - expand range to individual rules
-        dvpn_log "INFO: iprange module not available, expanding range: $entry"
-        local s_int e_int cur ip
-        s_int=$(dvpn_ip_to_int "$start")
-        e_int=$(dvpn_ip_to_int "$end")
-        cur=$s_int
-        while [ "$cur" -le "$e_int" ]; do
-          ip="$(( (cur>>24)&255 )).$(( (cur>>16)&255 )).$(( (cur>>8)&255 )).$(( cur&255 ))"
-          iptables -t mangle $ipt_action PREROUTING \
-            -s "$ip" -j MARK --set-mark "$mark" 2>/dev/null
-          cur=$(( cur + 1 ))
-        done
-      fi
-      ;;
-    *)
-      dvpn_log "WARNING: Skipping invalid IP entry '$entry'"
-      ;;
-  esac
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_mss_rule - add or remove TCPMSS clamping rule for an IP entry
-# Usage: dvpn_mss_rule <add|del> <ip_entry> <mss>
-
-dvpn_mss_rule()
-{
-  local action="$1" entry="$2" mss="$3"
-  local fmt ipt_action
-  fmt=$(dvpn_ip_format "$entry")
-  [ "$action" = "add" ] && ipt_action="-A" || ipt_action="-D"
-
-  case "$fmt" in
-    single|cidr)
-      iptables -t mangle $ipt_action FORWARD \
-        -s "$entry" -p tcp --tcp-flags SYN,RST SYN \
-        -j TCPMSS --set-mss "$mss" 2>/dev/null
-      iptables -t mangle $ipt_action FORWARD \
-        -d "$entry" -p tcp --tcp-flags SYN,RST SYN \
-        -j TCPMSS --set-mss "$mss" 2>/dev/null
-      ;;
-    range)
-      local start end
-      start=$(echo "$entry" | cut -d- -f1)
-      end=$(echo "$entry" | cut -d- -f2)
-      if lsmod 2>/dev/null | grep -qE "xt_iprange|ipt_iprange"; then
-        iptables -t mangle $ipt_action FORWARD \
-          -m iprange --src-range "${start}-${end}" \
-          -p tcp --tcp-flags SYN,RST SYN \
-          -j TCPMSS --set-mss "$mss" 2>/dev/null
-        iptables -t mangle $ipt_action FORWARD \
-          -m iprange --dst-range "${start}-${end}" \
-          -p tcp --tcp-flags SYN,RST SYN \
-          -j TCPMSS --set-mss "$mss" 2>/dev/null
-      else
-        local s_int e_int cur ip
-        s_int=$(dvpn_ip_to_int "$start")
-        e_int=$(dvpn_ip_to_int "$end")
-        cur=$s_int
-        while [ "$cur" -le "$e_int" ]; do
-          ip="$(( (cur>>24)&255 )).$(( (cur>>16)&255 )).$(( (cur>>8)&255 )).$(( cur&255 ))"
-          iptables -t mangle $ipt_action FORWARD \
-            -s "$ip" -p tcp --tcp-flags SYN,RST SYN \
-            -j TCPMSS --set-mss "$mss" 2>/dev/null
-          iptables -t mangle $ipt_action FORWARD \
-            -d "$ip" -p tcp --tcp-flags SYN,RST SYN \
-            -j TCPMSS --set-mss "$mss" 2>/dev/null
-          cur=$(( cur + 1 ))
-        done
-      fi
-      ;;
-  esac
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_get_wan - set WAN_GW and WAN_IF
-# Excludes VPN interfaces so we always get the physical WAN route.
-
-dvpn_get_wan()
-{
-  WAN_GW=$(ip route show default table main 2>/dev/null | \
-           awk '/^default/ && ($0 !~ /wgc/ && $0 !~ /tun/) {print $3; exit}')
-  WAN_IF=$(ip route show default table main 2>/dev/null | \
-           awk '/^default/ && ($0 !~ /wgc/ && $0 !~ /tun/) {print $5; exit}')
-  # Fallback to any default route if pure-WAN search fails
-  if [ -z "$WAN_GW" ]; then
-    WAN_GW=$(ip route show default 2>/dev/null | awk '/^default/ {print $3; exit}')
-    WAN_IF=$(ip route show default 2>/dev/null | awk '/^default/ {print $5; exit}')
-  fi
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_get_endpoint - return current endpoint IP for a tunnel from NVRAM
-# WireGuard: wgcN_ep_addr (IP:port - strip port)
-# OpenVPN:   vpn_clientN_addr (hostname or IP - resolve if hostname)
-
-dvpn_get_endpoint()
-{
-  local type="$1" slot="$2"
-  local raw ep
-
-  if [ "$type" = "wg" ]; then
-    raw=$(nvram get "wgc${slot}_ep_addr" 2>/dev/null)
-    ep=$(echo "$raw" | cut -d: -f1)
-  else
-    raw=$(nvram get "vpn_client${slot}_addr" 2>/dev/null)
-    if echo "$raw" | grep -qE '[a-zA-Z]'; then
-      # Hostname - resolve to IP
-      ep=$(nslookup "$raw" 2>/dev/null | awk '/^Address/ && !/#/ {print $3; exit}')
-      [ -z "$ep" ] && ep="$raw"
-    else
-      ep="$raw"
-    fi
-  fi
-  echo "$ep"
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_get_if_addr - return IPv4 address of an interface (no prefix length)
-
-dvpn_get_if_addr()
-{
-  ip -4 addr show dev "$1" 2>/dev/null | awk '/inet / {print $2}' | cut -d/ -f1 | head -1
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_get_if_cidr - return IPv4 address/prefix of an interface
-
-dvpn_get_if_cidr()
-{
-  ip -4 addr show dev "$1" 2>/dev/null | awk '/inet / {print $2}' | head -1
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_tunnel_is_up - test whether a configured tunnel is fully operational.
-# Used by dvpn_check_and_apply each time through the timer loop.
-# Returns 0 (true = UP) or 1 (false = DOWN).
-
-dvpn_tunnel_is_up()
-{
-  local type="$1" slot="$2" iface="$3"
-
-  if [ "$type" = "wg" ]; then
-    [ "$(dvpn_wg_slot_status "$slot")" = "UP" ] && return 0 || return 1
-  else
-    [ "$(dvpn_ovpn_slot_status "$slot")" = "UP" ] && return 0 || return 1
-  fi
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# VPN Director state management
-# Save, suspend, and restore ip rules for double-hop client IPs so that VPN Director and our double-hop rules don't conflict.
-
-dvpn_save_vd_rules()
-{
-  # Create file if missing
-  [ -f "$DVPN_SAVED_RULES" ] || touch "$DVPN_SAVED_RULES"
-
-  local entry fmt start end s_int e_int cur ip line
-
-  for entry in $DVPN_HOP_IPS; do
-    fmt=$(dvpn_ip_format "$entry")
-    case "$fmt" in
-      single|cidr)
-        while IFS= read -r line; do
-          [ -z "$line" ] && continue
-          # Only append if not already in the file
-          grep -qF "$line" "$DVPN_SAVED_RULES" 2>/dev/null || \
-            echo "$line" >> "$DVPN_SAVED_RULES"
-        done <<EOF
-$(ip rule show 2>/dev/null | grep "from $entry")
-EOF
-        ;;
-      range)
-        start=$(echo "$entry" | cut -d- -f1)
-        end=$(echo "$entry" | cut -d- -f2)
-        s_int=$(dvpn_ip_to_int "$start")
-        e_int=$(dvpn_ip_to_int "$end")
-        cur=$s_int
-        while [ "$cur" -le "$e_int" ]; do
-          ip="$(( (cur>>24)&255 )).$(( (cur>>16)&255 )).$(( (cur>>8)&255 )).$(( cur&255 ))"
-          while IFS= read -r line; do
-            [ -z "$line" ] && continue
-            grep -qF "$line" "$DVPN_SAVED_RULES" 2>/dev/null || \
-              echo "$line" >> "$DVPN_SAVED_RULES"
-          done <<EOF
-$(ip rule show 2>/dev/null | grep "from $ip")
-EOF
-          cur=$(( cur + 1 ))
-        done
-        ;;
-    esac
-  done
-
-  local saved
-  saved=$(wc -l < "$DVPN_SAVED_RULES" 2>/dev/null || echo 0)
-  [ "$saved" -gt 0 ] && \
-    dvpn_log "INFO: Saved rules file now contains $saved VPN/DNS Director rule(s)"
-}
-
-dvpn_suspend_vd_rules()
-{
-  local entry fmt start end s_int e_int cur ip prio
-
-  for entry in $DVPN_HOP_IPS; do
-    fmt=$(dvpn_ip_format "$entry")
-    case "$fmt" in
-      single|cidr)
-        while ip rule show 2>/dev/null | grep -q "from $entry"; do
-          prio=$(ip rule show 2>/dev/null | grep "from $entry" | \
-                 head -1 | awk -F: '{print $1}' | tr -d ' ')
-          [ -z "$prio" ] && break
-          ip rule del prio "$prio" 2>/dev/null && \
-            dvpn_log "INFO: Suspended VPN Director rule prio $prio for $entry"
-        done
-        ;;
-      range)
-        start=$(echo "$entry" | cut -d- -f1)
-        end=$(echo "$entry" | cut -d- -f2)
-        s_int=$(dvpn_ip_to_int "$start")
-        e_int=$(dvpn_ip_to_int "$end")
-        cur=$s_int
-        while [ "$cur" -le "$e_int" ]; do
-          ip="$(( (cur>>24)&255 )).$(( (cur>>16)&255 )).$(( (cur>>8)&255 )).$(( cur&255 ))"
-          while ip rule show 2>/dev/null | grep -q "from $ip"; do
-            prio=$(ip rule show 2>/dev/null | grep "from $ip" | \
-                   head -1 | awk -F: '{print $1}' | tr -d ' ')
-            [ -z "$prio" ] && break
-            ip rule del prio "$prio" 2>/dev/null
-          done
-          cur=$(( cur + 1 ))
-        done
-        ;;
-    esac
-  done
-}
-
-dvpn_restore_vd_rules()
-{
-  [ ! -s "$DVPN_SAVED_RULES" ] && \
-    { dvpn_log "INFO: No saved VPN Director rules to restore"; return; }
-
-  local rule prio src table
-  while IFS= read -r rule; do
-    [ -z "$rule" ] && continue
-    prio=$(echo "$rule" | awk -F: '{print $1}' | tr -d ' ')
-    src=$(echo "$rule" | awk '{print $3}')
-    table=$(echo "$rule" | awk '{print $NF}')
-    if [ -n "$prio" ] && [ -n "$src" ] && [ -n "$table" ]; then
-      ip rule add from "$src" table "$table" prio "$prio" 2>/dev/null && \
-        dvpn_log "INFO: Restored VPN Director rule: prio $prio from $src -> table $table"
-    fi
-  done < "$DVPN_SAVED_RULES"
-
-  rm -f "$DVPN_SAVED_RULES"
-  dvpn_log "INFO: VPN Director rules restored"
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_build_table - flush and rebuild a routing table for a tunnel interface
-
-dvpn_build_table()
-{
-  local table="$1" iface="$2" if_cidr="$3" mark="$4"
-
-  ip route flush table "$table" 2>/dev/null
-
-  [ -n "$if_cidr" ] && \
-    ip route add "$if_cidr" dev "$iface" table "$table" 2>/dev/null
-
-  ip route add default dev "$iface" table "$table"
-  dvpn_log "INFO: Table $table - default -> $iface"
-
-  # Remove the per-tunnel fwmark rule before re-adding
-  ip rule del fwmark "$mark" table "$table" 2>/dev/null
-  ip rule add fwmark "$mark" table "$table" prio $((9000 + table))
-  dvpn_log "INFO: ip rule - fwmark $mark -> table $table (prio $((9000 + table)))"
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_tunnel1_up - pin T1 endpoint to WAN, build T1 routing table
-
-dvpn_tunnel1_up()
-{
-  dvpn_log "INFO: ---> T1 UP start (${DVPN_TUNNEL1_TYPE} slot ${DVPN_TUNNEL1_SLOT} / ${DVPN_TUNNEL1_IF})"
-
-  dvpn_get_wan
-  if [ -z "$WAN_GW" ] || [ -z "$WAN_IF" ]; then
-    dvpn_log "ERROR: T1 UP - cannot determine WAN gateway -- aborting"
-    return 1
-  fi
-
-  local ep
-  ep=$(dvpn_get_endpoint "$DVPN_TUNNEL1_TYPE" "$DVPN_TUNNEL1_SLOT")
-  if [ -z "$ep" ]; then
-    dvpn_log "ERROR: T1 UP - cannot determine endpoint -- aborting"
-    return 1
-  fi
-
-  # Pin T1 endpoint to physical WAN (prevents routing loop through VPN)
-  ip route del "${ep}/32" 2>/dev/null
-  ip route add "${ep}/32" via "$WAN_GW" dev "$WAN_IF"
-  dvpn_log "INFO: T1 UP - pinned $ep -> WAN ($WAN_IF via $WAN_GW)"
-
-  local if_cidr
-  if_cidr=$(dvpn_get_if_cidr "$DVPN_TUNNEL1_IF")
-  if [ -z "$if_cidr" ]; then
-    dvpn_log "ERROR: T1 UP - cannot get address for $DVPN_TUNNEL1_IF -- aborting"
-    return 1
-  fi
-
-  dvpn_build_table "$DVPN_TUNNEL1_TABLE" "$DVPN_TUNNEL1_IF" "$if_cidr" "$DVPN_TUNNEL1_MARK"
-  ip route flush cache
-  dvpn_log "INFO: ---> T1 UP complete (ep=$ep iface=$DVPN_TUNNEL1_IF cidr=$if_cidr)"
-  return 0
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_add_hop_rules - add direct from-IP ip rules for all hop client entries at DVPN_HOP_PRIO, routing them to DVPN_TUNNEL2_TABLE.
-# Called from dvpn_tunnel2_up after the table and fwmark rules are set.
-
-dvpn_add_hop_rules()
-{
-  local entry fmt start end s_int e_int cur ip
-
-  for entry in $DVPN_HOP_IPS; do
-    fmt=$(dvpn_ip_format "$entry")
-    case "$fmt" in
-      single|cidr)
-        # Remove any existing prio-99 rule for this IP (any table) before adding
-        while ip rule show 2>/dev/null | grep -q "^${DVPN_HOP_PRIO}:.*from ${entry}"; do
-          ip rule del from "$entry" prio "$DVPN_HOP_PRIO" 2>/dev/null || break
-        done
-        ip rule add from "$entry" lookup "$DVPN_TUNNEL2_TABLE" prio "$DVPN_HOP_PRIO"
-        dvpn_log "INFO: Added hop rule - from $entry -> table $DVPN_TUNNEL2_TABLE (prio $DVPN_HOP_PRIO)"
-        ;;
-      range)
-        start=$(echo "$entry" | cut -d- -f1)
-        end=$(echo "$entry" | cut -d- -f2)
-        s_int=$(dvpn_ip_to_int "$start")
-        e_int=$(dvpn_ip_to_int "$end")
-        cur=$s_int
-        while [ "$cur" -le "$e_int" ]; do
-          ip="$(( (cur>>24)&255 )).$(( (cur>>16)&255 )).$(( (cur>>8)&255 )).$(( cur&255 ))"
-          while ip rule show 2>/dev/null | grep -q "^${DVPN_HOP_PRIO}:.*from ${ip}"; do
-            ip rule del from "$ip" prio "$DVPN_HOP_PRIO" 2>/dev/null || break
-          done
-          ip rule add from "$ip" lookup "$DVPN_TUNNEL2_TABLE" prio "$DVPN_HOP_PRIO"
-          cur=$(( cur + 1 ))
-        done
-        dvpn_log "INFO: Added hop rules for range $entry -> table $DVPN_TUNNEL2_TABLE (prio $DVPN_HOP_PRIO)"
-        ;;
-    esac
-  done
-
-  # Write the installed IPs file so dvpn_tunnel2_down can clean up even if DVPN_HOP_IPS changes before teardown.
-  echo "$DVPN_HOP_IPS" > "$DVPN_INSTALLED_IPS_FILE"
-  dvpn_log "INFO: Installed IPs recorded: $DVPN_HOP_IPS"
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_del_hop_rules - remove direct from-IP ip rules added by dvpn_add_hop_rules.
-# Called from dvpn_tunnel2_down.
-
-dvpn_del_hop_rules()
-{
-  # Use installed IPs if available, fall back to current config
-  local installed_ips
-  if [ -f "$DVPN_INSTALLED_IPS_FILE" ]; then
-    installed_ips=$(cat "$DVPN_INSTALLED_IPS_FILE")
-    dvpn_log "INFO: Removing hop rules for installed IPs: $installed_ips"
-  else
-    installed_ips="$DVPN_HOP_IPS"
-    dvpn_log "INFO: No installed IPs file found, using current config: $installed_ips"
-  fi
-
-  local entry fmt start end s_int e_int cur ip
-
-  for entry in $installed_ips; do
-    fmt=$(dvpn_ip_format "$entry")
-    case "$fmt" in
-      single|cidr)
-        # Remove ALL prio-99 rules for this IP regardless of which table they point to
-        while ip rule show 2>/dev/null | grep -q "^${DVPN_HOP_PRIO}:.*from ${entry}"; do
-          ip rule del from "$entry" prio "$DVPN_HOP_PRIO" 2>/dev/null || break
-        done
-        dvpn_log "INFO: Removed hop rule(s) - from $entry (prio $DVPN_HOP_PRIO)"
-        ;;
-      range)
-        start=$(echo "$entry" | cut -d- -f1)
-        end=$(echo "$entry" | cut -d- -f2)
-        s_int=$(dvpn_ip_to_int "$start")
-        e_int=$(dvpn_ip_to_int "$end")
-        cur=$s_int
-        while [ "$cur" -le "$e_int" ]; do
-          ip="$(( (cur>>24)&255 )).$(( (cur>>16)&255 )).$(( (cur>>8)&255 )).$(( cur&255 ))"
-          while ip rule show 2>/dev/null | grep -q "^${DVPN_HOP_PRIO}:.*from ${ip}"; do
-            ip rule del from "$ip" prio "$DVPN_HOP_PRIO" 2>/dev/null || break
-          done
-          cur=$(( cur + 1 ))
-        done
-        dvpn_log "INFO: Removed hop rules for range $entry (prio $DVPN_HOP_PRIO)"
-        ;;
-    esac
-  done
-
-  rm -f "$DVPN_INSTALLED_IPS_FILE"
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_tunnel2_up - route T2 endpoint through T1, build T2 table, apply all hop rules.
-
-dvpn_tunnel2_up()
-{
-  dvpn_log "INFO: ---> T2 UP start (${DVPN_TUNNEL2_TYPE} slot ${DVPN_TUNNEL2_SLOT} / ${DVPN_TUNNEL2_IF})"
-
-  if ! ip link show "$DVPN_TUNNEL1_IF" > /dev/null 2>&1; then
-    dvpn_log "ERROR: T2 UP - $DVPN_TUNNEL1_IF not up -- cannot proceed"
-    return 1
-  fi
-  if ! ip route show table "$DVPN_TUNNEL1_TABLE" 2>/dev/null | grep -q "^default"; then
-    dvpn_log "WARNING: T2 UP - table $DVPN_TUNNEL1_TABLE has no default route -- T1 setup incomplete"
-    return 1
-  fi
-
-  local t1_addr ep if_cidr
-  t1_addr=$(dvpn_get_if_addr "$DVPN_TUNNEL1_IF")
-
-  ep=$(dvpn_get_endpoint "$DVPN_TUNNEL2_TYPE" "$DVPN_TUNNEL2_SLOT")
-  if [ -z "$ep" ]; then
-    dvpn_log "ERROR: T2 UP - cannot determine endpoint -- aborting"
-    return 1
-  fi
-
-  ip route del "${ep}/32" 2>/dev/null
-  if [ -n "$t1_addr" ]; then
-    ip route add "${ep}/32" dev "$DVPN_TUNNEL1_IF" src "$t1_addr" table main
-  else
-    ip route add "${ep}/32" dev "$DVPN_TUNNEL1_IF" table main
-  fi
-  dvpn_log "INFO: T2 UP - pinned $ep -> $DVPN_TUNNEL1_IF (rides inside T1)"
-
-  if_cidr=$(dvpn_get_if_cidr "$DVPN_TUNNEL2_IF")
-  if [ -z "$if_cidr" ]; then
-    dvpn_log "ERROR: T2 UP - cannot get address for $DVPN_TUNNEL2_IF -- aborting"
-    return 1
-  fi
-
-  dvpn_build_table "$DVPN_TUNNEL2_TABLE" "$DVPN_TUNNEL2_IF" "$if_cidr" "$DVPN_TUNNEL2_MARK"
-
-  # Save and suspend VPN/DNS Director rules for hop IPs
-  dvpn_save_vd_rules
-  dvpn_suspend_vd_rules
-
-  # Direct from-IP rules at DVPN_HOP_PRIO
-  # dvpn_add_hop_rules handles removal of stale prio-99 rules internally
-  dvpn_add_hop_rules
-
-  # Remove ALL existing fwmark rules for DVPN_HOP_MARK before adding the new one.
-  while ip rule show 2>/dev/null | grep -q "fwmark ${DVPN_HOP_MARK}"; do
-    local stale_table
-    stale_table=$(ip rule show 2>/dev/null | grep "fwmark ${DVPN_HOP_MARK}" | \
-                  head -1 | awk '{print $NF}')
-    [ -z "$stale_table" ] && break
-    ip rule del fwmark "$DVPN_HOP_MARK" table "$stale_table" prio 9000 2>/dev/null || \
-    ip rule del fwmark "$DVPN_HOP_MARK" 2>/dev/null || break
-  done
-  ip rule add fwmark "$DVPN_HOP_MARK" table "$DVPN_TUNNEL2_TABLE" prio 9000
-  dvpn_log "INFO: T2 UP - fwmark $DVPN_HOP_MARK -> table $DVPN_TUNNEL2_TABLE (prio 9000)"
-
-  # Mangle marks and MSS clamping
-  # Read installed IPs from file if available (handles case where DVPN_HOP_IPS changed since last teardown - clean up old entries first)
-  local prev_ips=""
-  [ -f "$DVPN_INSTALLED_IPS_FILE" ] && prev_ips=$(cat "$DVPN_INSTALLED_IPS_FILE")
-  if [ -n "$prev_ips" ] && [ "$prev_ips" != "$DVPN_HOP_IPS" ]; then
-    dvpn_log "INFO: T2 UP - cleaning up mangle rules for previous IPs: $prev_ips"
-    local prev_entry mss=1300
-    for prev_entry in $prev_ips; do
-      dvpn_mangle_rule del "$prev_entry" "$DVPN_HOP_MARK" 2>/dev/null
-      dvpn_mss_rule del "$prev_entry" "$mss" 2>/dev/null
-    done
-  fi
-
-  local entry mss=1300
-  for entry in $DVPN_HOP_IPS; do
-    dvpn_mangle_rule del "$entry" "$DVPN_HOP_MARK" 2>/dev/null
-    dvpn_mangle_rule add "$entry" "$DVPN_HOP_MARK"
-    dvpn_mss_rule del "$entry" "$mss" 2>/dev/null
-    dvpn_mss_rule add "$entry" "$mss"
-    dvpn_log "INFO: T2 UP - mark + MSS applied for $entry"
-  done
-
-  ip route flush cache
-  dvpn_log "INFO: ---> T2 UP complete (ep=$ep iface=$DVPN_TUNNEL2_IF cidr=$if_cidr)"
-  return 0
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_tunnel1_down - remove T1 endpoint host route and routing table
-
-dvpn_tunnel1_down()
-{
-  dvpn_log "INFO: ---> T1 DOWN start"
-
-  local ep
-  ep=$(dvpn_get_endpoint "$DVPN_TUNNEL1_TYPE" "$DVPN_TUNNEL1_SLOT")
-  if [ -z "$ep" ]; then
-    # Try NVRAM directly as fallback
-    ep=$(nvram get "wgc${DVPN_TUNNEL1_SLOT}_ep_addr" 2>/dev/null | cut -d: -f1)
-  fi
-  if [ -n "$ep" ]; then
-    ip route del "${ep}/32" 2>/dev/null
-    dvpn_log "INFO: T1 DOWN - removed host route for $ep"
-  fi
-
-  ip rule del fwmark "$DVPN_TUNNEL1_MARK" table "$DVPN_TUNNEL1_TABLE" 2>/dev/null
-  ip route flush table "$DVPN_TUNNEL1_TABLE" 2>/dev/null
-  ip route flush cache
-  dvpn_log "INFO: ---> T1 DOWN complete"
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_tunnel2_down - remove all T2 rules including direct hop rules.
-
-dvpn_tunnel2_down()
-{
-  dvpn_log "INFO: ---> T2 DOWN start"
-
-  # Use installed IPs for mangle and MSS cleanup
-  local installed_ips
-  if [ -f "$DVPN_INSTALLED_IPS_FILE" ]; then
-    installed_ips=$(cat "$DVPN_INSTALLED_IPS_FILE")
-    dvpn_log "INFO: T2 DOWN - cleaning up rules for installed IPs: $installed_ips"
-  else
-    installed_ips="$DVPN_HOP_IPS"
-    dvpn_log "INFO: T2 DOWN - no installed IPs file, using current config: $installed_ips"
-  fi
-
-  local entry mss=1300
-  for entry in $installed_ips; do
-    dvpn_mangle_rule del "$entry" "$DVPN_HOP_MARK"
-    dvpn_mss_rule del "$entry" "$mss"
-  done
-
-  # Remove direct from-IP hop rules (uses installed IPs internally)
-  dvpn_del_hop_rules
-
-  # Remove ALL fwmark rules for DVPN_HOP_MARK (any table)
-  while ip rule show 2>/dev/null | grep -q "fwmark ${DVPN_HOP_MARK}"; do
-    local stale_table
-    stale_table=$(ip rule show 2>/dev/null | grep "fwmark ${DVPN_HOP_MARK}" | \
-                  head -1 | awk '{print $NF}')
-    [ -z "$stale_table" ] && break
-    ip rule del fwmark "$DVPN_HOP_MARK" table "$stale_table" 2>/dev/null || \
-    ip rule del fwmark "$DVPN_HOP_MARK" 2>/dev/null || break
-  done
-
-  local ep
-  ep=$(dvpn_get_endpoint "$DVPN_TUNNEL2_TYPE" "$DVPN_TUNNEL2_SLOT")
-  [ -z "$ep" ] && ep=$(nvram get "wgc${DVPN_TUNNEL2_SLOT}_ep_addr" 2>/dev/null | cut -d: -f1)
-  [ -n "$ep" ] && ip route del "${ep}/32" 2>/dev/null
-
-  ip rule del fwmark "$DVPN_TUNNEL2_MARK" table "$DVPN_TUNNEL2_TABLE" 2>/dev/null
-  ip route flush table "$DVPN_TUNNEL2_TABLE" 2>/dev/null
-
-  dvpn_restore_vd_rules
-  ip route flush cache
-  dvpn_log "INFO: ---> T2 DOWN complete"
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_nuke_orphans — one-time cleanup for any orphaned rules left by previous versions of the code.
-
-dvpn_nuke_orphans()
-{
-  dvpn_log "INFO: Running orphan rule cleanup"
-
-  # Remove all prio-99 ip rules (our hop rules span 99)
-  while ip rule show 2>/dev/null | grep -q "^99:"; do
-    local entry
-    entry=$(ip rule show 2>/dev/null | grep "^99:" | head -1 | awk '{print $3}')
-    [ -z "$entry" ] && break
-    ip rule del from "$entry" prio 99 2>/dev/null || break
-    dvpn_log "INFO: Removed orphan prio-99 rule for $entry"
-  done
-
-  # Remove all fwmark 0x1cc rules (any priority, any table)
-  local hop_mark_dec
-  hop_mark_dec=$(printf "%d" "$DVPN_HOP_MARK" 2>/dev/null)
-  while ip rule show 2>/dev/null | grep -qiE "fwmark.*(${DVPN_HOP_MARK}|${hop_mark_dec})"; do
-    local stale_table
-    stale_table=$(ip rule show 2>/dev/null | grep -i "${DVPN_HOP_MARK}" | head -1 | awk '{print $NF}')
-    [ -z "$stale_table" ] && break
-    ip rule del fwmark "$DVPN_HOP_MARK" table "$stale_table" 2>/dev/null || \
-    ip rule del fwmark "$DVPN_HOP_MARK" 2>/dev/null || break
-    dvpn_log "INFO: Removed orphan fwmark rule -> table $stale_table"
-  done
-
-  # Remove all mangle PREROUTING mark rules setting 0x1cc
-  while iptables -t mangle -L PREROUTING -n 2>/dev/null | \
-        grep -qiE "MARK set ${DVPN_HOP_MARK}|MARK set ${hop_mark_dec}"; do
-    iptables -t mangle -D PREROUTING \
-      -j MARK --set-mark "$DVPN_HOP_MARK" 2>/dev/null || break
-    dvpn_log "INFO: Removed orphan mangle PREROUTING mark rule"
-  done
-
-  dvpn_log "INFO: Orphan cleanup complete"
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_read_state - load state file variables into local scope
-# Sets: ST1_UP, ST1_EP, ST2_UP, ST2_EP
-
-dvpn_read_state()
-{
-  ST1_UP=0; ST1_EP=""
-  ST2_UP=0; ST2_EP=""
-  [ -f "$DVPN_STATE_FILE" ] && . "$DVPN_STATE_FILE"
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_write_state - persist current state to state file
-
-dvpn_write_state()
-{
-  {
-    echo "ST1_UP=$1"
-    echo "ST1_EP=\"$2\""
-    echo "ST2_UP=$3"
-    echo "ST2_EP=\"$4\""
-  } > "$DVPN_STATE_FILE"
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_routing_intact - verify the routing infrastructure is actually in place.
-# Returns 0 (intact) or 1 (missing/broken).
-
-dvpn_routing_intact()
-{
-  # Check 1: T1 table has a default route via the correct interface
-  if ! ip route show table "$DVPN_TUNNEL1_TABLE" 2>/dev/null | \
-       grep -q "^default.*$DVPN_TUNNEL1_IF"; then
-    dvpn_log "WARNING: Integrity - T1 table $DVPN_TUNNEL1_TABLE missing default route via $DVPN_TUNNEL1_IF"
-    return 1
-  fi
-
-  # Check 2: T2 table has a default route via the correct interface
-  if ! ip route show table "$DVPN_TUNNEL2_TABLE" 2>/dev/null | \
-       grep -q "^default.*$DVPN_TUNNEL2_IF"; then
-    dvpn_log "WARNING: Integrity - T2 table $DVPN_TUNNEL2_TABLE missing default route via $DVPN_TUNNEL2_IF"
-    return 1
-  fi
-
-  # Check 3: direct from-IP hop rule exists at DVPN_HOP_PRIO for first hop entry
-  local first_entry fmt
-  first_entry=$(echo "$DVPN_HOP_IPS" | awk '{print $1}')
-  fmt=$(dvpn_ip_format "$first_entry")
-
-  case "$fmt" in
-    single|cidr)
-      if ! ip rule show 2>/dev/null | \
-           grep -q "^${DVPN_HOP_PRIO}:.*from ${first_entry}.*lookup ${DVPN_TUNNEL2_TABLE}"; then
-        dvpn_log "WARNING: Integrity - direct hop rule missing for $first_entry -> table $DVPN_TUNNEL2_TABLE (prio $DVPN_HOP_PRIO)"
-        return 1
-      fi
-      ;;
-    range)
-      # For ranges, check that a priority-99 rule pointing to T2 table exists
-      local start
-      start=$(echo "$first_entry" | cut -d- -f1)
-      if ! ip rule show 2>/dev/null | \
-           grep -q "^${DVPN_HOP_PRIO}:.*from ${start}.*lookup ${DVPN_TUNNEL2_TABLE}"; then
-        dvpn_log "WARNING: Integrity - direct hop rule missing for range start $start -> table $DVPN_TUNNEL2_TABLE"
-        return 1
-      fi
-      ;;
-  esac
-
-  # Check 4: iptables mangle PREROUTING mark rule for first hop entry
-  case "$fmt" in
-    single|cidr)
-      if ! iptables -t mangle -L PREROUTING -n 2>/dev/null | \
-           grep -q "$first_entry"; then
-        dvpn_log "WARNING: Integrity - mangle PREROUTING mark rule missing for $first_entry"
-        return 1
-      fi
-      ;;
-    range)
-      local hop_mark_dec
-      hop_mark_dec=$(printf "%d" "$DVPN_HOP_MARK" 2>/dev/null)
-      if ! iptables -t mangle -L PREROUTING -n 2>/dev/null | \
-           grep -iE "MARK.*(${DVPN_HOP_MARK}|${hop_mark_dec})" | grep -qi "mark"; then
-        dvpn_log "WARNING: Integrity - mangle PREROUTING mark rule missing for range $first_entry"
-        return 1
-      fi
-      ;;
-  esac
-
-  # Check 5: no VPN Director rule exists for any hop IP at a priority LOWER than DVPN_HOP_PRIO (which would override the rules).
-  # If found, return 1 to trigger a rebuild that will re-suspend them.
-  local entry vd_prio vd_rule
-  for entry in $DVPN_HOP_IPS; do
-    fmt=$(dvpn_ip_format "$entry")
-    case "$fmt" in
-      single|cidr)
-        # Look for any rule "from <entry>" whose priority number < DVPN_HOP_PRIO
-        while IFS= read -r vd_rule; do
-          [ -z "$vd_rule" ] && continue
-          vd_prio=$(echo "$vd_rule" | awk -F: '{print $1}' | tr -d ' ')
-          # Skip if it's our own rule pointing to T2 table
-          echo "$vd_rule" | grep -q "lookup $DVPN_TUNNEL2_TABLE" && continue
-          if [ -n "$vd_prio" ] && [ "$vd_prio" -lt "$DVPN_HOP_PRIO" ] 2>/dev/null; then
-            dvpn_log "WARNING: Integrity - conflicting VPN Director rule at prio $vd_prio for $entry overrides hop routing -- rebuilding"
-            return 1
-          fi
-        done <<EOF
-$(ip rule show 2>/dev/null | grep "from $entry")
-EOF
-        ;;
-      range)
-        # For ranges, check the start IP as representative
-        local start
-        start=$(echo "$entry" | cut -d- -f1)
-        while IFS= read -r vd_rule; do
-          [ -z "$vd_rule" ] && continue
-          vd_prio=$(echo "$vd_rule" | awk -F: '{print $1}' | tr -d ' ')
-          echo "$vd_rule" | grep -q "lookup $DVPN_TUNNEL2_TABLE" && continue
-          if [ -n "$vd_prio" ] && [ "$vd_prio" -lt "$DVPN_HOP_PRIO" ] 2>/dev/null; then
-            dvpn_log "WARNING: Integrity - conflicting VPN Director rule at prio $vd_prio for range $entry -- rebuilding"
-            return 1
-          fi
-        done <<EOF
-$(ip rule show 2>/dev/null | grep "from $start")
-EOF
-        ;;
-    esac
-  done
-
-  return 0
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_check_and_apply - state machine called each monitoring loop iteration.
-#
-# Logic order:
-#   1. If either tunnel is down, handle teardown/rebuild
-#   2. If both tunnels are up and endpoints changed, rebuild.
-#   3. If both tunnels are up, endpoints unchanged, but routing infrastructure is missing, force a full rebuild.
-
-dvpn_check_and_apply()
-{
-  [ "$DVPN_ENABLED" != "1" ] && return
-  [ -z "$DVPN_HOP_IPS" ]    && return
-
-  dvpn_read_state
-
-  local cur1_up=0 cur2_up=0 cur1_ep cur2_ep
-
-  dvpn_tunnel_is_up "$DVPN_TUNNEL1_TYPE" "$DVPN_TUNNEL1_SLOT" && cur1_up=1
-  dvpn_tunnel_is_up "$DVPN_TUNNEL2_TYPE" "$DVPN_TUNNEL2_SLOT" && cur2_up=1
-  cur1_ep=$(dvpn_get_endpoint "$DVPN_TUNNEL1_TYPE" "$DVPN_TUNNEL1_SLOT")
-  cur2_ep=$(dvpn_get_endpoint "$DVPN_TUNNEL2_TYPE" "$DVPN_TUNNEL2_SLOT")
-
-  # T1 dropped
-  if [ "$ST1_UP" = "1" ] && [ "$cur1_up" = "0" ]; then
-    dvpn_log "WARNING: State - T1 went DOWN -- tearing down T2 then T1 routing"
-    [ "$ST2_UP" = "1" ] && dvpn_tunnel2_down
-    dvpn_tunnel1_down
-    dvpn_write_state 0 "" 0 ""
-    return
-  fi
-
-  # T1 came up
-  if [ "$ST1_UP" = "0" ] && [ "$cur1_up" = "1" ]; then
-    dvpn_log "INFO: State - T1 came UP (ep=$cur1_ep)"
-    dvpn_tunnel1_up
-    if [ "$cur2_up" = "1" ]; then
-      dvpn_log "INFO: State - T2 also UP -- applying T2 routing"
-      dvpn_tunnel2_up
-      dvpn_write_state 1 "$cur1_ep" 1 "$cur2_ep"
-    else
-      dvpn_write_state 1 "$cur1_ep" 0 ""
-    fi
-    return
-  fi
-
-  # T1 server changed
-  if [ "$ST1_UP" = "1" ] && [ "$cur1_up" = "1" ] && \
-     [ -n "$cur1_ep" ] && [ -n "$ST1_EP" ] && [ "$cur1_ep" != "$ST1_EP" ]; then
-    dvpn_log "WARNING: State - T1 server changed ($ST1_EP -> $cur1_ep) -- rebuilding"
-    [ "$ST2_UP" = "1" ] && dvpn_tunnel2_down
-    dvpn_tunnel1_down
-    dvpn_tunnel1_up
-    if [ "$cur2_up" = "1" ]; then
-      dvpn_tunnel2_up
-      dvpn_write_state 1 "$cur1_ep" 1 "$cur2_ep"
-    else
-      dvpn_write_state 1 "$cur1_ep" 0 ""
-    fi
-    return
-  fi
-
-  # T2 dropped
-  if [ "$ST2_UP" = "1" ] && [ "$cur2_up" = "0" ]; then
-    dvpn_log "WARNING: State - T2 went DOWN -- tearing down T2 routing"
-    dvpn_tunnel2_down
-    dvpn_write_state "$cur1_up" "$cur1_ep" 0 ""
-    return
-  fi
-
-  # T2 came up (T1 must be up first)
-  if [ "$ST2_UP" = "0" ] && [ "$cur2_up" = "1" ] && [ "$cur1_up" = "1" ]; then
-    dvpn_log "INFO: State - T2 came UP (ep=$cur2_ep)"
-    dvpn_tunnel2_up
-    dvpn_write_state 1 "$cur1_ep" 1 "$cur2_ep"
-    return
-  fi
-
-  # T2 server changed
-  if [ "$ST2_UP" = "1" ] && [ "$cur2_up" = "1" ] && \
-     [ -n "$cur2_ep" ] && [ -n "$ST2_EP" ] && [ "$cur2_ep" != "$ST2_EP" ]; then
-    dvpn_log "INFO: State - T2 server changed ($ST2_EP -> $cur2_ep) -- rebuilding T2"
-    dvpn_tunnel2_down
-    dvpn_tunnel2_up
-    dvpn_write_state "$cur1_up" "$cur1_ep" 1 "$cur2_ep"
-    return
-  fi
-
-  # Both tunnels UP, endpoints unchanged - verify routing is intact
-  # State and endpoints look identical but routing tables may have been wiped.
-  if [ "$cur1_up" = "1" ] && [ "$cur2_up" = "1" ]; then
-    if ! dvpn_routing_intact; then
-      dvpn_log "WARNING: State - tunnels UP but routing infrastructure missing -- forcing full rebuild"
-      dvpn_tunnel2_down 2>/dev/null
-      dvpn_tunnel1_down 2>/dev/null
-      dvpn_tunnel1_up
-      dvpn_tunnel2_up
-      dvpn_write_state 1 "$cur1_ep" 1 "$cur2_ep"
-      return
-    fi
-  fi
-
-  # No change - refresh EPs in state file
-  dvpn_write_state "$cur1_up" "$cur1_ep" "$cur2_up" "$cur2_ep"
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_on_tunnel_restart - called immediately after restartvpn/restartwg
-# Proactively tears down routing for the affected tunnel so stale routes are cleaned before dvpn_check_and_apply rebuilds on the next iteration.
-
-dvpn_on_tunnel_restart()
-{
-  local type="$1" slot="$2"
-  [ "$DVPN_ENABLED" != "1" ] && return
-
-  if [ "$type" = "$DVPN_TUNNEL1_TYPE" ] && [ "$slot" = "$DVPN_TUNNEL1_SLOT" ]; then
-    dvpn_log "INFO: Tunnel restart - T1 (${type} slot ${slot}) -- clearing routing stack"
-    dvpn_tunnel2_down 2>/dev/null
-    dvpn_tunnel1_down 2>/dev/null
-    rm -f "$DVPN_STATE_FILE"
-
-  elif [ "$type" = "$DVPN_TUNNEL2_TYPE" ] && [ "$slot" = "$DVPN_TUNNEL2_SLOT" ]; then
-    dvpn_log "INFO: Tunnel restart - T2 (${type} slot ${slot}) -- clearing T2 routing"
-    dvpn_tunnel2_down 2>/dev/null
-    # Update state: T2 is now down, T1 state preserved
-    dvpn_read_state
-    dvpn_write_state "$ST1_UP" "$ST1_EP" 0 ""
-  fi
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_display_status - render the Double-Hop section in the main VPNMON-R3 UI.
-# Renders nothing when DVPN_ENABLED=0.
-
-dvpn_display_status()
-{
-  [ "$DVPN_ENABLED" != "1" ] && return
-
-  dvpn_read_state
-
-  local wgbin
-  wgbin=$(dvpn_find_wg)
-
-  # Tunnel 1 display
-  local t1_color t1_label t1_detail t1_ep_disp t1_type_disp
-  [ "$DVPN_TUNNEL1_TYPE" = "wg" ] && t1_type_disp="WGC" || t1_type_disp="VPN"
-
-  if [ "$ST1_UP" = "1" ]; then
-    t1_color="$CGreen"
-    t1_label="Active"
-    t1_ep_disp="${ST1_EP:-unknown}"
-
-    if [ "$DVPN_TUNNEL1_TYPE" = "wg" ] && [ -n "$wgbin" ]; then
-      local hs now age
-      hs=$(dvpn_wg_latest_hs "$DVPN_TUNNEL1_IF")
-      if [ -n "$hs" ] && [ "$hs" != "0" ]; then
-        now=$(date +%s)
-        age=$(( now - hs ))
-        t1_detail="HS: ${age}s ago"
-      else
-        t1_detail="HS: Pending"
-      fi
-    elif [ "$DVPN_TUNNEL1_TYPE" = "wg" ] && [ -z "$wgbin" ]; then
-      t1_detail="HS: n/a (no wg)"
-    else
-      t1_detail="OVPN state: 2"
-    fi
-  else
-    t1_color="$CRed"
-    t1_label="Down  "
-    t1_detail="Waiting..."
-    t1_ep_disp="---"
-  fi
-
-  # Tunnel 2 display
-  local t2_color t2_label t2_detail t2_ep_disp t2_type_disp
-  [ "$DVPN_TUNNEL2_TYPE" = "wg" ] && t2_type_disp="WGC" || t2_type_disp="VPN"
-
-  if [ "$ST2_UP" = "1" ]; then
-    t2_color="$CGreen"
-    t2_label="Active"
-    t2_ep_disp="${ST2_EP:-unknown}"
-
-    if [ "$DVPN_TUNNEL2_TYPE" = "wg" ] && [ -n "$wgbin" ]; then
-      local hs now age
-      hs=$(dvpn_wg_latest_hs "$DVPN_TUNNEL2_IF")
-      if [ -n "$hs" ] && [ "$hs" != "0" ]; then
-        now=$(date +%s)
-        age=$(( now - hs ))
-        t2_detail="HS: ${age}s ago"
-      else
-        t2_detail="HS: Pending"
-      fi
-    elif [ "$DVPN_TUNNEL2_TYPE" = "wg" ] && [ -z "$wgbin" ]; then
-      t2_detail="HS: n/a (no wg)"
-    else
-      t2_detail="OVPN state: 2"
-    fi
-  else
-    t2_color="$CRed"
-    t2_label="Down  "
-    t2_detail="Waiting..."
-    t2_ep_disp="---"
-  fi
-
-  # Overall hop status
-  local hop_color hop_status
-  if [ "$ST1_UP" = "1" ] && [ "$ST2_UP" = "1" ]; then
-    hop_color="$CGreen"; hop_status="| ROUTING ACTIVE"
-  elif [ "$ST1_UP" = "1" ] || [ "$ST2_UP" = "1" ]; then
-    hop_color="$CYellow"; hop_status="| PARTIAL       "
-  else
-    hop_color="$CRed"; hop_status="| INACTIVE      "
-  fi
-
-  # Truncate hop IPs display if too long for the line
-  local hop_ips_disp="$DVPN_HOP_IPS"
-  [ ${#hop_ips_disp} -gt 41 ] && hop_ips_disp="$(echo "$DVPN_HOP_IPS" | cut -c1-38)..."
-  
-  # Insert bogus IP if screenshotmode is on #
-  if [ "$screenshotmode" = "1" ]; then
-     t1_ep_disp="$(printf '%15s' "12.34.56.78")"
-     t2_ep_disp="$(printf '%15s' "12.34.56.78")"
-  fi
-
-  echo -e "${InvDkGray}${CWhite} Double-Hop VPN ${hop_color}${hop_status}${InvDkGray}                                                                                                 ${CClear}"
-  echo ""
-  echo -e "  Slot | Tunnel Layer | IFace  | Status       | Endpoint IP     | Connection State    | Hop Client(s) / Mark -> Table"
-  echo -e "-------|--------------|--------|--------------|-----------------|---------------------|------------------------------------------"
-  printf "${InvGreen} ${CClear}${InvDkGray}${CWhite} %s%s${CClear} | T1 Outer     | %-6.6s |${t1_color} %-12.12s ${CClear}| %15.15s | %-19.19s | %s\n" \
-    "$t1_type_disp" "$DVPN_TUNNEL1_SLOT" "$DVPN_TUNNEL1_IF" "${t1_label}" "${t1_ep_disp}" "${t1_detail}" "${hop_ips_disp}"
-  printf "${InvGreen} ${CClear}${InvDkGray}${CWhite} %s%s${CClear} | T2 Inner     | %-6.6s |${t2_color} %-12.12s ${CClear}| %15.15s | %-19.19s | Mark: %s -> Table %s\n" \
-    "$t2_type_disp" "$DVPN_TUNNEL2_SLOT" "$DVPN_TUNNEL2_IF" "${t2_label}" "${t2_ep_disp}" "${t2_detail}" "${DVPN_HOP_MARK}" "${DVPN_TUNNEL2_TABLE}"
-  echo ""
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_validate_ip_entry - validate a single IP/CIDR/range entry
-# Returns 0 if valid, 1 if invalid
-
-dvpn_validate_ip_entry()
-{
-  local entry="$1"
-  local fmt
-  fmt=$(dvpn_ip_format "$entry")
-
-  case "$fmt" in
-    single)
-      # Check each octet is 0-255
-      local a b c d
-      IFS='.' read -r a b c d <<EOF
-$entry
-EOF
-      for octet in "$a" "$b" "$c" "$d"; do
-        echo "$octet" | grep -qE '^[0-9]+$' || return 1
-        [ "$octet" -le 255 ] 2>/dev/null || return 1
-      done
-      return 0
-      ;;
-    cidr)
-      local ip prefix
-      ip=$(echo "$entry" | cut -d/ -f1)
-      prefix=$(echo "$entry" | cut -d/ -f2)
-      dvpn_validate_ip_entry "$ip" || return 1
-      echo "$prefix" | grep -qE '^[0-9]+$' || return 1
-      [ "$prefix" -le 32 ] 2>/dev/null && return 0
-      return 1
-      ;;
-    range)
-      local start end
-      start=$(echo "$entry" | cut -d- -f1)
-      end=$(echo "$entry" | cut -d- -f2)
-      dvpn_validate_ip_entry "$start" || return 1
-      dvpn_validate_ip_entry "$end"   || return 1
-      [ "$(dvpn_ip_to_int "$start")" -le "$(dvpn_ip_to_int "$end")" ] && return 0
-      return 1
-      ;;
-    *)
-      return 1
-      ;;
-  esac
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_detect_wg_slots - echo space-separated list of configured WG slot numbers
-# A slot is considered "configured" if its NVRAM endpoint is non-empty.
-
-dvpn_detect_wg_slots()
-{
-  local slots="" s ep
-  for s in 1 2 3 4 5; do
-    ep=$(nvram get "wgc${s}_ep_addr" 2>/dev/null)
-    [ -n "$ep" ] && slots="$slots $s"
-  done
-  echo "$slots"
-}
-
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_detect_ovpn_slots - echo space-separated list of configured OVPN slot numbers
-
-dvpn_detect_ovpn_slots()
-{
-  local slots="" s addr
-  for s in 1 2 3 4 5; do
-    addr=$(nvram get "vpn_client${s}_addr" 2>/dev/null)
-    [ -n "$addr" ] && slots="$slots $s"
-  done
-  echo "$slots"
-}
-
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_derive_iface - echo interface name from type+slot
-
-dvpn_derive_iface()
-{
-  local type="$1" slot="$2"
-  [ "$type" = "wg" ] && echo "wgc${slot}" || echo "tun1${slot}"
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_derive_table - echo routing table number from type+slot
-# WG slots use tables 201-205; OVPN slots use tables 206-210 to avoid Merlin's 111-115 range
-
-dvpn_derive_table()
-{
-  local type="$1" slot="$2"
-  [ "$type" = "wg" ] && echo "$((200 + slot))" || echo "$((205 + slot))"
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_setup - Double-Hop VPN configuration page
-
-dvpn_setup()
-{
-  local action
-
-  while true; do
-    clear
-    echo -e "${InvGreen} ${InvDkGray}${CWhite} Double-Hop VPN Setup                                                                  ${CClear}"
-    echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear} This feature routes selected LAN clients through two nested VPN tunnels, giving you${CClear}"
-    echo -e "${InvGreen} ${CClear} double encryption where neither provider sees both your origin and destination, when${CClear}"
-    echo -e "${InvGreen} ${CClear} using 2 different VPN providers. If you only use 1 VPN provider, this feature will${CClear}"
-    echo -e "${InvGreen} ${CClear} only obfuscate traffic for those intercepting.${CClear}"
-    echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear} Tunnel 1 (outer) connects to WAN. Tunnel 2 (inner) rides inside Tunnel 1. You have${CClear}"
-    echo -e "${InvGreen} ${CClear} a choice between choosing a single client IP, or a range of IPs using either a start${Clear}"
-    echo -e "${InvGreen} ${CClear} and an end, or using CIDR notation. Nesting VPN tunnels works seamlessly between${CClear}"
-    echo -e "${InvGreen} ${CClear} WG -> OVPN, OVPN -> WG, WG -> WG, or OVPN -> OVPN.${CClear}"
-    echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-    echo -e "${InvGreen} ${CClear}"
-
-    # Live routing state
-    local route_state route_color
-    if [ -f "$DVPN_STATE_FILE" ]; then
-      . "$DVPN_STATE_FILE" 2>/dev/null
-      if [ "$ST1_UP" = "1" ] && [ "$ST2_UP" = "1" ]; then
-        if dvpn_routing_intact 2>/dev/null; then
-          route_state="Rules active"
-          route_color="$CGreen"
-        else
-          route_state="Rules incomplete (rebuild needed)"
-          route_color="$CYellow"
-        fi
-      elif [ "$ST1_UP" = "1" ] || [ "$ST2_UP" = "1" ]; then
-        route_state="Partial — one tunnel down"
-        route_color="$CYellow"
-      else
-        route_state="No rules installed (tunnels down)"
-        route_color="$CDkGray"
-      fi
-    else
-      route_state="No rules installed"
-      route_color="$CDkGray"
-    fi
-
-    local en_disp en_color
-    if [ "$DVPN_ENABLED" = "1" ]; then
-      en_color="$CGreen"; en_disp="Enabled"
-    else
-      en_color="$CRed";   en_disp="Disabled"
-    fi
-
-    local t1_type_disp t2_type_disp
-    [ "$DVPN_TUNNEL1_TYPE" = "wg" ] && t1_type_disp="WireGuard" || t1_type_disp="OpenVPN"
-    [ "$DVPN_TUNNEL2_TYPE" = "wg" ] && t2_type_disp="WireGuard" || t2_type_disp="OpenVPN"
-
-    echo -e "${InvGreen} ${CClear} Feature          : ${en_color}${en_disp}${CClear}"
-    echo -e "${InvGreen} ${CClear} Routing          : ${route_color}${route_state}${CClear}"
-    echo -e "${InvGreen} ${CClear} Tunnel 1 (Outer) : ${CGreen}${t1_type_disp} Slot ${DVPN_TUNNEL1_SLOT}${CWhite}  (${DVPN_TUNNEL1_IF} -> table ${DVPN_TUNNEL1_TABLE})${CClear}"
-    echo -e "${InvGreen} ${CClear} Tunnel 2 (Inner) : ${CGreen}${t2_type_disp} Slot ${DVPN_TUNNEL2_SLOT}${CWhite}  (${DVPN_TUNNEL2_IF} -> table ${DVPN_TUNNEL2_TABLE})${CClear}"
-    echo -e "${InvGreen} ${CClear} Hop Clients      : ${CGreen}${DVPN_HOP_IPS:-"(none configured)"}${CClear}"
-    echo -e "${InvGreen} ${CClear} Hop Mark         : ${CDkGray}${DVPN_HOP_MARK}${CClear}"
-    echo -e "${InvGreen} ${CClear} WG Stale HS      : ${CDkGray}>${DVPN_WG_MAX_AGE}s treated as DOWN${CClear}"
-    echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-    echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(1)${CClear} : Enable / Disable DH Routing"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(2)${CClear} : Configure Tunnel 1 (Outer)"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(3)${CClear} : Configure Tunnel 2 (Inner)"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(4)${CClear} : Configure Hop Client IPs"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(5)${CClear} : Advanced Settings"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(6)${CClear} : Force Rebuild Rules Now"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(7)${CClear} : Remove DH Routing Rules"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(8)${CClear} : Run Diagnostics"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} | ${CClear}"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(e)${CClear} : Exit to Configuration Menu"
-    echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-    echo ""
-    read -p "Please select (1-8, e=Exit): " action
-
-    case "$action" in
-
-      # 1: Toggle enable
-      1)
-        while true
-        do
-          if [ $DVPN_ENABLED -eq 1 ]; then en_disp="${CGreen}Enabled"; else en_disp="${CRed}Disabled"; fi
-          clear
-          echo -e "${InvGreen} ${InvDkGray}${CWhite} Enable / Disable Double-Hop VPN Feature                                               ${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Please indicate below if you would like to Enable or Disable the Double-Hop VPN${CClear}"
-          echo -e "${InvGreen} ${CClear} feature. Enabling this feature will allow you to view a new section on the main${CClear}"
-          echo -e "${InvGreen} ${CClear} VPNMON-R3 interface providing Double-Hop stats. Once enabled, you can automatically${CClear}"
-          echo -e "${InvGreen} ${CClear} apply routing rules.${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Disabling this feature will keep routing rules in place until you forcibly remove${CClear}"
-          echo -e "${InvGreen} ${CClear} the routing rules using menu option (7) (Remove DH Routing Rules).${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Current Double-Hop VPN Feature: $en_disp${CClear}"
-          echo ""
-          if promptyn "Proceed to Enable/Disable Double-Hop VPN Feature? [y/n]: "
-            then
-              if [ "$DVPN_ENABLED" = "1" ]; then
-                DVPN_ENABLED=0
-                dvpn_saveconfig
-                echo ""
-                echo ""
-                echo -e "${CGreen}Double-Hop VPN disabled.${CClear}"
-                echo -e "VPNMON-R3 will no longer manage or monitor the routing rules. Any rules currently${CClear}"
-                echo -e "installed remain active until you use option (7) to remove them.${CClear}"
-                echo ""
-                read -rsp $'Press any key to continue...\n' -n1 key
-              else
-                if [ -z "$DVPN_HOP_IPS" ]; then
-                  echo ""
-                  echo -e "${CRed}Cannot enable Double-Hop VPN — no Hop Client IPs configured. Use option (4) to add"
-                  echo -e "at least one Hop Client IP first.${CClear}"
-                  echo ""
-                  read -rsp $'Press any key to continue...\n' -n1 key
-                else
-                  DVPN_ENABLED=1
-                  dvpn_saveconfig
-                  echo ""
-                  echo ""
-                  echo -e "${CGreen}Double-Hop VPN enabled.${CClear}"
-                  echo ""
-                  # Offer immediate apply if both tunnels appear to be up already
-                  local t1_up=0 t2_up=0
-                  dvpn_tunnel_is_up "$DVPN_TUNNEL1_TYPE" "$DVPN_TUNNEL1_SLOT" && t1_up=1
-                  dvpn_tunnel_is_up "$DVPN_TUNNEL2_TYPE" "$DVPN_TUNNEL2_SLOT" && t2_up=1
-                  if [ "$t1_up" = "1" ] && [ "$t2_up" = "1" ]; then
-                    echo -e "${CGreen}Both tunnels are currently UP.${CClear}"
-                    echo ""
-                    read -p "Apply routing rules now? [y/n]: " immediate
-                    case "$immediate" in
-                      [Yy]*)
-                        echo ""
-                        echo -e "Applying routing rules...${CClear}"
-                        rm -f "$DVPN_STATE_FILE"
-                        dvpn_check_and_apply
-                        echo ""
-                        echo -e "${CGreen}Done. Routing is now active.${CClear}"
-                        echo ""
-                        read -rsp $'Press any key to continue...\n' -n1 key
-                        ;;
-                      *)
-                        echo ""
-                        echo -e "Skipped. Rules will be applied on the next timer loop.${CClear}"
-                        echo ""
-                        read -rsp $'Press any key to continue...\n' -n1 key
-                        ;;
-                    esac
-                  else
-                    echo -e "${CYellow}One or both tunnels are currently DOWN.${CClear}"
-                    echo -e "Rules will be installed automatically once both come up.${CClear}"
-                    echo ""
-                    read -rsp $'Press any key to continue...\n' -n1 key
-                  fi
-                fi
-              fi
-            else
-              break
-          fi
-        done
-        ;;
-
-      # 2: Configure Tunnel 1
-      2)
-        dvpn__config_tunnel 1
-        ;;
-
-      # 3: Configure Tunnel 2
-      3)
-        dvpn__config_tunnel 2
-        ;;
-
-      # 4: Configure hop client IPs
-      4)
-        dvpn__config_hop_ips
-        ;;
-
-      # 5: Advanced settings
-      5)
-        dvpn__config_advanced
-        ;;
-
-      # 6: Force rebuild
-      6)
-        echo ""
-        echo -e "${CWhite}Force Rebuild DH Rules${CClear}"
-        echo ""
-        if [ "$DVPN_ENABLED" != "1" ]; then
-          echo -e "${CGreen}Double-Hop is currently disabled.${CClear}"
-          echo -e "Rules will be rebuilt and added but the script will not monitor or maintain them${CClear}"
-          echo -e "until you enable the feature.${CClear}"
-          echo ""
-        fi
-        echo -e "${CGreen}Rebuilding...${CClear}"
-        rm -f "$DVPN_STATE_FILE"
-        dvpn_check_and_apply
-        echo ""
-        echo -e "${CGreen}Rebuild complete.${CClear}"
-        echo -e "Check the status line at the top of this feature menu, or use option (8) to run a${CClear}"
-        echo -e "full diagnostic to validate.${CClear}"
-        echo ""
-        read -rsp $'Press any key to continue...\n' -n1 key
-        ;;
-
-      # 7: Tear down
-      7)
-       while true
-        do
-          clear
-          echo -e "${InvGreen} ${InvDkGray}${CWhite} Tear Down Routing Rules                                                               ${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Please indicate below if you would like to tear down and remove all Double-Hop${CClear}"
-          echo -e "${InvGreen} ${CClear} Routing Rules. This is the last step that you would need to take when disabling${CClear}"
-          echo -e "${InvGreen} ${CClear} the Double-Hop functionality. This removes all Double-Hop routing rules (ip rules,${CClear}"
-          echo -e "${InvGreen} ${CClear} routing tables, iptables marks) and restores any VPN Director rules that were${CClear}"
-          echo -e "${InvGreen} ${CClear} suspended. Your VPN tunnels themselves are not affected — only the Double-Hop${CClear}"
-          echo -e "${InvGreen} ${CClear} routing layer is removed.${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} In other cases, you may want to perform this step when troubleshooting, and${CClear}"
-          echo -e "${InvGreen} ${CClear} need a complete refresh of the rules, which would need to be followed up with${CClear}"
-          echo -e "${InvGreen} ${CClear} Option (6), Force Rebuild DH Rules.${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-          echo ""
-          read -p "Proceed with teardown? [y/n]: " confirm
-          case "$confirm" in
-            [Yy]*)
-            echo ""
-            echo -e "${CGreen}Tearing down...${CClear}"
-            dvpn_nuke_orphans 2>/dev/null
-            dvpn_tunnel2_down 2>/dev/null
-            dvpn_tunnel1_down 2>/dev/null
-            rm -f "$DVPN_STATE_FILE"
-            echo ""
-            echo -e "${CGreen}Tear Down Complete.${CClear}"
-            echo -e "All Double-Hop routing rules removed. VPN Director rules have been restored (if any).${CClear}"
-            if [ "$DVPN_ENABLED" = "1" ]; then
-              echo ""
-              echo -e "${CGreen}Double-Hop is still enabled.${CClear}"
-              echo -e "Rules will be reinstalled automatically when both tunnels are up, or use option (6)${CClear}"
-              echo -e "to force a rebuild now.${CClear}"
-            fi
-            echo ""
-            read -rsp $'Press any key to continue...\n' -n1 key
-            break
-            ;;
-          *)
-            echo ""
-            echo -e "${CGreen}Teardown cancelled.${CClear}"
-            echo ""
-            read -rsp $'Press any key to continue...\n' -n1 key
-            break
-            ;;
-          esac
-        done
-      ;;
-
-      # 8: Run diagnostics
-      8)
-        dvpn__run_diagnostics
-        ;;
-
-      [Ee])
-        return
-        ;;
-
-      *)
-        ;;
-    esac
-  done
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_find_wg - locate the wg binary and echo its full path, or empty if not found.
-# Called once per function that needs it rather than stored globally, so it
-# always reflects the current filesystem state (e.g. after Entware mounts).
-
-dvpn_find_wg()
-{
-  local candidate
-  for candidate in /usr/sbin/wg /usr/bin/wg /sbin/wg /bin/wg /opt/bin/wg /opt/sbin/wg; do
-    [ -x "$candidate" ] && { echo "$candidate"; return; }
-  done
-  # Last resort: PATH search
-  local p
-  p=$(which wg 2>/dev/null)
-  [ -n "$p" ] && echo "$p"
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_wg_latest_hs - echo the most recent handshake epoch for a WG interface, or "0" if unavailable. Uses the resolved wg binary path.
-# Output: integer Unix timestamp, or 0 on any failure.
-
-dvpn_wg_latest_hs()
-{
-  local iface="$1"
-  local wgbin hs
-
-  wgbin=$(dvpn_find_wg)
-  if [ -z "$wgbin" ]; then
-    dvpn_log "ERROR: wg binary not found -- cannot check handshake for $iface"
-    echo "0"; return
-  fi
-
-  hs=$("$wgbin" show "$iface" latest-handshakes 2>/dev/null | awk '{print $2}' | head -1)
-  [ -z "$hs" ] && hs="0"
-  echo "$hs"
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_wg_iface_exists - confirm a WireGuard interface is present and live.
-# WireGuard interfaces report "state UNKNOWN" (not "state UP") in ip-link, so we check only for interface existence, not the state string.
-
-dvpn_wg_iface_exists()
-{
-  local iface="$1"
-  ip link show "$iface" > /dev/null 2>&1
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_wg_slot_status - return UP or DOWN for a WireGuard slot.
-# UP requires: interface exists (state UNKNOWN is normal for WG) AND most recent handshake is within DVPN_WG_MAX_AGE seconds.
-# If the wg binary is missing entirely, falls back to interface-only detection and logs a warning so the operator knows the check is degraded.
-
-dvpn_wg_slot_status()
-{
-  local slot="$1"
-  local iface="wgc${slot}"
-
-  # Step 1: interface must exist (WG shows as UNKNOWN, not UP - check existence only)
-  if ! dvpn_wg_iface_exists "$iface"; then
-    echo "DOWN"; return
-  fi
-
-  # Step 2: check handshake age via wg binary
-  local wgbin
-  wgbin=$(dvpn_find_wg)
-
-  if [ -z "$wgbin" ]; then
-    # wg binary unavailable - degrade gracefully: interface exists -> assume UP,
-    dvpn_log "WARNING: wg binary not found -- $iface UP status based on interface only (no handshake check)"
-    echo "UP"; return
-  fi
-
-  local hs now age
-  hs=$(dvpn_wg_latest_hs "$iface")
-
-  if [ "$hs" = "0" ]; then
-    # Interface exists but no handshake yet (just connected, or no peers)
-    echo "DOWN"; return
-  fi
-
-  now=$(date +%s)
-  age=$(( now - hs ))
-  [ "$age" -le "$DVPN_WG_MAX_AGE" ] && echo "UP" || echo "DOWN"
-}
-
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_ovpn_slot_status - return UP or DOWN for an OpenVPN slot.
-# UP requires: nvram vpn_clientN_state = 2 AND tun1N interface exists.
-
-dvpn_ovpn_slot_status()
-{
-  local slot="$1"
-  local iface="tun1${slot}"
-  local state
-
-  state=$(nvram get "vpn_client${slot}_state" 2>/dev/null)
-  [ "$state" != "2" ] && { echo "DOWN"; return; }
-  ip link show "$iface" > /dev/null 2>&1 && echo "UP" || echo "DOWN"
-}
-
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn__config_tunnel - sub-page: select type and slot for T1 or T2
-# Usage: dvpn__config_tunnel <1|2>
-
-dvpn__config_tunnel()
-{
-  local tunnel_num="$1"
-  local other_num other_type other_slot other_label
-
-  if [ "$tunnel_num" = "1" ]; then
-    other_num="2"
-    other_type="$DVPN_TUNNEL2_TYPE"
-    other_slot="$DVPN_TUNNEL2_SLOT"
-    other_label="T2"
-  else
-    other_num="1"
-    other_type="$DVPN_TUNNEL1_TYPE"
-    other_slot="$DVPN_TUNNEL1_SLOT"
-    other_label="T1"
-  fi
-
-  local label
-  [ "$tunnel_num" = "1" ] && label="Tunnel 1 (Outer)" || label="Tunnel 2 (Inner)"
-
-  clear
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} Double-Hop VPN - Configure ${label}                                           ${CClear}"
-  echo -e "${InvGreen} ${CClear}"
-
-  # Build the numbered menu
-  # Each entry: index | type | slot | status | in_use_flag | display_ep
-
-  local idx=0
-  # Parallel space-separated lists (positional, same index in each)
-  local all_types=""   # "wg" or "ovpn"
-  local all_slots=""   # "1".."5"
-
-  # Collect WG slots
-  local wg_slots s ep addr status_str status_color in_use_note
-  wg_slots=$(dvpn_detect_wg_slots)
-  for s in $wg_slots; do
-    idx=$(( idx + 1 ))
-    all_types="${all_types} wg"
-    all_slots="${all_slots} ${s}"
-
-    ep=$(nvram get "wgc${s}_ep_addr" 2>/dev/null | cut -d: -f1)
-    status_str=$(dvpn_wg_slot_status "$s")
-    [ "$status_str" = "UP" ] && status_color="$CGreen" || status_color="$CRed"
-
-    in_use_note=""
-    if [ "$other_type" = "wg" ] && [ "$other_slot" = "$s" ]; then
-      in_use_note="  [in use as ${other_label}]"
-    fi
-
-    printf "${InvGreen} ${CClear}  ${InvDkGray}${CWhite}(%1d)${CClear}  WireGuard   Slot %s  ${status_color}%-4s${CClear}  ${CDkGray}%s${CClear}%s\n" \
-    "$idx" "$s" "$status_str" "$ep" "$in_use_note"
-  done
-
-  # Collect OVPN slots
-  local ovpn_slots
-  ovpn_slots=$(dvpn_detect_ovpn_slots)
-  for s in $ovpn_slots; do
-    idx=$(( idx + 1 ))
-    all_types="${all_types} ovpn"
-    all_slots="${all_slots} ${s}"
-
-    addr=$(nvram get "vpn_client${s}_addr" 2>/dev/null)
-    status_str=$(dvpn_ovpn_slot_status "$s")
-    [ "$status_str" = "UP" ] && status_color="$CGreen" || status_color="$CRed"
-
-    in_use_note=""
-    if [ "$other_type" = "ovpn" ] && [ "$other_slot" = "$s" ]; then
-      in_use_note="  [in use as ${other_label}]"
-    fi
-
-    printf "${InvGreen} ${CClear}  ${InvDkGray}${CWhite}(%1d)${CClear}  OpenVPN     Slot %s  ${status_color}%-4s${CClear}  ${CDkGray}%s${CClear}%s\n" \
-    "$idx" "$s" "$status_str" "$addr" "$in_use_note"
-  done
-
-  # Handle the no-slots-found case
-  if [ "$idx" = "0" ]; then
-    echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear}${CRed}No configured VPN slots found.${CClear}"
-    echo -e "${InvGreen} ${CClear}Set up WireGuard or OpenVPN clients in the router UI first.${CClear}"
-    echo -e "${InvGreen} ${CClear}"
-    echo ""
-    read -rsp "Press any key to return..." -n1
-    echo ""
-    return
-  fi
-
-  echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-  echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear}  ${CDkGray}Note: DOWN slots can be selected - routing will be applied when they connect.${CClear}"
-  if [ -n "$(echo "$all_types" | grep -o "wg\|ovpn" | head -1)" ]; then
-    echo -e "${InvGreen} ${CClear}  ${CDkGray}[in use as Tx] means that slot is currently assigned to the other tunnel.${CClear}"
-  fi
-  echo -e "${InvGreen} ${CClear}"
-  echo ""
-
-  # Read and validate selection
-  local choice valid=0
-  while [ "$valid" = "0" ]; do
-    read -p "Select slot for ${label} [1-${idx}, e=Exit]: " choice
-    [ "$choice" = "e" ] || [ "$choice" = "E" ] && return
-    if echo "$choice" | grep -qE '^[0-9]+$' && \
-       [ "$choice" -ge 1 ] && [ "$choice" -le "$idx" ]; then
-      valid=1
-    else
-      echo -e "${CRed}Invalid - enter a number between 1 and ${idx}.${CClear}"
-    fi
-  done
-
-  # Extract selected type and slot from positional lists
-  local sel_type="" sel_slot="" pos=0
-  for t in $all_types; do
-    pos=$(( pos + 1 ))
-    if [ "$pos" = "$choice" ]; then sel_type="$t"; break; fi
-  done
-  pos=0
-  for sl in $all_slots; do
-    pos=$(( pos + 1 ))
-    if [ "$pos" = "$choice" ]; then sel_slot="$sl"; break; fi
-  done
-
-  # Warn and confirm if selecting the slot already used by other tunnel ──
-  if [ "$sel_type" = "$other_type" ] && [ "$sel_slot" = "$other_slot" ]; then
-    echo ""
-    echo -e "${CYellow}Warning: this slot is currently assigned to ${other_label}.${CClear}"
-    echo -e "Assigning it here will clear ${other_label}'s slot assignment.${CClear}"
-    echo -e "You will need to re-configure ${other_label} before enabling Double-Hop.${CClear}"
-    echo ""
-    read -p "Continue? (y/n): " confirm
-    case "$confirm" in
-      [Yy]*) ;;
-      *) return ;;
-    esac
-    # Clear the other tunnel's slot so it's obviously unconfigured
-    if [ "$other_num" = "1" ]; then
-      DVPN_TUNNEL1_SLOT="" ; DVPN_TUNNEL1_IF="" ; DVPN_TUNNEL1_TABLE="" ; DVPN_TUNNEL1_MARK=""
-    else
-      DVPN_TUNNEL2_SLOT="" ; DVPN_TUNNEL2_IF="" ; DVPN_TUNNEL2_TABLE="" ; DVPN_TUNNEL2_MARK=""
-    fi
-  fi
-
-  # Derive interface, table, and mark
-  local sel_if sel_table sel_mark
-  sel_if=$(dvpn_derive_iface "$sel_type" "$sel_slot")
-  sel_table=$(dvpn_derive_table "$sel_type" "$sel_slot")
-  sel_mark=$(printf "0x%X" "$sel_table")
-
-  # Save to appropriate tunnel variables
-  if [ "$tunnel_num" = "1" ]; then
-    DVPN_TUNNEL1_TYPE="$sel_type"
-    DVPN_TUNNEL1_SLOT="$sel_slot"
-    DVPN_TUNNEL1_IF="$sel_if"
-    DVPN_TUNNEL1_TABLE="$sel_table"
-    DVPN_TUNNEL1_MARK="$sel_mark"
-  else
-    DVPN_TUNNEL2_TYPE="$sel_type"
-    DVPN_TUNNEL2_SLOT="$sel_slot"
-    DVPN_TUNNEL2_IF="$sel_if"
-    DVPN_TUNNEL2_TABLE="$sel_table"
-    DVPN_TUNNEL2_MARK="$sel_mark"
-  fi
-
-  dvpn_saveconfig
-  rm -f "$DVPN_STATE_FILE"
-
-  local disp_type
-  [ "$sel_type" = "wg" ] && disp_type="WireGuard" || disp_type="OpenVPN"
-  echo ""
-  echo -e "${CGreen}${label} set to ${disp_type} Slot ${sel_slot} (${sel_if} -> table ${sel_table}).${CClear}"
-  echo ""
-  read -rsp $'Press any key to continue...\n' -n1 key
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn__config_hop_ips - collect double-hop client IP entries
-
-dvpn__config_hop_ips()
-{
-  clear
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} Double-Hop VPN - Hop Client IPs                                                       ${CClear}"
-  echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} Enter the LAN IPs that should be routed through both tunnels.${CClear}"
-  echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} ${CWhite}Accepted formats:${CClear}"
-  echo -e "${InvGreen} ${CClear}   Single IP(s) : ${CGreen}192.168.50.197 (multiple standalone IPs allowed)${CClear}"
-  echo -e "${InvGreen} ${CClear}   CIDR range   : ${CGreen}192.168.50.184/29${CClear}"
-  echo -e "${InvGreen} ${CClear}   IP range     : ${CGreen}192.168.50.100-192.168.50.105${CClear}"
-  echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} Enter one entry per prompt using examples above. Leave blank to finish.${CClear}"
-  echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} Current entries: ${CGreen}${DVPN_HOP_IPS:-"(none)"}${CClear}"
-  echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-  echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear}  ${CDkGray}Press ENTER on a blank line to keep existing entries unchanged.${CClear}"
-  echo -e "${InvGreen} ${CClear}  ${CDkGray}Type 'clear' to remove all entries and start over.${CClear}"
-  echo -e "${InvGreen} ${CClear}"
-  echo ""
-
-  local input
-  read -p "Clear or Keep existing Hop Client IPs? (type: 'clear'/'keep', e=Exit): " input
-  case "$input" in
-    clear|CLEAR)
-      DVPN_HOP_IPS=""
-      echo ""
-      echo -e "${CGreen}Existing entries cleared.${CClear}"
-      ;;
-    e|E)
-      return
-      ;;
-  esac
-
-  local count=0
-  for _ in $DVPN_HOP_IPS; do count=$(( count + 1 )); done
-
-  while true; do
-    echo ""
-    read -p "Entry $((count+1)) (blank=done): " input
-    [ -z "$input" ] && break
-
-    if dvpn_validate_ip_entry "$input"; then
-      if [ -z "$DVPN_HOP_IPS" ]; then
-        DVPN_HOP_IPS="$input"
-      else
-        DVPN_HOP_IPS="$DVPN_HOP_IPS $input"
-      fi
-      count=$(( count + 1 ))
-      echo ""
-      echo -e "${CGreen}Added: $input${CClear}"
-    else
-      echo ""
-      echo -e "${CRed}Invalid format or range - please try again.${CClear}"
-    fi
-  done
-
-  if [ "$count" = "0" ]; then
-    echo ""
-    echo -e "\n${CYellow}No entries - Double-Hop VPN will not be able to route any clients.${CClear}"
-    echo ""
-    read -rsp $'Press any key to continue...\n' -n1 key
-    return
-  fi
-
-  dvpn_saveconfig
-  rm -f "$DVPN_STATE_FILE"
-  echo -e "\n${CGreen}Saved ${count} hop client entries.${CClear}"
-  echo ""
-  read -rsp $'Press any key to continue...\n' -n1 key
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn__config_advanced - advanced settings
-
-dvpn__config_advanced()
-{
-  while true
-  do
-    clear
-    echo -e "${InvGreen} ${InvDkGray}${CWhite} Double-Hop VPN - Advanced Settings                                                    ${CClear}"
-    echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear} User-configurable Advanced Settings. ${CYellow}WARNING:${CClear} Leave these settings as-is if you do not${CClear}"
-    echo -e "${InvGreen} ${CClear} understand what their purpose is.${CClear}"
-    echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear} ${CWhite}Current settings:${CClear}"
-    echo -e "${InvGreen} ${CClear}   WG Handshake max age : ${CGreen}${DVPN_WG_MAX_AGE} seconds  ${CDkGray}(handshake older than this = tunnel DOWN)${CClear}"
-    echo -e "${InvGreen} ${CClear}   Double-hop fwmark    : ${CGreen}${DVPN_HOP_MARK}${CClear}  ${CDkGray}(must not conflict with other marks)${CClear}"
-    echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear}   (Defaults: WG Handshake = 180 seconds, DH fwmark = 0x1CC)"
-    echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear}   ${CDkGray}Use the enter key to accept currenty configured settings."
-    echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-    echo ""
-    if promptyn "Proceed to modify Advanced Settings? [y/n]: "
-      then
-        echo ""
-        echo ""
-        local input
-        read -p "WG handshake max age in seconds [${DVPN_WG_MAX_AGE}]: " input
-        if [ -n "$input" ]; then
-          if echo "$input" | grep -qE '^[0-9]+$' && [ "$input" -ge 30 ] && [ "$input" -le 600 ]; then
-            DVPN_WG_MAX_AGE="$input"
-            echo ""
-            echo -e "${CGreen}Set to ${DVPN_WG_MAX_AGE}s.${CClear}"
-          else
-            echo ""
-            echo -e "${CRed}Invalid - Please choose a value between 30-600. Keeping ${DVPN_WG_MAX_AGE}s.${CClear}"
-          fi
-        fi
-
-        echo ""
-        read -p "Double-hop fwmark (hex, e.g. 0x1CC) [${DVPN_HOP_MARK}]: " input
-        if [ -n "$input" ]; then
-          if echo "$input" | grep -qE '^0x[0-9a-fA-F]+$'; then
-            DVPN_HOP_MARK="$input"
-            echo ""
-            echo -e "${CGreen}Set to ${DVPN_HOP_MARK}.${CClear}"
-          else
-            echo ""
-            echo -e "${CRed}Invalid hex value. Keeping ${DVPN_HOP_MARK}.${CClear}"
-          fi
-        fi
-
-        dvpn_saveconfig
-        echo ""
-        echo -e "${CGreen}Advanced settings saved.${CClear}"
-        echo ""
-        read -rsp $'Press any key to continue...\n' -n1 key
-    else
-      break
-    fi
-  done
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# Double-Hop VPN Diagnostic functions - to verify double-hop routing is fully in place
-
-pass() { echo -e "  ${CGreen}[PASS]${CClear} $*" ; PASS=$(( PASS + 1 )); }
-warn() { echo -e "  ${CYellow}[WARN]${CClear} $*" ; WARN=$(( WARN + 1 )); }
-fail() { echo -e "  ${CRed}[FAIL]${CClear} $*" ; FAIL=$(( FAIL + 1 )); }
-info() { echo -e "  ${CDkGray}      ${CClear} $*" ; }
-section() {
-  echo ""
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} $* ${CClear}"
-  echo ""
-}
-
-#Locate wg binary
-find_wg() {
-  local c
-  for c in /usr/sbin/wg /usr/bin/wg /sbin/wg /bin/wg /opt/bin/wg /opt/sbin/wg; do
-    [ -x "$c" ] && { echo "$c"; return; }
-  done
-  which wg 2>/dev/null
-}
-
-#IP format detection
-ip_format() {
-  local e="$1"
-  echo "$e" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$'   && { echo "cidr";   return; }
-  echo "$e" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+-[0-9.]+$'  && { echo "range";  return; }
-  echo "$e" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'           && { echo "single"; return; }
-  echo "invalid"
-}
-
-ip_to_int() {
-  local a b c d
-  IFS='.' read -r a b c d <<EOF
-$1
-EOF
-  echo $(( (a<<24) + (b<<16) + (c<<8) + d ))
-}
-
-# Expand an IP entry to a space-separated list of individual IPs
-expand_entry() {
-  local entry="$1" fmt
-  fmt=$(ip_format "$entry")
-  case "$fmt" in
-    single) echo "$entry" ;;
-    cidr)
-      # Return the CIDR as-is for route-get testing; iptables uses it natively
-      echo "$entry" ;;
-    range)
-      local start end s_int e_int cur ip
-      start=$(echo "$entry" | cut -d- -f1)
-      end=$(echo "$entry" | cut -d- -f2)
-      s_int=$(ip_to_int "$start")
-      e_int=$(ip_to_int "$end")
-      cur=$s_int
-      while [ "$cur" -le "$e_int" ]; do
-        ip="$(( (cur>>24)&255 )).$(( (cur>>16)&255 )).$(( (cur>>8)&255 )).$(( cur&255 ))"
-        echo "$ip"
-        cur=$(( cur + 1 ))
-      done
-      ;;
-  esac
-}
-
-check_iface() {
-  local label="$1" iface="$2" type="$3" slot="$4"
-  echo ""
-  echo -e "  ${CWhite}${label} - ${iface}${CClear}"
-
-  # Interface existence (WG shows UNKNOWN, not UP - test existence only)
-  if ip link show "$iface" > /dev/null 2>&1; then
-    local flags
-    flags=$(ip link show "$iface" 2>/dev/null | head -1)
-    pass "Interface exists: ${CDkGray}${flags}${CClear}"
-  else
-    fail "Interface $iface does not exist - tunnel is not connected"
-    return 1
-  fi
-
-  # WireGuard-specific: handshake age
-  if [ "$type" = "wg" ] && [ -n "$WGBIN" ]; then
-    local hs now age peer
-    peer=$("$WGBIN" show "$iface" peers 2>/dev/null | head -1)
-    if [ -z "$peer" ]; then
-      fail "No WireGuard peer found on $iface"
-    else
-      info "Peer: ${CDkGray}${peer}${CClear}"
-      hs=$("$WGBIN" show "$iface" latest-handshakes 2>/dev/null | awk '{print $2}' | head -1)
-      if [ -z "$hs" ] || [ "$hs" = "0" ]; then
-        fail "No handshake recorded yet on $iface"
-      else
-        now=$(date +%s)
-        age=$(( now - hs ))
-        if [ "$age" -le "$DVPN_WG_MAX_AGE" ]; then
-          pass "Handshake: ${CGreen}${age}s ago${CClear} (within ${DVPN_WG_MAX_AGE}s threshold)"
-        else
-          fail "Handshake: ${CRed}${age}s ago${CClear} - exceeds ${DVPN_WG_MAX_AGE}s threshold (tunnel stale)"
-        fi
-      fi
-    fi
-
-    # Transfer counters - confirms data is actually flowing
-    local rx tx
-    rx=$("$WGBIN" show "$iface" transfer 2>/dev/null | awk '{print $2}' | head -1)
-    tx=$("$WGBIN" show "$iface" transfer 2>/dev/null | awk '{print $3}' | head -1)
-    if [ -n "$rx" ] && [ "$rx" != "0" ]; then
-      pass "Traffic flowing - RX: ${CGreen}${rx}B${CClear}  TX: ${tx}B"
-    else
-      warn "No transfer data recorded yet on $iface"
-    fi
-
-  elif [ "$type" = "ovpn" ]; then
-    local state
-    state=$(nvram get "vpn_client${slot}_state" 2>/dev/null)
-    if [ "$state" = "2" ]; then
-      pass "OpenVPN state: ${CGreen}2 (connected)${CClear}"
-    else
-      fail "OpenVPN state: ${CRed}${state}${CClear} (expected 2)"
-    fi
-  fi
-
-  # IP address on interface
-  local addr
-  addr=$(ip -4 addr show dev "$iface" 2>/dev/null | awk '/inet / {print $2}' | head -1)
-  if [ -n "$addr" ]; then
-    pass "Interface address: ${CCyan}${addr}${CClear}"
-  else
-    fail "No IPv4 address on $iface"
-  fi
-}
-
-check_table() {
-  local label="$1" table="$2" expected_if="$3" mark="$4" prio="$5"
-  echo -e "  ${CWhite}${label} - table ${table}${CClear}"
-
-  # Default route in table
-  local def_route
-  def_route=$(ip route show table "$table" 2>/dev/null | grep "^default")
-  if [ -z "$def_route" ]; then
-    fail "No default route in table ${table}"
-  else
-    if echo "$def_route" | grep -q "$expected_if"; then
-      pass "Default route: ${CDkGray}${def_route}${CClear}"
-    else
-      fail "Default route in table ${table} does NOT go via ${expected_if}"
-      info "Actual: $def_route"
-    fi
-  fi
-
-  # ip rule for this table's fwmark
-  local rule
-  rule=$(ip rule show 2>/dev/null | grep "fwmark $mark" | grep "lookup $table")
-  if [ -z "$rule" ]; then
-    # Try hex/decimal variations
-    rule=$(ip rule show 2>/dev/null | grep "$table" | grep -i "$mark")
-  fi
-  if [ -n "$rule" ]; then
-    pass "ip rule: ${CDkGray}${rule}${CClear}"
-  else
-    fail "No ip rule found for fwmark ${mark} -> table ${table}"
-  fi
-
-  echo ""
-}
-
-dvpn__run_diagnostics()
-{
-
-#Result tracking
-PASS=0
-WARN=0
-FAIL=0
-CONF="/jffs/addons/vpnmon-r3.d/vr3dblvpn.cfg"
-STATE="/tmp/doublevpn-state"
-
-##############################################################################
-# HEADER
-##############################################################################
-clear
-echo ""
-echo -e "${InvGreen} ${InvDkGray}${CWhite} Double-Hop VPN Diagnostic                                                             ${CClear}"
-echo -e "${InvGreen} ${CClear}"
-echo -e "${InvGreen} ${CClear}  Router   : $(nvram get lan_hostname 2>/dev/null)"
-echo -e "${InvGreen} ${CClear}  WAN IP   : $(nvram get wan0_ipaddr 2>/dev/null)"
-echo -e "${InvGreen} ${CClear}  Run time : $(date)"
-echo -e "${InvGreen} ${CClear}"
-echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-
-##############################################################################
-# SECTION 1 - Configuration
-##############################################################################
-section "1 of 7 - Configuration                                                               "
-
-if [ ! -f "$CONF" ]; then
-  fail "doublevpn.conf not found at $CONF"
-  echo ""
-  echo -e "  ${CRed}Cannot continue without configuration. Run the VPNMON-R3 setup menu first.${CClear}"
-  echo ""; exit 1
-fi
-
-. "$CONF"
-pass "Loaded config from $CONF"
-
-if [ "$DVPN_ENABLED" != "1" ]; then
-  fail "DVPN_ENABLED=$DVPN_ENABLED - Double-Hop is disabled in config"
-  echo ""
-  echo -e "  ${CYellow}Enable via the VPNMON-R3 setup menu before running this check.${CClear}"
-  echo ""; exit 1
-fi
-pass "DVPN_ENABLED=1"
-
-[ -z "$DVPN_HOP_IPS" ] && { fail "DVPN_HOP_IPS is empty - no hop clients configured"; } \
-                       || { pass "Hop clients: ${CCyan}${DVPN_HOP_IPS}${CClear}"; }
-
-echo ""
-echo -e "  ${CWhite}Tunnel 1 (Outer):${CClear} ${DVPN_TUNNEL1_TYPE} Slot ${DVPN_TUNNEL1_SLOT} / ${DVPN_TUNNEL1_IF}  table ${DVPN_TUNNEL1_TABLE}  mark ${DVPN_TUNNEL1_MARK}"
-echo -e "  ${CWhite}Tunnel 2 (Inner):${CClear} ${DVPN_TUNNEL2_TYPE} Slot ${DVPN_TUNNEL2_SLOT} / ${DVPN_TUNNEL2_IF}  table ${DVPN_TUNNEL2_TABLE}  mark ${DVPN_TUNNEL2_MARK}"
-echo -e "  ${CWhite}Hop Mark:${CClear}         ${DVPN_HOP_MARK} -> table ${DVPN_TUNNEL2_TABLE}"
-echo -e "  ${CWhite}WG Max HS Age:${CClear}    ${DVPN_WG_MAX_AGE}s"
-
-echo ""
-read -rsp $'Press any key to continue (2/7)... ' -n1 key
-printf "\r\033[2K"
-
-##############################################################################
-# SECTION 2 - Interface Status
-##############################################################################
-section "2 of 7 - Interface Status                                                            "
-
-WGBIN=$(find_wg)
-if [ -z "$WGBIN" ]; then
-  warn "wg binary not found - handshake checks will be skipped"
-else
-  pass "wg binary found: $WGBIN"
-fi
-
-check_iface "Tunnel 1 (Outer)" "$DVPN_TUNNEL1_IF" "$DVPN_TUNNEL1_TYPE" "$DVPN_TUNNEL1_SLOT"
-check_iface "Tunnel 2 (Inner)" "$DVPN_TUNNEL2_IF" "$DVPN_TUNNEL2_TYPE" "$DVPN_TUNNEL2_SLOT"
-
-echo ""
-read -rsp $'Press any key to continue (3/7)... ' -n1 key
-printf "\r\033[2K"
-
-##############################################################################
-# SECTION 3 - Endpoint Host Routes
-##############################################################################
-section "3 of 7 - Endpoint Host Routes                                                        "
-
-echo -e "  ${CDkGray}T1 endpoint must be pinned to WAN (not via any tunnel).${CClear}"
-echo -e "  ${CDkGray}T2 endpoint must be pinned through T1 (${DVPN_TUNNEL1_IF}), not WAN.${CClear}"
-echo ""
-
-# T1 endpoint -> WAN
-T1_EP=$(nvram get "wgc${DVPN_TUNNEL1_SLOT}_ep_addr" 2>/dev/null | cut -d: -f1)
-if [ "$DVPN_TUNNEL1_TYPE" = "ovpn" ]; then
-  T1_EP=$(nvram get "vpn_client${DVPN_TUNNEL1_SLOT}_addr" 2>/dev/null)
-fi
-
-if [ -z "$T1_EP" ]; then
-  warn "Cannot determine T1 endpoint from NVRAM"
-else
-  echo -e "  ${CWhite}T1 endpoint: ${CCyan}${T1_EP}${CClear}"
-  t1_route=$(ip route show "${T1_EP}/32" 2>/dev/null | head -1)
-  if [ -z "$t1_route" ]; then
-    fail "No host route found for T1 endpoint ${T1_EP}/32"
-    info "Expected: ${T1_EP}/32 via <WAN_GW> dev <WAN_IF>"
-  else
-    # Confirm it goes via WAN and NOT through a tunnel interface
-    if echo "$t1_route" | grep -qE "wgc|tun1"; then
-      fail "T1 endpoint route goes through a tunnel interface - routing loop risk!"
-      info "Route: $t1_route"
-    else
-      pass "T1 endpoint pinned to WAN: ${CDkGray}${t1_route}${CClear}"
-    fi
-  fi
-fi
-
-echo ""
-
-# T2 endpoint -> via T1 interface
-T2_EP=$(nvram get "wgc${DVPN_TUNNEL2_SLOT}_ep_addr" 2>/dev/null | cut -d: -f1)
-if [ "$DVPN_TUNNEL2_TYPE" = "ovpn" ]; then
-  T2_EP=$(nvram get "vpn_client${DVPN_TUNNEL2_SLOT}_addr" 2>/dev/null)
-fi
-
-if [ -z "$T2_EP" ]; then
-  warn "Cannot determine T2 endpoint from NVRAM"
-else
-  echo -e "  ${CWhite}T2 endpoint: ${CCyan}${T2_EP}${CClear}"
-  t2_route=$(ip route show "${T2_EP}/32" 2>/dev/null | head -1)
-  if [ -z "$t2_route" ]; then
-    # Also check main table
-    t2_route=$(ip route get "$T2_EP" 2>/dev/null | head -1)
-  fi
-  if [ -z "$t2_route" ]; then
-    fail "No host route found for T2 endpoint ${T2_EP}"
-    info "Expected: ${T2_EP}/32 dev ${DVPN_TUNNEL1_IF}"
-  else
-    if echo "$t2_route" | grep -q "$DVPN_TUNNEL1_IF"; then
-      pass "T2 endpoint routed through T1 (${DVPN_TUNNEL1_IF}): ${CDkGray}${t2_route}${CClear}"
-    else
-      fail "T2 endpoint NOT routed through ${DVPN_TUNNEL1_IF}"
-      info "Actual route: $t2_route"
-      info "Expected via: $DVPN_TUNNEL1_IF"
-    fi
-  fi
-fi
-
-echo ""
-read -rsp $'Press any key to continue (4/7)... ' -n1 key
-printf "\r\033[2K"
-
-##############################################################################
-# SECTION 4 - Routing Tables
-##############################################################################
-section "4 of 7 - Routing Tables                                                              "
-
-check_table "Tunnel 1 routing table" \
-  "$DVPN_TUNNEL1_TABLE" "$DVPN_TUNNEL1_IF" "$DVPN_TUNNEL1_MARK" "$((9000 + DVPN_TUNNEL1_TABLE))"
-
-check_table "Tunnel 2 routing table" \
-  "$DVPN_TUNNEL2_TABLE" "$DVPN_TUNNEL2_IF" "$DVPN_TUNNEL2_MARK" "$((9000 + DVPN_TUNNEL2_TABLE))"
-
-# Hop client fwmark rule -> T2 table
-echo -e "  ${CWhite}Hop client rule - fwmark ${DVPN_HOP_MARK} -> table ${DVPN_TUNNEL2_TABLE}${CClear}"
-hop_rule=$(ip rule show 2>/dev/null | grep -i "fwmark.*${DVPN_HOP_MARK}" | grep "lookup ${DVPN_TUNNEL2_TABLE}")
-if [ -z "$hop_rule" ]; then
-  hop_rule=$(ip rule show 2>/dev/null | grep "9000" | grep "${DVPN_TUNNEL2_TABLE}")
-fi
-if [ -n "$hop_rule" ]; then
-  pass "Hop rule: ${CDkGray}${hop_rule}${CClear}"
-else
-  fail "No ip rule found for hop mark ${DVPN_HOP_MARK} -> table ${DVPN_TUNNEL2_TABLE}"
-  info "This is the critical rule - without it hop clients go to the wrong table"
-fi
-
-echo ""
-read -rsp $'Press any key to continue (5/7)... ' -n1 key
-printf "\r\033[2K"
-
-##############################################################################
-# SECTION 5 - iptables Mangle Rules
-##############################################################################
-section "5 of 7 - iptables Mangle Rules                                                       "
-
-echo -e "  ${CDkGray}Each hop client IP must have a PREROUTING mark rule setting ${DVPN_HOP_MARK}.${CClear}"
-echo -e "  ${CDkGray}Each hop client IP must have FORWARD TCPMSS clamp rules for MSS 1300.${CClear}"
-echo ""
-
-for entry in $DVPN_HOP_IPS; do
-  echo -e "  ${CWhite}Entry: ${CCyan}${entry}${CClear}"
-  fmt=$(ip_format "$entry")
-  info "Format: $fmt"
-
-  # PREROUTING mark check
-  mark_rule=$(iptables -t mangle -L PREROUTING -n -v 2>/dev/null | grep -i "MARK\|mark" | grep "$entry")
-  if [ -z "$mark_rule" ]; then
-    # For ranges, check iprange module match
-    mark_rule=$(iptables -t mangle -L PREROUTING -n -v 2>/dev/null | grep -i "MARK\|mark" | grep -i "iprange")
-    if [ -n "$mark_rule" ] && [ "$fmt" = "range" ]; then
-      pass "PREROUTING mark rule present (iprange): ${CDkGray}${mark_rule}${CClear}"
-    else
-      fail "No PREROUTING mangle mark rule found for $entry"
-      info "Hop client traffic will NOT be marked - it will bypass double-hop entirely"
-    fi
-  else
-    pass "PREROUTING mark rule: ${CDkGray}$(echo "$mark_rule" | tr -s ' ')${CClear}"
-  fi
-
-  # FORWARD MSS clamp check
-  mss_rule=$(iptables -t mangle -L FORWARD -n -v 2>/dev/null | grep "TCPMSS\|tcpmss" | grep "$entry")
-  if [ -z "$mss_rule" ] && [ "$fmt" = "range" ]; then
-    mss_rule=$(iptables -t mangle -L FORWARD -n -v 2>/dev/null | grep "TCPMSS\|tcpmss" | grep -i "iprange")
-  fi
-  if [ -n "$mss_rule" ]; then
-    pass "FORWARD TCPMSS clamp rule present"
-  else
-    warn "No TCPMSS MSS clamp rule found for $entry"
-    info "Large packets may be fragmented or dropped - browsing/streaming may suffer"
-  fi
-
-  echo ""
-done
-
-read -rsp $'Press any key to continue (6/7)... ' -n1 key
-printf "\r\033[2K"
-
-##############################################################################
-# SECTION 6 - End-to-End Routing Chain Proof Per Hop Client
-##############################################################################
-section "6 of 7 - End-to-End Routing Chain Proof Per Hop Client                               "
-
-echo -e "  ${CDkGray}Verifies the complete routing chain and that nothing overrides it.${CClear}"
-echo ""
-echo -e "  ${CWhite}Chain: [no conflicting rule] -> [from hop-IP rule prio 99 -> table ${DVPN_TUNNEL2_TABLE}] -> [table ${DVPN_TUNNEL2_TABLE} -> ${DVPN_TUNNEL2_IF}]${CClear}"
-echo ""
-
-WAN_IF=$(ip route show default table main 2>/dev/null | \
-         awk '/^default/ && ($0 !~ /wgc/ && $0 !~ /tun/) {print $5; exit}')
-WAN_IP=$(nvram get wan0_ipaddr 2>/dev/null)
-
-for entry in $DVPN_HOP_IPS; do
-  echo -e "  ${CWhite}--- Hop client: ${CCyan}${entry}${CWhite} ---${CClear}"
-  echo ""
-  chain_ok=0
-  fmt=$(ip_format "$entry")
-
-  # Link 0: no conflicting ip rule at a lower priority number
-  echo -e "  ${CWhite}Link 0 - No overriding ip rule above priority ${DVPN_HOP_PRIO:-99}${CClear}"
-
-  conflict_found=0
-  case "$fmt" in
-    single|cidr)
-      while IFS= read -r crule; do
-        [ -z "$crule" ] && continue
-        cprio=$(echo "$crule" | awk -F: '{print $1}' | tr -d ' ')
-        # Skip our own rule pointing to T2 table
-        echo "$crule" | grep -q "lookup ${DVPN_TUNNEL2_TABLE}" && continue
-        if [ -n "$cprio" ] && [ "$cprio" -lt "${DVPN_HOP_PRIO:-99}" ] 2>/dev/null; then
-          conflict_found=1
-          fail "Conflicting rule at priority ${cprio} overrides double-hop routing"
-          info "Rule: ${CDkGray}${crule}${CClear}"
-          info "This rule routes ${entry} before our priority-99 rule is reached"
-          info "VPN Director likely rebuilt its rules after a tunnel reset"
-        fi
-      done <<EOF
-$(ip rule show 2>/dev/null | grep "from $entry")
-EOF
-      ;;
-    range)
-      start=$(echo "$entry" | cut -d- -f1)
-      while IFS= read -r crule; do
-        [ -z "$crule" ] && continue
-        cprio=$(echo "$crule" | awk -F: '{print $1}' | tr -d ' ')
-        echo "$crule" | grep -q "lookup ${DVPN_TUNNEL2_TABLE}" && continue
-        if [ -n "$cprio" ] && [ "$cprio" -lt "${DVPN_HOP_PRIO:-99}" ] 2>/dev/null; then
-          conflict_found=1
-          fail "Conflicting rule at priority ${cprio} for range start $start"
-          info "Rule: ${CDkGray}${crule}${CClear}"
-        fi
-      done <<EOF
-$(ip rule show 2>/dev/null | grep "from $start")
-EOF
-      ;;
-  esac
-
-  if [ "$conflict_found" = "0" ]; then
-    pass "No overriding ip rules found above priority ${DVPN_HOP_PRIO:-99}"
-    chain_ok=$(( chain_ok + 1 ))
-  fi
-
-  echo ""
-
-  # Link 1: direct from-IP rule at DVPN_HOP_PRIO -> T2 table
-  echo -e "  ${CWhite}Link 1 - ip rule: from ${entry} -> table ${DVPN_TUNNEL2_TABLE} (prio ${DVPN_HOP_PRIO:-99})${CClear}"
-
-  direct_rule=""
-  case "$fmt" in
-    single|cidr)
-      direct_rule=$(ip rule show 2>/dev/null | \
-                    grep "^${DVPN_HOP_PRIO:-99}:.*from ${entry}.*lookup ${DVPN_TUNNEL2_TABLE}")
-      ;;
-    range)
-      start=$(echo "$entry" | cut -d- -f1)
-      direct_rule=$(ip rule show 2>/dev/null | \
-                    grep "^${DVPN_HOP_PRIO:-99}:.*from ${start}.*lookup ${DVPN_TUNNEL2_TABLE}")
-      ;;
-  esac
-
-  if [ -n "$direct_rule" ]; then
-    pass "Direct routing rule: ${CDkGray}${direct_rule}${CClear}"
-    chain_ok=$(( chain_ok + 1 ))
-  else
-    fail "No direct from-IP rule at priority ${DVPN_HOP_PRIO:-99} -> table ${DVPN_TUNNEL2_TABLE}"
-    info "Rebuild routing via VPNMON-R3 setup -> Double-Hop -> option 6"
-  fi
-
-  echo ""
-
-  # Link 2: table T2 default exits via DVPN_TUNNEL2_IF
-  echo -e "  ${CWhite}Link 2 - table ${DVPN_TUNNEL2_TABLE} default route via ${DVPN_TUNNEL2_IF}${CClear}"
-
-  t2_default=$(ip route show table "$DVPN_TUNNEL2_TABLE" 2>/dev/null | grep "^default")
-
-  if [ -z "$t2_default" ]; then
-    fail "Table ${DVPN_TUNNEL2_TABLE} has no default route"
-  elif echo "$t2_default" | grep -q "$DVPN_TUNNEL2_IF"; then
-    pass "Default route: ${CDkGray}${t2_default}${CClear}"
-    chain_ok=$(( chain_ok + 1 ))
-  elif echo "$t2_default" | grep -q "$DVPN_TUNNEL1_IF"; then
-    fail "Table ${DVPN_TUNNEL2_TABLE} exits via ${DVPN_TUNNEL1_IF} (T1 only - single hop)"
-    info "Route: $t2_default"
-  elif [ -n "$WAN_IF" ] && echo "$t2_default" | grep -q "$WAN_IF"; then
-    fail "Table ${DVPN_TUNNEL2_TABLE} exits via WAN - bypasses all VPN"
-    info "Route: $t2_default"
-  else
-    warn "Unrecognised exit interface in table ${DVPN_TUNNEL2_TABLE}"
-    info "Route: $t2_default"
-  fi
-
-  echo ""
-
-  # Chain verdict
-  if [ "$chain_ok" = "3" ]; then
-    echo -e "  ${CGreen}Chain complete (3/3) - traffic from ${entry} is double-hopped${CClear}"
-    echo -e "  ${CGreen}Exits via ${DVPN_TUNNEL2_IF} (T2) inside ${DVPN_TUNNEL1_IF} (T1)${CClear}"
-  else
-    echo -e "  ${CRed}Chain broken (${chain_ok}/3 links OK) - ${entry} is NOT correctly double-hopped${CClear}"
-    if [ "$conflict_found" = "1" ]; then
-      echo -e "  ${CYellow}VPN Director has overriding rules. Use option 6 to rebuild.${CClear}"
-      echo -e "  ${CYellow}The integrity check will re-suspend them automatically on the next loop.${CClear}"
-    else
-      echo -e "  ${CYellow}Use VPNMON-R3 setup -> Double-Hop -> option 6 to rebuild routing.${CClear}"
-    fi
-  fi
-  echo ""
-done
-
-read -rsp $'Press any key to continue (7/7)... ' -n1 key
-printf "\r\033[2K"
-
-##############################################################################
-# SECTION 7 - State File
-##############################################################################
-section "7 of 7 - Runtime State                                                               "
-
-if [ -f "$STATE" ]; then
-  pass "State file present: $STATE"
-  echo ""
-  while IFS= read -r line; do
-    info "$line"
-  done < "$STATE"
-  echo ""
-
-  . "$STATE" 2>/dev/null
-  if [ "$ST1_UP" = "1" ] && [ "$ST2_UP" = "1" ]; then
-    pass "State: both tunnels UP - routing should be active"
-  elif [ "$ST1_UP" = "1" ] && [ "$ST2_UP" = "0" ]; then
-    fail "State: T1 UP but T2 DOWN - hop clients have no T2 exit"
-  elif [ "$ST1_UP" = "0" ] && [ "$ST2_UP" = "0" ]; then
-    fail "State: both tunnels DOWN - no double-hop routing active"
-  else
-    warn "State: unexpected combination ST1_UP=${ST1_UP} ST2_UP=${ST2_UP}"
-  fi
-else
-  warn "State file not found at $STATE"
-  info "dvpn_check_and_apply has not run yet, or state was cleared"
-fi
-
-echo ""
-read -rsp $'Press any key to continue (Diagnostic Summary)... ' -n1 key
-printf "\r\033[2K"
-
-##############################################################################
-# SUMMARY
-##############################################################################
-echo ""
-echo -e "${InvGreen} ${InvDkGray}${CWhite} Diagnostic Summary                                                                    ${CClear}"
-echo ""
-
-TOTAL=$(( PASS + WARN + FAIL ))
-
-echo -e "  ${CGreen}Passed : ${PASS}${CClear}"
-echo -e "  ${CYellow}Warned : ${WARN}${CClear}"
-echo -e "  ${CRed}Failed : ${FAIL}${CClear}"
-echo -e "  ${CDkGray}Total  : ${TOTAL}${CClear}"
-echo ""
-
-if [ "$FAIL" = "0" ] && [ "$WARN" = "0" ]; then
-  echo -e "  ${CGreen}All checks passed. Double-hop routing is fully operational.${CClear}"
-  echo -e "  ${CDkGray}Verify from each hop client: curl -s https://api.ipify.org${CClear}"
-  echo -e "  ${CDkGray}Returned IP should match T2 exit (not WAN, not T1).${CClear}"
-elif [ "$FAIL" = "0" ]; then
-  echo -e "  ${CYellow}Routing is active but review warnings above.${CClear}"
-  echo -e "  ${CDkGray}Verify from each hop client: curl -s https://api.ipify.org${CClear}"
-else
-  echo -e "  ${CRed}One or more critical checks failed.${CClear}"
-  echo -e "  ${CYellow}Try: VPNMON-R3 setup -> Double-Hop -> option 6 (Apply/Rebuild)${CClear}"
-  echo -e "  ${CYellow}Then re-run this script.${CClear}"
-fi
-
-echo ""
-echo -e "${CDkGray}  T1 exit (single-hop clients): should be IP of server ${T1_EP}${CClear}"
-echo -e "${CDkGray}  T2 exit (double-hop clients): should be IP of server ${T2_EP}${CClear}"
-echo -e "${CDkGray}  WAN IP (must NOT appear for any VPN client): ${WAN_IP}${CClear}"
-echo ""
-read -rsp $'Press any key to continue...\n' -n1 key
 
 }
 
@@ -3218,7 +735,7 @@ do
           echo -e "Your router model is: ${CGreen}$ROUTERMODEL${CClear}"
           echo ""
           echo -e "Ready to install?"
-          if promptyn "[y/n]: "
+          if promptyn " (y/n): "
           then
               if [ -d "/opt" ]; then # Does entware exist? If yes proceed, if no error out.
                 echo ""
@@ -3459,12 +976,6 @@ do
      throughputmethoddisp="Total Throughput (in MB)"
   fi
 
-  if [ "$DVPN_ENABLED" -eq 0 ]; then
-     dvpnenableddisp="${CDkGray}Disabled"
-  else
-     dvpnenableddisp="Enabled"
-  fi
-
 
   utilspddisp="${CGreen}RX: 0-->$lowutilspd${CGreen}|${CYellow}$lowutilspd-->$medutilspd${CGreen}|${CRed}$medutilspd-->Max${CClear}"
   utilspdupdisp="${CGreen}TX: 0-->$lowutilspdup${CGreen}|${CYellow}$lowutilspdup-->$medutilspdup${CGreen}|${CRed}$medutilspdup-->Max${CClear}"
@@ -3497,13 +1008,12 @@ do
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  |-${CClear}---                                             : $utilspdupdisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(15)${CClear} : Connection Throughput Display Method         : ${CGreen}$throughputmethoddisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(16)${CClear} : WAN Recovery, Down, Reconnect Timers         : $wantimersdisp"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(17)${CClear} : Double-Hop OVPN/WG configuration             : ${CGreen}$dvpnenableddisp${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  | ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( e)${CClear} : Exit${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo ""
-  read -p "Please select? (1-17, e=Exit): " SelectSlot
+  read -p "Please select? (1-16, e=Exit): " SelectSlot
     case $SelectSlot in
       1)
         clear
@@ -3791,7 +1301,7 @@ do
                fi
 
               else
-                curl --silent --fail --retry 3 --max-time 10 --retry-delay 2 --retry-all-errors "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/main/Unbound/nat-start" -o "/jffs/scripts/nat-start" && chmod 755 "/jffs/scripts/nat-start"
+                curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 2 --retry-all-errors "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/main/Unbound/nat-start" -o "/jffs/scripts/nat-start" && chmod 755 "/jffs/scripts/nat-start"
               fi
 
               # Modify or create openvpn-event
@@ -3808,11 +1318,13 @@ do
                 echo "[ "'"${dev:0:4}"'" = 'tun1' ] && vpn_id=$unboundovervpn &&  [ "'"$script_type"'" = 'route-up' ] && /jffs/addons/unbound/unbound_DNS_via_OVPN.sh \$vpn_id start &" >> /jffs/scripts/openvpn-event
                 echo "[ "'"${dev:0:4}"'" = 'tun1' ] && vpn_id=$unboundovervpn &&  [ "'"$script_type"'" = 'route-pre-down' ] && /jffs/addons/unbound/unbound_DNS_via_OVPN.sh \$vpn_id stop &" >> /jffs/scripts/openvpn-event
                 chmod 755 /jffs/scripts/openvpn-event
+                # backup - curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 2 --retry-all-errors "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/main/Unbound/openvpn-event" -o "/jffs/scripts/openvpn-event" && chmod 755 "/jffs/scripts/openvpn-event"
               fi
 
               # Download and create the unbound_DNS_via_OVPN.sh file - many thanks to @Martineau and @Swinson
               if [ ! -f /jffs/addons/unbound/unbound_DNS_via_OVPN.sh ]; then
-                curl --silent --fail --retry 3 --max-time 10 --retry-delay 2 --retry-all-errors "https://raw.githubusercontent.com/MartineauUK/Unbound-Asuswrt-Merlin/dev/unbound_DNS_via_OVPN.sh" -o "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh" && chmod 755 "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh"
+                curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 2 --retry-all-errors "https://raw.githubusercontent.com/MartineauUK/Unbound-Asuswrt-Merlin/dev/unbound_DNS_via_OVPN.sh" -o "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh" && chmod 755 "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh"
+                # backup - curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/main/Unbound/unbound_DNS_via_OVPN.sh" -o "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh" && chmod 755 "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh"
               fi
 
               echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Unbound-over-VPN was enabled for VPNMON-R3" >> $logfile
@@ -4736,10 +2248,6 @@ do
         fi
       ;;
 
-      17)
-        dvpn_setup
-      ;;
-
     esac
 done
 }
@@ -4806,7 +2314,7 @@ while true; do
       if promptyn "[y/n]: "; then
         echo ""
         echo -e "\nDownloading VPNMON-R3 ${CGreen}v$DLversion${CClear}"
-        curl --silent --fail --retry 3 --max-time 10 --retry-delay 2 --retry-all-errors "https://raw.githubusercontent.com/ViktorJp/VPNMON-R3/main/vpnmon-r3.sh" -o "/jffs/scripts/vpnmon-r3.sh" && chmod 755 "/jffs/scripts/vpnmon-r3.sh"
+        curl --silent --retry 3 --connect-timeout 3 --max-time 5 --retry-delay 2 --retry-all-errors --fail "https://raw.githubusercontent.com/ViktorJp/VPNMON-R3/main/vpnmon-r3.sh" -o "/jffs/scripts/vpnmon-r3.sh" && chmod 755 "/jffs/scripts/vpnmon-r3.sh"
         echo ""
         echo -e "Download successful!${CClear}"
         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Successfully downloaded and installed VPNMON-R3 v$DLversion" >> $logfile
@@ -4825,7 +2333,7 @@ while true; do
       if promptyn "[y/n]: "; then
         echo ""
         echo -e "\nDownloading VPNMON-R3 ${CGreen}v$DLversion${CClear}"
-        curl --silent --fail --retry 3 --max-time 10 --retry-delay 2 --retry-all-errors "https://raw.githubusercontent.com/ViktorJp/VPNMON-R3/main/vpnmon-r3.sh" -o "/jffs/scripts/vpnmon-r3.sh" && chmod 755 "/jffs/scripts/vpnmon-r3.sh"
+        curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 2 --retry-all-errors --fail "https://raw.githubusercontent.com/ViktorJp/VPNMON-R3/main/vpnmon-r3.sh" -o "/jffs/scripts/vpnmon-r3.sh" && chmod 755 "/jffs/scripts/vpnmon-r3.sh"
         echo ""
         echo -e "Download successful!${CClear}"
         echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: Successfully downloaded and installed VPNMON-R3 v$DLversion" >> $logfile
@@ -4851,7 +2359,7 @@ updatecheck()
 {
 
   # Download the latest version file from the source repository
-  curl --silent --fail --retry 3 --max-time 10 --retry-delay 2 --retry-all-errors "https://raw.githubusercontent.com/ViktorJp/VPNMON-R3/main/version.txt" -o "/jffs/addons/vpnmon-r3.d/version.txt"
+  curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 2 --retry-all-errors --fail "https://raw.githubusercontent.com/ViktorJp/VPNMON-R3/main/version.txt" -o "/jffs/addons/vpnmon-r3.d/version.txt"
 
   if [ -f $dlverpath ]
     then
@@ -4889,7 +2397,7 @@ while true; do
   if promptyn "(y/n): "; then
     echo ""
     echo -e "\nAre you sure? Please type 'y' to validate you wish to proceed.${CClear}"
-      if promptyn "[y/n]: "; then
+      if promptyn "(y/n): "; then
         clear
         #Remove and uninstall files/directories
         rm -f -r /jffs/addons/vpnmon-r3.d
@@ -6952,9 +4460,6 @@ saveconfig()
      then
        source "$config"
    fi
-
-   dvpn_loadconfig
-   dvpn_check_and_apply
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -7262,7 +4767,7 @@ sendmessage()
           printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
           printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
           printf "\n"
-          printf "<b>WARNING: VPNMON-R3</b> has detected that WG Slot $3 exceeded a 180s handshake. WG Slot $3 has been reset.\n"
+          printf "<b>WARNING: VPNMON-R3</b> has detected that WG Slot $3 exceeded a 200s handshake. WG Slot $3 has been reset.\n"
           printf "Please check your network environment and configuration if this error continues to persist."
           printf "\n"
           } > "$tmpEMailBodyFile"
@@ -8023,7 +5528,6 @@ vreset()
         fi
 
         restartvpn $slot
-        dvpn_on_tunnel_restart "ovpn" "$slot";
         sendmessage 0 "VPN Connection Scheduled Reset" $slot
 
       fi
@@ -8097,7 +5601,6 @@ vreset()
           fi
         fi
         restartwg $slot
-        dvpn_on_tunnel_restart "wg" "$slot"
         sendmessage 0 "WG Connection Scheduled Reset" $slot
 
       fi
@@ -8129,7 +5632,7 @@ getvpnip()
   if [ -z "$icanhazvpnip" ] || [ "$icanhazvpnip" = "unknown" ]
   then
      # Grab the public IP of the VPN Connection #
-     icanhazvpnip="curl --silent --fail --retry 3 --retry-delay 2 --retry-all-errors --interface "$TUN" --request GET --url https://ipv4.icanhazip.com"
+     icanhazvpnip="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --fail --interface "$TUN" --request GET --url https://ipv4.icanhazip.com"
      icanhazvpnip="$(eval $icanhazvpnip)"
      if [ -z "$icanhazvpnip" ] || echo "$icanhazvpnip" | grep -qoE 'Internet|traffic|Error|error' ; then icanhazvpnip="0.0.0.0" ; fi
   fi
@@ -8214,7 +5717,7 @@ getwgip()
   TUN_IP=$($timeoutcmd$timeoutsec nvram get "$TUN"_addr | cut -d '/' -f1)
   ip rule add from $TUN_IP lookup $TUN prio 10 >/dev/null 2>&1
 
-  icanhazwgip="curl --silent --fail --retry 3 --retry-delay 2 --retry-all-errors --interface "$TUN" --request GET --url https://ipv4.icanhazip.com"
+  icanhazwgip="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --fail --interface "$TUN" --request GET --url https://ipv4.icanhazip.com"
   icanhazwgip="$(eval $icanhazwgip)"
   if [ -z "$icanhazwgip" ] || echo "$icanhazwgip" | grep -qoE 'Internet|traffic|Error|error' ; then icanhazwgip="0.0.0.0" ; fi
 
@@ -8304,7 +5807,7 @@ getvpncity()
     lastvpnip1="$icanhazvpnip"
     if [ "$lastvpnip1" != "$oldvpnip1" ]
     then
-      vpncity="curl --silent --fail --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazvpnip | jq --raw-output .city"
+      vpncity="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazvpnip | jq --raw-output .city"
       vpncity="$(eval $vpncity)"
       if [ -z "$vpncity" ] || echo "$vpncity" | grep -qoE '\b(error.*:.*True.*|Undefined)\b' ; then vpncity="Undetermined" ; fi
       citychange="${CGreen}- NEW ${CClear}"
@@ -8317,7 +5820,7 @@ getvpncity()
     lastvpnip2="$icanhazvpnip"
     if [ "$lastvpnip2" != "$oldvpnip2" ]
     then
-      vpncity="curl --silent --fail --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazvpnip | jq --raw-output .city"
+      vpncity="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazvpnip | jq --raw-output .city"
       vpncity="$(eval $vpncity)"
       if [ -z "$vpncity" ] || echo "$vpncity" | grep -qoE '\b(error.*:.*True.*|Undefined)\b' ; then vpncity="Undetermined" ; fi
       citychange="${CGreen}- NEW ${CClear}"
@@ -8330,7 +5833,7 @@ getvpncity()
     lastvpnip3="$icanhazvpnip"
     if [ "$lastvpnip3" != "$oldvpnip3" ]
     then
-      vpncity="curl --silent --fail --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazvpnip | jq --raw-output .city"
+      vpncity="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazvpnip | jq --raw-output .city"
       vpncity="$(eval $vpncity)"
       if [ -z "$vpncity" ] || echo "$vpncity" | grep -qoE '\b(error.*:.*True.*|Undefined)\b' ; then vpncity="Undetermined" ; fi
       citychange="${CGreen}- NEW ${CClear}"
@@ -8343,7 +5846,7 @@ getvpncity()
     lastvpnip4="$icanhazvpnip"
     if [ "$lastvpnip4" != "$oldvpnip4" ]
     then
-      vpncity="curl --silent --fail --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazvpnip | jq --raw-output .city"
+      vpncity="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazvpnip | jq --raw-output .city"
       vpncity="$(eval $vpncity)"
       if [ -z "$vpncity" ] || echo "$vpncity" | grep -qoE '\b(error.*:.*True.*|Undefined)\b' ; then vpncity="Undetermined" ; fi
       citychange="${CGreen}- NEW ${CClear}"
@@ -8356,7 +5859,7 @@ getvpncity()
     lastvpnip5="$icanhazvpnip"
     if [ "$lastvpnip5" != "$oldvpnip5" ]
     then
-      vpncity="curl --silent --fail --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazvpnip | jq --raw-output .city"
+      vpncity="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazvpnip | jq --raw-output .city"
       vpncity="$(eval $vpncity)"
       if [ -z "$vpncity" ] || echo "$vpncity" | grep -qoE '\b(error.*:.*True.*|Undefined)\b' ; then vpncity="Undetermined" ; fi
       citychange="${CGreen}- NEW ${CClear}"
@@ -8393,7 +5896,7 @@ getwgcity()
     lastwgip1="$icanhazwgip"
     if [ "$lastwgip1" != "$oldwgip1" ]
     then
-      wgcity="curl --silent --fail --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazwgip | jq --raw-output .city"
+      wgcity="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazwgip | jq --raw-output .city"
       wgcity="$(eval $wgcity)"
       if [ -z "$wgcity" ] || echo "$wgcity" | grep -qoE '\b(error.*:.*True.*|Undefined)\b' ; then wgcity="Undetermined" ; fi
       wgcitychange="${CGreen}- NEW ${CClear}"
@@ -8406,7 +5909,7 @@ getwgcity()
     lastwgip2="$icanhazwgip"
     if [ "$lastwgip2" != "$oldwgip2" ]
     then
-      wgcity="curl --silent --fail --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazwgip | jq --raw-output .city"
+      wgcity="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazwgip | jq --raw-output .city"
       wgcity="$(eval $wgcity)"
       if [ -z "$wgcity" ] || echo "$wgcity" | grep -qoE '\b(error.*:.*True.*|Undefined)\b' ; then wgcity="Undetermined" ; fi
       wgcitychange="${CGreen}- NEW ${CClear}"
@@ -8419,7 +5922,7 @@ getwgcity()
     lastwgip3="$icanhazwgip"
     if [ "$lastwgip3" != "$oldwgip3" ]
     then
-      wgcity="curl --silent --fail --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazwgip | jq --raw-output .city"
+      wgcity="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazwgip | jq --raw-output .city"
       wgcity="$(eval $wgcity)"
       if [ -z "$wgcity" ] || echo "$wgcity" | grep -qoE '\b(error.*:.*True.*|Undefined)\b' ; then wgcity="Undetermined" ; fi
       wgcitychange="${CGreen}- NEW ${CClear}"
@@ -8432,7 +5935,7 @@ getwgcity()
     lastwgip4="$icanhazwgip"
     if [ "$lastwgip4" != "$oldwgip4" ]
     then
-      wgcity="curl --silent --fail --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazwgip | jq --raw-output .city"
+      wgcity="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazwgip | jq --raw-output .city"
       wgcity="$(eval $wgcity)"
       if [ -z "$wgcity" ] || echo "$wgcity" | grep -qoE '\b(error.*:.*True.*|Undefined)\b' ; then wgcity="Undetermined" ; fi
       wgcitychange="${CGreen}- NEW ${CClear}"
@@ -8445,7 +5948,7 @@ getwgcity()
     lastwgip5="$icanhazwgip"
     if [ "$lastwgip5" != "$oldwgip5" ]
     then
-      wgcity="curl --silent --fail --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazwgip | jq --raw-output .city"
+      wgcity="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$icanhazwgip | jq --raw-output .city"
       wgcity="$(eval $wgcity)"
       if [ -z "$wgcity" ] || echo "$wgcity" | grep -qoE '\b(error.*:.*True.*|Undefined)\b' ; then wgcity="Undetermined" ; fi
       wgcitychange="${CGreen}- NEW ${CClear}"
@@ -8480,7 +5983,7 @@ checkvpn()
     SC=$?
     if [ "$RC" -eq 0 ] || [ "$SC" -eq 0 ]; then # Grab the public IP of the VPN Connection #
       COMBOPING=0
-      ICANHAZIP="$(curl --silent --fail --retry 3 --retry-delay 1 --retry-all-errors --max-time 10 --interface "$TUN" --request GET --url https://ipv4.icanhazip.com)"
+      ICANHAZIP="$(curl --silent --retry 3 --retry-delay 2 --retry-all-errors --fail --interface "$TUN" --request GET --url https://ipv4.icanhazip.com)"
       IC=$?
     else
       COMBOPING=1
@@ -8555,7 +6058,7 @@ checkwg()
     SC=$?
     if [ "$RC" -eq 0 ] || [ "$SC" -eq 0 ]; then # Grab the public IP of the VPN Connection #
       COMBOPING=0
-      ICANHAZIP="$(curl --silent --fail --retry 3 --retry-delay 1 --retry-all-errors --max-time 10 --interface "$TUN" --request GET --url https://ipv4.icanhazip.com)"
+      ICANHAZIP="$(curl --silent --retry 3 --retry-delay 2 --retry-all-errors --fail --interface "$TUN" --request GET --url https://ipv4.icanhazip.com)"
       IC=$?
     else
       COMBOPING=1
@@ -8802,8 +6305,8 @@ wancheck()
         # Get the public IP of the WAN, determine the city from it, and display it on screen #
         if [ -z "${WAN0IP:+xSETx}" ]
         then
-           WAN0IP="$(curl --silent --fail --retry 3 --retry-delay 2 --retry-all-errors --interface "$WAN0IFNAME" --request GET --url https://ipv4.icanhazip.com)"
-           WAN0CITY="curl --silent --fail --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$WAN0IP | jq --raw-output .city"
+           WAN0IP="$(curl --silent --retry 3 --retry-delay 2 --retry-all-errors --fail --interface "$WAN0IFNAME" --request GET --url https://ipv4.icanhazip.com)"
+           WAN0CITY="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$WAN0IP | jq --raw-output .city"
            WAN0CITY="$(eval $WAN0CITY)"
            if [ -z "$WAN0CITY" ] || echo "$WAN0CITY" | grep -qoE '\b(error.*:.*True.*|Undefined)\b' ; then WAN0CITY="$WAN0IP" ; fi
            WAN0IP="$(printf '%15s' "$WAN0IP")"
@@ -8897,9 +6400,9 @@ wancheck()
            echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN0${CClear} | $wan0status | "
            printf "%-6s" "$WAN0IFNAME"
            if [ "$bwdisp" = "1" ]; then
-             echo -e " | $wan0health | ${CGreen}Active${CClear}       | $WAN0IP | $WAN0PING | $WAN0RX1 | $WAN0TX1 | $WAN0CITY: $uptimeStr"
+             echo -e " | $wan0health | Active       | $WAN0IP | $WAN0PING | $WAN0RX1 | $WAN0TX1 | $WAN0CITY: $uptimeStr"
            else
-             echo -e " | $wan0health | ${CGreen}Active${CClear}       | $WAN0IP | $WAN0PING | $WAN0RX2 | $WAN0TX2 | $WAN0CITY: $uptimeStr"
+             echo -e " | $wan0health | Active       | $WAN0IP | $WAN0PING | $WAN0RX2 | $WAN0TX2 | $WAN0CITY: $uptimeStr"
            fi
         fi
      else
@@ -8930,8 +6433,8 @@ wancheck()
         # Get the public IP of the WAN, determine the city from it, and display it on screen #
         if [ -z "${WAN1IP:+xSETx}" ]
         then
-           WAN1IP="$(curl --silent --fail --retry 3 --retry-delay 2 --retry-all-errors --interface "$WAN1IFNAME" --request GET --url https://ipv4.icanhazip.com)"
-           WAN1CITY="curl --silent --fail --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$WAN1IP | jq --raw-output .city"
+           WAN1IP="$(curl --silent --retry 3 --retry-delay 2 --retry-all-errors --fail --interface "$WAN1IFNAME" --request GET --url https://ipv4.icanhazip.com)"
+           WAN1CITY="curl --silent --retry 3 --retry-delay 2 --retry-all-errors --request GET --url http://ip-api.com/json/$WAN1IP | jq --raw-output .city"
            WAN1CITY="$(eval $WAN1CITY)"
            if [ -z "$WAN1CITY" ] || echo "$WAN1CITY" | grep -qoE '\b(error.*:.*True.*|Undefined)\b' ; then WAN1CITY="$WAN1IP" ; fi
            WAN1IP="$(printf '%15s' "$WAN1IP")"
@@ -9018,9 +6521,9 @@ wancheck()
            echo -en "${InvGreen} ${InvDkGray}${CWhite} WAN1${CClear} | $wan1status | "
            printf "%-6s" "$WAN1IFNAME"
            if [ "$bwdisp" = "1" ]; then
-             echo -e " | $wan1health | ${CGreen}Active${CClear}       | $WAN1IP | $WAN1PING | $WAN1RX1 | $WAN1TX1 | $WAN1CITY: $uptimeStr"
+             echo -e " | $wan1health | Active       | $WAN1IP | $WAN1PING | $WAN1RX1 | $WAN1TX1 | $WAN1CITY: $uptimeStr"
            else
-             echo -e " | $wan1health | ${CGreen}Active${CClear}       | $WAN1IP | $WAN1PING | $WAN1RX2 | $WAN1TX2 | $WAN1CITY: $uptimeStr"
+             echo -e " | $wan1health | Active       | $WAN1IP | $WAN1PING | $WAN1RX2 | $WAN1TX2 | $WAN1CITY: $uptimeStr"
            fi
         fi
      else
@@ -9912,11 +7415,6 @@ do
     exit 1
   fi
 
-  if [ -f "$dvpnconfig" ]
-  then
-    source "$dvpnconfig"
-  fi
-
   createconfigs
 
   # Grab the monitored slots file and read it in
@@ -10081,7 +7579,7 @@ do
            vpntx2="${CDkGray}[n/a ]${CClear}"
         elif [ "$vpnstate" = "2" ]
         then
-           vpnstate="${CGreen}Connected${CClear}   "
+           vpnstate="Connected   "
            checkvpn "$i"
            getvpnip "$i"
            getvpncity "$i"
@@ -10133,19 +7631,19 @@ do
           vpnbwrx=""
           tmpvpnslot="diffvpn${i}rxbytes"
           eval currentvpnslot=\$$tmpvpnslot
-          vpnbwrx="$(printf '%4s' "$currentvpnslot")"
+          vpnbwtx="$(printf '%4s' "$currentvpnslot")"
           if [ -z "$currentvpnslot" ] || [ "$currentvpnslot" = "" ] || [ "$currentvpnslot" -lt 0 ]
           then
             vpnrx1="${CRed}[UNKN]${CClear}"
           elif [ "$currentvpnslot" -ge 0 ] && [ "$currentvpnslot" -le "$lowutilspd" ]
           then
-            vpnrx1="${CGreen}[$vpnbwrx]${CClear}"
+            vpnrx1="${CGreen}[$vpnbwtx]${CClear}"
           elif [ "$currentvpnslot" -gt "$lowutilspd" ] && [ "$currentvpnslot" -le "$medutilspd" ]
           then
-            vpnrx1="${CYellow}[$vpnbwrx]${CClear}"
+            vpnrx1="${CYellow}[$vpnbwtx]${CClear}"
           elif [ "$currentvpnslot" -gt "$medutilspd" ]
           then
-            vpnrx1="${CRed}[$vpnbwrx]${CClear}"
+            vpnrx1="${CRed}[$vpnbwtx]${CClear}"
           fi
         fi
 
@@ -10154,19 +7652,19 @@ do
           vpntprx=""
           tmpvpntpslot="thruvpn${i}rxbytes"
           eval currentvpntpslot=\$$tmpvpntpslot
-          vpntprx="$(printf '%4s' "$currentvpntpslot")"
+          vpntptx="$(printf '%4s' "$currentvpntpslot")"
           if [ -z "$currentvpntpslot" ] || [ "$currentvpntpslot" = "" ] || [ "$currentvpntpslot" -lt 0 ]
           then
             vpnrx2="${CRed}[UNKN]${CClear}"
           elif [ "$currentvpntpslot" -ge 0 ] && [ "$currentvpntpslot" -le "$lowutilspd" ]
           then
-            vpnrx2="${CGreen}[$vpntprx]${CClear}"
+            vpnrx2="${CGreen}[$vpntptx]${CClear}"
           elif [ "$currentvpntpslot" -gt "$lowutilspd" ] && [ "$currentvpntpslot" -le "$medutilspd" ]
           then
-            vpnrx2="${CYellow}[$vpntprx]${CClear}"
+            vpnrx2="${CYellow}[$vpntptx]${CClear}"
           elif [ "$currentvpntpslot" -gt "$medutilspd" ]
           then
-            vpnrx2="${CRed}[$vpntprx]${CClear}"
+            vpnrx2="${CRed}[$vpntptx]${CClear}"
           fi
         fi
 
@@ -10239,7 +7737,6 @@ do
           printf "\33[2K\r"
 
           restartvpn $i
-          dvpn_on_tunnel_restart "ovpn" "$i";
           sendmessage 1 "VPN Tunnel Disconnected" $i
           restartrouting
           resetspdmerlin
@@ -10265,7 +7762,6 @@ do
           printf "\33[2K\r"
 
           restartvpn $i
-          dvpn_on_tunnel_restart "ovpn" "$i";
           sendmessage 1 "VPN Slot In Error State" $i
           restartrouting
           resetspdmerlin
@@ -10291,7 +7787,6 @@ do
           printf "\33[2K\r"
 
           restartvpn $resetvpn
-          dvpn_on_tunnel_restart "ovpn" "$resetvpn";
           sendmessage 1 "VPN Slot Is Non-Responsive" $resetvpn
           restartrouting
           resetspdmerlin
@@ -10336,7 +7831,6 @@ do
             printf "\33[2K\r"
 
             restartvpn $i
-            dvpn_on_tunnel_restart "ovpn" "$i";
             sendmessage 1 "VPN Slot Exceeded Max Ping" $i
             restartrouting
             resetspdmerlin
@@ -10413,7 +7907,7 @@ do
            wgtx2="${CDkGray}[n/a ]${CClear}"
         elif [ "$wgstate" = "2" ]
         then
-           wgstate="${CGreen}Connected${CClear}   "
+           wgstate="Connected   "
            checkwg "$i"
            getwgip "$i"
            getwgcity "$i"
@@ -10573,7 +8067,6 @@ do
           printf "\33[2K\r"
 
           restartwg $i
-          dvpn_on_tunnel_restart "wg" "$i"
           sendmessage 1 "WG Tunnel Disconnected" $i
           restartrouting
           resetspdmerlin
@@ -10588,9 +8081,9 @@ do
           if [ ! -z $last_handshake ]
             then
               idle_seconds=$((`date +%s`-${last_handshake}))
-              if [ "$idle_seconds" -gt "180" ]
+              if [ "$idle_seconds" -gt "200" ]
               then #reconnect
-                echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WGC$i handshake exceeded 180s" >> $logfile
+                echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: WGC$i handshake exceeded 200s" >> $logfile
                 echo ""
                 printf "\33[2K\r"
 
@@ -10605,7 +8098,6 @@ do
                 printf "\33[2K\r"
 
                 restartwg $i
-                dvpn_on_tunnel_restart "wg" "$i"
                 sendmessage 1 "WG Handshake Exceeded" $i
                 restartrouting
                 resetspdmerlin
@@ -10652,7 +8144,6 @@ do
             printf "\33[2K\r"
 
             restartwg $i
-            dvpn_on_tunnel_restart "wg" "$i"
             sendmessage 1 "WG Slot Exceeded Max Ping" $i
             restartrouting
             resetspdmerlin
@@ -10679,7 +8170,6 @@ do
           printf "\33[2K\r"
 
           restartwg $resetwg
-          dvpn_on_tunnel_restart "wg" "$resetwg"
           sendmessage 1 "WG Slot Is Non-Responsive" $resetwg
           restartrouting
           resetspdmerlin
@@ -10693,7 +8183,6 @@ do
 
     echo -e "-------|-----|--------|--------|--------------|-----------------|------------|--------|------------------------------------------"
     echo ""
-    dvpn_display_status
 
   #-----------------
   fi
@@ -10724,8 +8213,6 @@ do
 
   calcifacestats # Grab new stats after the timer completes for comparison
 
-  dvpn_check_and_apply # Check if DoubleVPN is currently intact
-
   #Check to see if a reset is currently underway
   lockcheck
   prevHideOpts=X
@@ -10753,7 +8240,6 @@ do
         printf "\33[2K\r"
 
         restartvpn $unboundreset
-        dvpn_on_tunnel_restart "ovpn" "$unboundreset";
         sendmessage 1 "VPN Slot Not Synced With Unbound" $unboundreset
         restartrouting
         resetspdmerlin
@@ -10782,7 +8268,6 @@ do
         printf "\33[2K\r"
 
         restartwg $unboundreset
-        dvpn_on_tunnel_restart "wg" "$unboundreset"
         sendmessage 1 "WG Slot Not Synced With Unbound" $unboundreset
         restartrouting
         resetspdmerlin
