@@ -1,3 +1,12 @@
+v1.9.1   - (March 14, 2026)
+         - PATCH: Because it's Pi-Day, we're celebrating with a small patch release along with a nice slice
+           of Pizza pie! This bug fix resolves an issue that I thought I caught last go-around, but it was
+           still showing bad behavior. Primarily related around the connection throughput indicator visuals,
+           when the figure exceeded the lower and medium display bounds (configurable using option #14) only
+           for the OVPN, it would use the TX values instead of the RX values. This all stems around the fact
+           that for some reason, RX and TX values are reversed for OVPN, but not for WG, when gathering these
+           stats from the underlying system. 
+
 v1.9.0   - (March 8, 2026)
          - MINOR: Added an extremely unique feature to VPNMON-R3. Multi/Double-Hop VPN! While this kind of
            functionality is available using major VPN providers, this is not a feature I have come across in

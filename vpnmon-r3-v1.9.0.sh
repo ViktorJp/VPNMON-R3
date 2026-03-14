@@ -1,20 +1,20 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.9.1 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.9.0 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2026-Mar-14
+# Last Modified: 2026-Mar-8
 ##########################################################################################
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 #Static Variables - please do not change
-version="1.9.1"                                                 # Version tracker
+version="1.9.0"                                                 # Version tracker
 beta=0                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -10137,13 +10137,13 @@ do
           if [ -z "$currentvpnslot" ] || [ "$currentvpnslot" = "" ] || [ "$currentvpnslot" -lt 0 ]
           then
             vpnrx1="${CRed}[UNKN]${CClear}"
-          elif [ "$currentvpnslot" -ge 0 ] && [ "$currentvpnslot" -le "$lowutilspdup" ]
+          elif [ "$currentvpnslot" -ge 0 ] && [ "$currentvpnslot" -le "$lowutilspd" ]
           then
             vpnrx1="${CGreen}[$vpnbwrx]${CClear}"
-          elif [ "$currentvpnslot" -gt "$lowutilspdup" ] && [ "$currentvpnslot" -le "$medutilspdup" ]
+          elif [ "$currentvpnslot" -gt "$lowutilspd" ] && [ "$currentvpnslot" -le "$medutilspd" ]
           then
             vpnrx1="${CYellow}[$vpnbwrx]${CClear}"
-          elif [ "$currentvpnslot" -gt "$medutilspdup" ]
+          elif [ "$currentvpnslot" -gt "$medutilspd" ]
           then
             vpnrx1="${CRed}[$vpnbwrx]${CClear}"
           fi
@@ -10158,13 +10158,13 @@ do
           if [ -z "$currentvpntpslot" ] || [ "$currentvpntpslot" = "" ] || [ "$currentvpntpslot" -lt 0 ]
           then
             vpnrx2="${CRed}[UNKN]${CClear}"
-          elif [ "$currentvpntpslot" -ge 0 ] && [ "$currentvpntpslot" -le "$lowutilspdup" ]
+          elif [ "$currentvpntpslot" -ge 0 ] && [ "$currentvpntpslot" -le "$lowutilspd" ]
           then
             vpnrx2="${CGreen}[$vpntprx]${CClear}"
-          elif [ "$currentvpntpslot" -gt "$lowutilspdup" ] && [ "$currentvpntpslot" -le "$medutilspdup" ]
+          elif [ "$currentvpntpslot" -gt "$lowutilspd" ] && [ "$currentvpntpslot" -le "$medutilspd" ]
           then
             vpnrx2="${CYellow}[$vpntprx]${CClear}"
-          elif [ "$currentvpntpslot" -gt "$medutilspdup" ]
+          elif [ "$currentvpntpslot" -gt "$medutilspd" ]
           then
             vpnrx2="${CRed}[$vpntprx]${CClear}"
           fi
@@ -10179,13 +10179,13 @@ do
           if [ -z "$currentvpnslot" ] || [ "$currentvpnslot" = "" ] || [ "$currentvpnslot" -lt 0 ]
           then
             vpntx1="${CRed}[UNKN]${CClear}"
-          elif [ "$currentvpnslot" -ge 0 ] && [ "$currentvpnslot" -le "$lowutilspd" ]
+          elif [ "$currentvpnslot" -ge 0 ] && [ "$currentvpnslot" -le "$lowutilspdup" ]
           then
             vpntx1="${CGreen}[$vpnbwtx]${CClear}"
-          elif [ "$currentvpnslot" -gt "$lowutilspd" ] && [ "$currentvpnslot" -le "$medutilspd" ]
+          elif [ "$currentvpnslot" -gt "$lowutilspdup" ] && [ "$currentvpnslot" -le "$medutilspdup" ]
           then
             vpntx1="${CYellow}[$vpnbwtx]${CClear}"
-          elif [ "$currentvpnslot" -gt "$medutilspd" ]
+          elif [ "$currentvpnslot" -gt "$medutilspdup" ]
           then
             vpntx1="${CRed}[$vpnbwtx]${CClear}"
           fi
@@ -10200,13 +10200,13 @@ do
           if [ -z "$currentvpntpslot" ] || [ "$currentvpntpslot" = "" ] || [ "$currentvpntpslot" -lt 0 ]
           then
             vpntx2="${CRed}[UNKN]${CClear}"
-          elif [ "$currentvpntpslot" -ge 0 ] && [ "$currentvpntpslot" -le "$lowutilspd" ]
+          elif [ "$currentvpntpslot" -ge 0 ] && [ "$currentvpntpslot" -le "$lowutilspdup" ]
           then
             vpntx2="${CGreen}[$vpntptx]${CClear}"
-          elif [ "$currentvpntpslot" -gt "$lowutilspd" ] && [ "$currentvpntpslot" -le "$medutilspd" ]
+          elif [ "$currentvpntpslot" -gt "$lowutilspdup" ] && [ "$currentvpntpslot" -le "$medutilspdup" ]
           then
             vpntx2="${CYellow}[$vpntptx]${CClear}"
-          elif [ "$currentvpntpslot" -gt "$medutilspd" ]
+          elif [ "$currentvpntpslot" -gt "$medutilspdup" ]
           then
             vpntx2="${CRed}[$vpntptx]${CClear}"
           fi
