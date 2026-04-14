@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.9.2 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.9.1 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
@@ -12,16 +12,9 @@
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
-unset LD_LIBRARY_PATH
-
-##-------------------------------------##
-## Added by Martinski W. [2026-Apr-13] ##
-##-------------------------------------##
-[ "$HOME" != "/root" ] && export HOME="/root"
-export SCREENDIR="${HOME}/.screen"
 
 #Static Variables - please do not change
-version="1.9.2"                                                 # Version tracker
+version="1.9.1"                                                 # Version tracker
 beta=0                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -96,10 +89,6 @@ DVPN_SAVED_RULES="/tmp/doublevpn-saved-rules.txt"               # VPN Director r
 DVPN_INSTALLED_IPS_FILE="/tmp/doublevpn-installed-ips"          # Tracks the exact IP entries that had rules
 DVPN_LOCK="/tmp/doublevpn.lock"                                 # Mutual-exclusion lock file
 DVPN_HOP_PRIO=99                                                # Hop Priority
-
-# To support automatic script updates from AMTM #
-doScriptUpdateFromAMTM=true
-
 ##-------------------------------------##
 ## Added by Martinski W. [2024-Oct-05] ##
 ##-------------------------------------##
@@ -267,34 +256,6 @@ spinner()
   printf "\r"
 }
 
-##-------------------------------------------##
-## Borrwed from ExtremeFiretop [2026-Apr-11] ##
-##-------------------------------------------##
-ScriptUpdateFromAMTM()
-{
-    if ! "$doScriptUpdateFromAMTM"
-    then
-        printf "Automatic script updates via AMTM are currently disabled.\n\n"
-        return 1
-    fi
-
-    if [ $# -gt 0 ] && [ "$1" = "check" ]
-    then return 0
-    fi
-
-    # Force a BACKUPMON download and update
-    echo -e "${CClear}[i] Force Downloading VPNMON-R3... Please stand by..."
-    curl --silent --fail --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R3/main/vpnmon-r3.sh" -o "/jffs/scripts/vpnmon-r3.sh" && chmod 755 "/jffs/scripts/vpnmon-r3.sh"
-    DLsuccess=$?
-    if [ "$DLsuccess" -eq 0 ]; then
-      echo -e "${CClear}[i] VPNMON-R3 Download/Update Success."
-    else
-      echo -e "${CClear}[X] VPNMON-R3 Download/Update Failed."
-    fi
-
-    return "$DLsuccess"
-}
-
 # -------------------------------------------------------------------------------------------------------------------------
 # Preparebar and Progressbar is a script that provides a nice progressbar to show script activity
 ##----------------------------------------##
@@ -343,8 +304,7 @@ progressbaroverride()
   fi
 
   # Borrowed this wonderful keypress capturing mechanism from @Eibgrad... thank you! :)
-  #key_press=''; read -rsn1 -t 1 key_press < "$(tty 0>&2)"
-  key_press=''; read -rsn1 -t 1 key_press < "$(tty 0>&2 2>/dev/null || echo /dev/null)"
+  key_press=''; read -rsn1 -t 1 key_press < "$(tty 0>&2)"
 
   if [ "$key_press" ]
   then
@@ -421,8 +381,7 @@ progressbarpause()
   fi
 
   # Borrowed this wonderful keypress capturing mechanism from @Eibgrad... thank you! :)
-  #key_press=''; read -rsn1 -t 1 key_press < "$(tty 0>&2)"
-  key_press=''; read -rsn1 -t 1 key_press < "$(tty 0>&2 2>/dev/null || echo /dev/null)"
+  key_press=''; read -rsn1 -t 1 key_press < "$(tty 0>&2)"
 
   if [ $key_press ]
   then
@@ -1760,7 +1719,7 @@ dvpn_display_status()
   # Truncate hop IPs display if too long for the line
   local hop_ips_disp="$DVPN_HOP_IPS"
   [ ${#hop_ips_disp} -gt 41 ] && hop_ips_disp="$(echo "$DVPN_HOP_IPS" | cut -c1-38)..."
-
+  
   # Insert bogus IP if screenshotmode is on #
   if [ "$screenshotmode" = "1" ]; then
      t1_ep_disp="$(printf '%15s' "12.34.56.78")"
@@ -9762,14 +9721,6 @@ FWBUILD="${FWVER}.${BUILDNO}_${EXTENDNO}"
 # Check for updates
 updatecheck
 
-# Check for an AMTM Auto Update
-if [ "$1" = "amtmupdate" ]
-then
-    shift
-    ScriptUpdateFromAMTM "$@"
-    exit "$?"
-fi
-
 # Check and see if any commandline option is being used
 if [ $# -eq 0 ] || [ -z "$1" ]
 then
@@ -9863,14 +9814,14 @@ fi
 # Check to see if the screen option is being called and run operations normally using the screen utility
 if [ "$1" = "-screen" ]
 then
-    /opt/sbin/screen -wipe >/dev/null 2>&1 # Kill any dead screen sessions
+    screen -wipe >/dev/null 2>&1 # Kill any dead screen sessions
     sleep 1
-    ScreenSess=$(/opt/sbin/screen -ls | grep "vpnmon-r3" | awk '{print $1}' | cut -d . -f 1)
+    ScreenSess=$(screen -ls | grep "vpnmon-r3" | awk '{print $1}' | cut -d . -f 1)
       if [ -z $ScreenSess ]; then
         if [ "$bypassscreentimer" = "1" ]; then
-          /opt/sbin/screen -dmS "vpnmon-r3" $apppath -noswitch
+          screen -dmS "vpnmon-r3" $apppath -noswitch
           sleep 1
-          /opt/sbin/screen -r vpnmon-r3
+          screen -r vpnmon-r3
         else
           clear
           echo -e "${CClear}Executing ${CGreen}VPNMON-R3 v$version${CClear} using the SCREEN utility..."
@@ -9879,9 +9830,9 @@ then
           echo -e "${CClear}In order to keep VPNMON-R3 running in the background,"
           echo -e "${CClear}properly exit the SCREEN session by using: ${CGreen}CTRL-A + D${CClear}"
           echo ""
-          /opt/sbin/screen -dmS "vpnmon-r3" $apppath -noswitch
+          screen -dmS "vpnmon-r3" $apppath -noswitch
           sleep 5
-          /opt/sbin/screen -r vpnmon-r3
+          screen -r vpnmon-r3
           exit 0
         fi
       else
@@ -9900,7 +9851,7 @@ then
           spinner 5
         fi
       fi
-    /opt/sbin/screen -dr $ScreenSess
+    screen -dr $ScreenSess
     exit 0
 fi
 
