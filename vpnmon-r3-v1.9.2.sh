@@ -1,13 +1,13 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.9.3 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.9.2 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2026-Mar-15
+# Last Modified: 2026-Mar-14
 ##########################################################################################
 
 #Preferred standard router binaries path
@@ -21,7 +21,7 @@ unset LD_LIBRARY_PATH
 export SCREENDIR="${HOME}/.screen"
 
 #Static Variables - please do not change
-version="1.9.3"                                                 # Version tracker
+version="1.9.2"                                                 # Version tracker
 beta=0                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -8673,9 +8673,9 @@ checkwan()
     # Check the actual WAN State from NVRAM before running connectivity test, or insert itself into loop after failing an SSL handshake test
     if [ "$($timeoutcmd$timeoutsec nvram get wan0_state_t)" -eq 2 ] || [ "$($timeoutcmd$timeoutsec nvram get wan1_state_t)" -eq 2 ]
     then
-       # Test the active WAN connection using 443 and verifying a handshake... if this fails, then the WAN connection is most likely down... or Google is down ;)
-        sleep 1
-        if ($echo | $timeoutcmd$timeoutlng openssl s_client -connect "${testssl}:443" 2>/dev/null | grep -q "SSL handshake has read")
+        # Test the active WAN connection using 443 and verifying a handshake... if this fails, then the WAN connection is most likely down... or Google is down ;)
+        if ($timeoutcmd$timeoutlng nc -w3 $testssl 443 >/dev/null 2>&1 && echo | $timeoutcmd$timeoutlng openssl s_client -connect $testssl:443 >/dev/null 2>&1 | awk 'handshake && $1 == "Verification" { if ($2=="OK") exit; exit 1 } $1 $2 == "SSLhandshake" { handshake = 1 }' >/dev/null 2>&1)
+        ##OFF##if ($timeoutcmd$timeoutlng nc -w1 $testssl 443 >/dev/null 2>&1 && echo | $timeoutcmd$timeoutlng openssl s_client -connect $testssl:443 >/dev/null 2>&1 | awk '$1 == "SSL" && $2 == "handshake" { handshake = 1 } handshake && $1 == "Verification:" { ok = $2; exit } END { exit ok != "OK" }' >/dev/null 2>&1)
         then
             printf "\r${InvGreen} ${CClear} [Checking WAN Connectivity]...ACTIVE"
             sleep 1
