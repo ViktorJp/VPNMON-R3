@@ -1,3 +1,11 @@
+v1.9.4   - (TBA)
+         - PATCH: Found that if the VPN/WG host is used as a hostname in NVRAM, that the double-hop
+           VPN will incorrectly display 9.9.9.9 (or whatever your WAN DNS is configured as), instead
+           of the VPN/WG endpoint IP address. This was also causing a failure when running a double-
+           hop VPN diagnostic, and would fail because it wasn't able to determine a subnet when using
+           this hostname instead of an IP. The script is now forcing an nslookup on the hostname if
+           it's not already an IP to ensure this info is displayed and processed correctly.
+
 v1.9.3   - (April 15, 2025)
          - MINOR: Based on some feedback from @JTnola, questioning my infallible code, he noted that
            the SSL handshake test was failing in RTRMON on his router. Looking into this deeper, and
