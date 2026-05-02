@@ -1,5 +1,5 @@
 To-Do:
-- If the WAN doesn't respond after X minutes, issue a router reboot?
+- ...
 
 Done:
 - Double-Hop VPN capabilities
