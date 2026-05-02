@@ -1,14 +1,13 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.9.4 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.9.3 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-#
-# Last Modified: 2026-May-02
+# Last Modified: 2026-Mar-15
 ##########################################################################################
 
 #Preferred standard router binaries path
@@ -22,7 +21,7 @@ unset LD_LIBRARY_PATH
 export SCREENDIR="${HOME}/.screen"
 
 #Static Variables - please do not change
-version="1.9.4"                                                 # Version tracker
+version="1.9.3"                                                 # Version tracker
 beta=0                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
@@ -895,33 +894,8 @@ dvpn_get_wan()
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-# dvpn_resolve_host - resolve a hostname to an IPv4 address.
-
-dvpn_resolve_host()
-{
-  local h="$1" ip
-
-  if ! echo "$h" | grep -qE '[a-zA-Z]'; then
-    echo "$h"; return
-  fi
-
-  ip=$(nslookup "$h" 2>/dev/null | awk '
-    /^Server:/  { match($0,/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/); s=substr($0,RSTART,RLENGTH) }
-    /^Address/  { match($0,/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/); v=substr($0,RSTART,RLENGTH)
-                  if (v != "" && v != s) { print v; exit } }
-  ')
-
-  # Fallback: ping resolves the hostname and prints it in parens on the first line
-  if [ -z "$ip" ]; then
-    ip=$(ping -c1 -w2 "$h" 2>/dev/null | sed -n '1s/.*(\([0-9.]*\)).*/\1/p')
-  fi
-
-  [ -n "$ip" ] && echo "$ip" || echo "$h"
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dvpn_get_endpoint - return current endpoint IP for a tunnel from NVRAM.
-# WireGuard: wgcN_ep_addr (IP:port or hostname:port - strip port, resolve if hostname)
+# dvpn_get_endpoint - return current endpoint IP for a tunnel from NVRAM
+# WireGuard: wgcN_ep_addr (IP:port - strip port)
 # OpenVPN:   vpn_clientN_addr (hostname or IP - resolve if hostname)
 
 dvpn_get_endpoint()
@@ -931,10 +905,16 @@ dvpn_get_endpoint()
 
   if [ "$type" = "wg" ]; then
     raw=$(nvram get "wgc${slot}_ep_addr" 2>/dev/null)
-    ep=$(dvpn_resolve_host "$(echo "$raw" | cut -d: -f1)")
+    ep=$(echo "$raw" | cut -d: -f1)
   else
     raw=$(nvram get "vpn_client${slot}_addr" 2>/dev/null)
-    ep=$(dvpn_resolve_host "$raw")
+    if echo "$raw" | grep -qE '[a-zA-Z]'; then
+      # Hostname - resolve to IP
+      ep=$(nslookup "$raw" 2>/dev/null | awk '/^Address/ && !/#/ {print $3; exit}')
+      [ -z "$ep" ] && ep="$raw"
+    else
+      ep="$raw"
+    fi
   fi
   echo "$ep"
 }
@@ -2848,7 +2828,10 @@ echo -e "  ${CDkGray}T2 endpoint must be pinned through T1 (${DVPN_TUNNEL1_IF}),
 echo ""
 
 # T1 endpoint -> WAN
-T1_EP=$(dvpn_get_endpoint "$DVPN_TUNNEL1_TYPE" "$DVPN_TUNNEL1_SLOT")
+T1_EP=$(nvram get "wgc${DVPN_TUNNEL1_SLOT}_ep_addr" 2>/dev/null | cut -d: -f1)
+if [ "$DVPN_TUNNEL1_TYPE" = "ovpn" ]; then
+  T1_EP=$(nvram get "vpn_client${DVPN_TUNNEL1_SLOT}_addr" 2>/dev/null)
+fi
 
 if [ -z "$T1_EP" ]; then
   warn "Cannot determine T1 endpoint from NVRAM"
@@ -2872,7 +2855,10 @@ fi
 echo ""
 
 # T2 endpoint -> via T1 interface
-T2_EP=$(dvpn_get_endpoint "$DVPN_TUNNEL2_TYPE" "$DVPN_TUNNEL2_SLOT")
+T2_EP=$(nvram get "wgc${DVPN_TUNNEL2_SLOT}_ep_addr" 2>/dev/null | cut -d: -f1)
+if [ "$DVPN_TUNNEL2_TYPE" = "ovpn" ]; then
+  T2_EP=$(nvram get "vpn_client${DVPN_TUNNEL2_SLOT}_addr" 2>/dev/null)
+fi
 
 if [ -z "$T2_EP" ]; then
   warn "Cannot determine T2 endpoint from NVRAM"
