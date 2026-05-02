@@ -7,7 +7,8 @@
 # are connected, and sends a ping to a host of your choice through each active connection. If it finds that a connection
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
-# Last Modified: 2026-Apr-26
+#
+# Last Modified: 2026-May-02
 ##########################################################################################
 
 #Preferred standard router binaries path
