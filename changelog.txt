@@ -1,3 +1,33 @@
+v1.10.0b1- (TBA)
+         - PATCH: Added a new feature and menu item (18) called DPI Resistance. This feature helps
+           OpenVPN tunnels resist Deep Packet Inspection (DPI) that some governments and ISPs use to
+           identify and block VPN traffic. It works by hardening the TLS parameters of your OpenVPN
+           connections to better resemble standard HTTPS browser traffic, and by actively testing
+           each tunnel to detect and respond to DPI interference automatically. IMPORTANT: This
+           feature only applies to OpenVPN connections configured for the TCP protocol on port 443.
+           WireGuard connections are not affected. Verify your OpenVPN client slots are set to
+           TCP/443 in the Merlin VPN configuration UI. Please note, this is not DPI avoidance, but
+           resistance. Entities analyzing traffic between you and your VPN provider can still tell
+           your traffic is OpenVPN-related though it is encrypted through TCP/443. Please look out
+           for the upcoming STUNMON script on how to get closer to DPI avoidance.
+         - PATCH: DPI Resistance uses a new method to detect interference on your connection. Active
+           DPI Detection periodically tests each monitored OpenVPN TCP/443 tunnel by sending an HTTPS
+           request to a well-known endpoint (Cloudflare CDN trace) through the tunnel interface. If
+           the test returns anything other than HTTP 200, or fails to connect entirely, VPNMON-R3
+           treats this as DPI MITM interference, logs the event, and immediately restarts that VPN
+           slot reinitiate a connection to the server.
+         - PATCH: In order to get around issues with OpenVPN connections pinging certain hosts via
+           their VPN tunnel, I have created a backup method to determine a PING estimate. This new
+           capability uses curl to estimate the amount of time it takes to receive a return code from
+           https://clients3.google.com/generate_204. Please note, this backup method may artificially
+           balloon your PING times, and may be wise to turn off PING resets if you wish to avoid more
+           frequent resets.
+         - PATCH: Integration with the upcoming STUNMON. VPNMON-R3 will display [STUN] in lieu of the
+           regular [ OK ] VPN Health stat when the VPN tunnel is being managed by STUNMON. VPNMON-R3
+           will only display that the Slots are in use, along with PING and city stats, they can be
+           manually reset if needed, but they won't be able to be monitored, as STUNMON takes on that
+           responsibility.
+
 v1.9.4   - (May 2, 2026)
          - PATCH: Found that if the VPN/WG host is used as a hostname in NVRAM, that the double-hop
            VPN will incorrectly display 9.9.9.9 (or whatever your WAN DNS is configured as), instead
