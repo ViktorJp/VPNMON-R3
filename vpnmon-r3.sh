@@ -2444,11 +2444,11 @@ government|ministry|national.security|intercept.ca|proxy.ca|firewall.ca"; then
       grep -q "resolv-retry"           "$CONFFILE" && d_resolv="${CGreen}OK${CClear}"        || d_resolv="${CRed}MISSING${CClear}"
       grep -q "persist-key"            "$CONFFILE" && d_persist="${CGreen}OK${CClear}"       || d_persist="${CRed}MISSING${CClear}"
       grep -q "remote-cert-tls server" "$CONFFILE" && d_certcheck="${CGreen}OK${CClear}"    || d_certcheck="${CRed}MISSING${CClear}"
-      echo -e "       ${CClear}     tls-version-min 1.2 ...... ${d_tlsver}"
+      echo -e "       ${CClear}     tls-version-min 1.3 ...... ${d_tlsver}"
       echo -e "       ${CClear}     tls-ciphersuites AES-256 . ${d_tlscs}"
       echo -e "       ${CClear}     cipher AES-256-GCM ....... ${d_cipher}"
       echo -e "       ${CClear}     tls-cipher ECDHE order ... ${d_tlscipher}"
-      echo -e "       ${CClear}     mssfix 1360 .............. ${d_mssfix}"
+      echo -e "       ${CClear}     mssfix 1280 .............. ${d_mssfix}"
       echo -e "       ${CClear}     resolv-retry infinite .... ${d_resolv}"
       echo -e "       ${CClear}     persist-key/tun .......... ${d_persist}"
       echo -e "       ${CClear}     remote-cert-tls server ... ${d_certcheck}"
@@ -2729,13 +2729,13 @@ dpi_setup()
           echo -e "${InvGreen} ${CClear} protocol-level obfuscation, the stunnel wrapper (Option 5) provides a stronger${CClear}"
           echo -e "${InvGreen} ${CClear} outer TLS layer.${CClear}"
           echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Directives injected: tls-version-min 1.2, tls-ciphersuites TLS_AES_256_GCM_SHA384,${CClear}"
-          echo -e "${InvGreen} ${CClear} AES-256-GCM cipher, ECDHE cipher suite ordering (TLS 1.2 fallback), mssfix 1360,${CClear}"
+          echo -e "${InvGreen} ${CClear} Directives injected: tls-version-min 1.3, tls-ciphersuites TLS_AES_256_GCM_SHA384,${CClear}"
+          echo -e "${InvGreen} ${CClear} AES-256-GCM cipher, ECDHE cipher suite ordering (TLS 1.2 fallback), mssfix 1280,${CClear}"
           echo -e "${InvGreen} ${CClear} resolv-retry infinite, persist-key, persist-tun, remote-cert-tls server.${CClear}"
           echo -e "${InvGreen} ${CClear}"
           echo -e "${InvGreen} ${CClear} Note: fragment and sndbuf/rcvbuf are intentionally omitted. The fragment directive${CClear}"
           echo -e "${InvGreen} ${CClear} causes double-fragmentation and keepalive timeouts on modern VPN servers; mssfix${CClear}"
-          echo -e "${InvGreen} ${CClear} 1360 prevents oversized segments at the TCP negotiation stage, which is the correct${CClear}"
+          echo -e "${InvGreen} ${CClear} 1280 prevents oversized segments at the TCP negotiation stage, which is the correct${CClear}"
           echo -e "${InvGreen} ${CClear} layer to address MTU issues. Socket buffer management is left to Merlin's OS ${CClear}"
           echo -e "${InvGreen} ${CClear} scheduler to prevent bufferbloat. These omissions are intentional and improve${CClear}"
           echo -e "${InvGreen} ${CClear} reliability without reducing security.${CClear}"
@@ -8516,12 +8516,12 @@ inject_dpi_tls_hardening()
 
 
 # vr3-dpi-hardening - injected by VPNMON-R3 DPI Resistance
-tls-version-min 1.2
+tls-version-min 1.3
 tls-ciphersuites TLS_AES_256_GCM_SHA384
 cipher AES-256-GCM
 tls-cipher TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384:TLS-ECDHE-ECDSA-WITH-AES-256-GCM-SHA384:TLS-DHE-RSA-WITH-AES-256-GCM-SHA384
 tun-mtu 1500
-mssfix 1360
+mssfix 1280
 resolv-retry infinite
 persist-key
 persist-tun
