@@ -11160,6 +11160,13 @@ do
   resetvpn=0
   resetwg=0
 
+  # Load the list of OpenVPN slots that were stuck in Connecting state last cycle
+  prevconnecting=""
+  if [ -f /tmp/vr3connecting.txt ]; then
+    prevconnecting="$(cat /tmp/vr3connecting.txt)"
+  fi
+  currconnecting=""
+
   #Check to see if a reset is currently underway
   lockcheck
 
@@ -11327,6 +11334,8 @@ do
            vpntx1="${CDkGray}[n/a ]${CClear}"
            vpnrx2="${CDkGray}[n/a ]${CClear}"
            vpntx2="${CDkGray}[n/a ]${CClear}"
+           # Track monitored slots that are connecting so we can detect if stuck next cycle
+           if [ "$((VPN$i))" = "1" ]; then currconnecting="${currconnecting} $i"; fi
         elif [ "$vpnstate" = "2" ]
         then
            vpnstate="${CGreen}Connected${CClear}   "
@@ -11356,6 +11365,8 @@ do
         if echo " $STUNMON_MANAGED_SLOTS " | grep -q " $i "
         then
           vpnhealth="${CCyan}[STUN]${CClear}"
+          # Remove all server entries from this particular slot as to not introduce a random reconnect breaking stunnel
+          rm -f "/jffs/addons/vpnmon-r3.d/vr3svr$i.txt" 2>/dev/null
         fi
 
         #Determine how many server entries are in each of the vpn slot alternate server files#
@@ -11527,6 +11538,32 @@ do
           exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
         fi
 
+        #if a vpn is monitored and stuck in Connecting state across two consecutive cycles, try to restart it
+        if [ "$((VPN$i))" = "1" ] && [ "$vpnstate" = "Connecting  " ] && echo " $prevconnecting " | grep -q " $i "
+        then #reconnect
+          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$i is stuck in Connecting state and being reconnected" >> $logfile
+          echo ""
+          printf "\33[2K\r"
+
+          #display a standard timer#
+          timer=0
+          while [ $timer -ne 5 ]
+          do
+            timer="$((timer+1))"
+            preparebar 46 "|"
+            progressbarpause $timer 5 "" "s" "Standard"
+          done
+          printf "\33[2K\r"
+
+          rm -f /tmp/vr3connecting.txt
+          restartvpn $i
+          dvpn_on_tunnel_restart "ovpn" "$i"
+          sendmessage 1 "VPN Stuck in Connecting State" $i
+          restartrouting
+          resetspdmerlin
+          exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
+        fi
+
         #if a vpn is monitored and not responsive, try to restart it
         if [ "$((VPN$i))" = "1" ] && [ "$resetvpn" != "0" ]
         then #reconnect
@@ -11604,6 +11641,13 @@ do
         sincelastreset=""
 
     done
+
+    # Persist which monitored slots are currently Connecting so the next cycle can detect stuck connections
+    if [ -n "$currconnecting" ]; then
+      echo "$currconnecting" > /tmp/vr3connecting.txt
+    else
+      rm -f /tmp/vr3connecting.txt
+    fi
 
     echo -e "-------|-----|--------|--------|--------------|-----------------|------------|--------|------------------------------------------"
     echo ""
