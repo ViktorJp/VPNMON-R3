@@ -26,7 +26,14 @@ v1.10.0b1- (TBA)
            regular [ OK ] VPN Health stat when the VPN tunnel is being managed by STUNMON. VPNMON-R3
            will only display that the Slots are in use, along with PING and city stats, they can be
            manually reset if needed, but they won't be able to be monitored, as STUNMON takes on that
-           responsibility.
+           responsibility. If a Slot is designated as a [STUN] slot, it will also automatically
+           delete any associated VPNMON-R3 server lists associated with this slot, as to not cause
+           a faulty server reset that would force it to choose a different server IP, and breaking
+           the stunnel connection.
+         - PATCH: Added a check to see if an OpenVPN connections was indefinitely stuck in a loop
+           showing it was "Connecting". VPNMON-R3 would not interfere for it to wait to connect. This
+           now resolves itself on the next loop and forces a VPN reset. This affects OVPN only. Huge
+           Thanks to @RRands for his report on this!
 
 v1.9.4   - (May 2, 2026)
          - PATCH: Found that if the VPN/WG host is used as a hostname in NVRAM, that the double-hop
