@@ -8,7 +8,7 @@
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
 #
-# Last Modified: 2026-May-24
+# Last Modified: 2026-May-26
 ##########################################################################################
 
 #Preferred standard router binaries path
