@@ -30,8 +30,8 @@ v1.10.0b1- (TBA)
            delete any associated VPNMON-R3 server lists associated with this slot, as to not cause
            a faulty server reset that would force it to choose a different server IP, and breaking
            the stunnel connection.
-         - PATCH: Added a check to see if an OpenVPN connections was indefinitely stuck in a loop
-           showing it was "Connecting". VPNMON-R3 would not interfere for it to wait to connect. This
+         - PATCH: Added a check to see if a new OpenVPN connection was indefinitely stuck in a loop
+           showing it was "Connecting". VPNMON-R3 would not interfere and wait for it to connect. This
            now resolves itself on the next loop and forces a VPN reset. This affects OVPN only. Huge
            Thanks to @RRands for his report on this!
 
