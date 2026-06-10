@@ -1,5 +1,5 @@
 v1.10.0  - (June 10, 2026)
-         - PATCH: Added a new feature and menu item (18) called DPI Resistance. This feature helps
+         - MINOR: Added a new feature and menu item (18) called DPI Resistance. This feature helps
            OpenVPN tunnels resist Deep Packet Inspection (DPI) that some governments and ISPs use to
            identify and block VPN traffic. It works by hardening the TLS parameters of your OpenVPN
            connections to better resemble standard HTTPS browser traffic, and by actively testing
