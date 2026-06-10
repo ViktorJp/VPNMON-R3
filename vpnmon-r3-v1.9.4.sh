@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R3 v1.10.0 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
+# VPNMON-R3 v1.9.4 (VPNMON-R3.SH) is an all-in-one script that is optimized to maintain multiple VPN connections and is
 # able to provide for the capabilities to randomly reconnect using a specified server list containing the servers of your
 # choice. Special care has been taken to ensure that only the VPN connections you want to have monitored are tended to.
 # This script will check the health of up to 5 VPN connections on a regular interval to see if monitored VPN conenctions
@@ -8,7 +8,7 @@
 # has been lost, it will execute a series of commands that will kill that single VPN client, and randomly picks one of
 # your specified servers to reconnect to for each VPN client.
 #
-# Last Modified: 2026-Jun-10
+# Last Modified: 2026-May-02
 ##########################################################################################
 
 #Preferred standard router binaries path
@@ -22,12 +22,11 @@ unset LD_LIBRARY_PATH
 export SCREENDIR="${HOME}/.screen"
 
 #Static Variables - please do not change
-version="1.10.0"                                                # Version tracker
+version="1.9.4"                                                 # Version tracker
 beta=0                                                          # Beta switch
 screenshotmode=0                                                # Switch to present bogus info for screenshots
 apppath="/jffs/scripts/vpnmon-r3.sh"                            # Static path to the app
 logfile="/jffs/addons/vpnmon-r3.d/vpnmon-r3.log"                # Static path to the log
-dpilogfile="/jffs/addons/vpnmon-r3.d/vr3dpi.log"                # Static path to the DPI-specific log
 dlverpath="/jffs/addons/vpnmon-r3.d/version.txt"                # Static path to the version file
 config="/jffs/addons/vpnmon-r3.d/vpnmon-r3.cfg"                 # Static path to the config file
 lockfile="/jffs/addons/vpnmon-r3.d/resetlock.txt"               # Static path to the reset lock file
@@ -98,15 +97,6 @@ DVPN_SAVED_RULES="/tmp/doublevpn-saved-rules.txt"               # VPN Director r
 DVPN_INSTALLED_IPS_FILE="/tmp/doublevpn-installed-ips"          # Tracks the exact IP entries that had rules
 DVPN_LOCK="/tmp/doublevpn.lock"                                 # Mutual-exclusion lock file
 DVPN_HOP_PRIO=99                                                # Hop Priority
-
-# DPI Resistance Variables - please do not change defaults here; configure via setup menu
-DPI_ENABLED=0                                                   # DPI Resistance master switch: 1=active 0=disabled
-DPI_ENHANCED_TLS=0                                              # Inject TLS hardening directives into OVPN config: 1=on 0=off
-DPI_DETECT=0                                                    # Enable active DPI detection via HTTPS test: 1=on 0=off
-DPI_DETECT_INTERVAL=5                                           # Number of timer loops between DPI detection checks
-dpiconfig="/jffs/addons/vpnmon-r3.d/vr3dpi.cfg"                # DPI Resistance config file path
-dpicheckcnt=0                                                   # Internal counter for DPI detection interval
-dpimitm_cnt=0                                                   # Internal counter for MITM cert check interval (3x DPI interval)
 
 # To support automatic script updates from AMTM #
 doScriptUpdateFromAMTM=true
@@ -382,7 +372,7 @@ progressbaroverride()
           [\=]) echo ""; killunmonwg 5; sendmessage 0 "WG Killed" 5; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
           [Aa]) autostart;; #resetifacestats;;
           [Cc]) vsetup;; #resetifacestats;;
-          [Dd]) dpivlogs;; #resetifacestats;;
+          [Dd]) wgserverlistautomation;; #resetifacestats;;
           [Ee]) logoNMexit; echo -e "${CClear}\n"; exit 0;;
           [Hh]) hideoptions=1 ; [ "$hideoptions" != "$prevHideOpts" ] && timerreset=1 ;;
           [Ii]) amtmevents;; #resetifacestats;;
@@ -551,7 +541,6 @@ do
             [\@]) echo ""; killunmonvpn 2; sendmessage 0 "VPN Killed" 2; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [Aa]) autostart;; #resetifacestats;;
             [Cc]) vsetup;; #resetifacestats;;
-            [Dd]) dpivlogs;;
             [Ee]) echo -e "${CClear}\n"; exit 0;;
             [Ii]) amtmevents;; #resetifacestats;;
             [Ll]) vlogs;; #resetifacestats;;
@@ -593,7 +582,6 @@ do
             [\=]) echo ""; killunmonwg 5; sendmessage 0 "WG Killed" 5; exec sh /jffs/scripts/vpnmon-r3.sh -noswitch;;
             [Aa]) autostart;; #resetifacestats;;
             [Cc]) vsetup;; #resetifacestats;;
-            [Dd]) dpivlogs;;
             [Ee]) echo -e "${CClear}\n"; exit 0;;
             [Ii]) amtmevents;; #resetifacestats;;
             [Ll]) vlogs;; #resetifacestats;;
@@ -712,18 +700,6 @@ EOF
     dvpn_saveconfig
   fi
 
-  # Create new DPI Resistance config
-  if [ ! -f "$dpiconfig" ]
-  then
-    dpi_saveconfig
-  fi
-
-  # Create new DPI log file
-  if [ ! -f "$dpilogfile" ]
-  then
-    touch "$dpilogfile"
-  fi
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -755,54 +731,6 @@ dvpn_saveconfig()
 dvpn_loadconfig()
 {
   [ -f "$dvpnconfig" ] && . "$dvpnconfig"
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dpi_saveconfig - write vr3dpi.cfg to /jffs/addons/vpnmon-r3.d
-
-dpi_saveconfig()
-{
-  {
-    echo "DPI_ENABLED=$DPI_ENABLED"
-    echo "DPI_ENHANCED_TLS=$DPI_ENHANCED_TLS"
-    echo "DPI_DETECT=$DPI_DETECT"
-    echo "DPI_DETECT_INTERVAL=$DPI_DETECT_INTERVAL"
-  } > "$dpiconfig"
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dpi_loadconfig - source vr3dpi.cfg if it exists
-
-dpi_loadconfig()
-{
-  [ -f "$dpiconfig" ] && . "$dpiconfig"
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dpi_log - write a timestamped DPI entry to the VPNMON-R3 log
-# Usage: dpi_log "INFO: message" or dpi_log "WARNING: message"
-
-dpi_log()
-{
-  echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - DPI $*" >> "$dpilogfile"
-  if [ -f "$dpilogfile" ] && [ "$(wc -l < "$dpilogfile")" -gt "$logsize" ]; then
-    tail -n "$logsize" "$dpilogfile" > /tmp/dpi_log_trim.tmp
-    mv /tmp/dpi_log_trim.tmp "$dpilogfile"
-  fi
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dpi_find_stunnel - locate the stunnel binary, echo its full path or empty string if not found
-
-dpi_find_stunnel()
-{
-  local candidate
-  for candidate in /opt/bin/stunnel /opt/sbin/stunnel /usr/bin/stunnel /usr/sbin/stunnel; do
-    [ -x "$candidate" ] && { echo "$candidate"; return; }
-  done
-  local p
-  p=$(which stunnel 2>/dev/null)
-  [ -n "$p" ] && echo "$p"
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -2248,731 +2176,6 @@ dvpn_setup()
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-# dpi_run_full_test - Run a comprehensive DPI protection verification report for one OpenVPN TCP/443 slot.
-# Checks: proto/port, tunnel interface state, HTTPS connectivity, TLS version, cipher suite,
-# certificate issuer, egress IP leak detection, TLS hardening directives in config, and overall status.
-# $1 = VPN slot number
-
-dpi_run_full_test()
-{
-  local SLOT="$1"
-  local TUNIF="tun1${SLOT}"
-  local TESTURL="https://www.cloudflare.com/cdn-cgi/trace"
-  local CONFFILE="/tmp/etc/openvpn/client${SLOT}/config.ovpn"
-  local PROTO PORT
-
-  PROTO=$($timeoutcmd$timeoutsec nvram get "vpn_client${SLOT}_proto" 2>/dev/null)
-  PORT=$($timeoutcmd$timeoutsec nvram get "vpn_client${SLOT}_port" 2>/dev/null)
-
-  echo -e "${InvDkGray}${CWhite} VPN${SLOT} (${TUNIF}) -- DPI Protection Verification Report ${CClear}"
-  echo ""
-
-  # Check 1: Protocol and port
-  local proto_ok=0
-  if { [ "$PROTO" = "tcp-client" ] || [ "$PROTO" = "tcp" ]; } && [ "$PORT" = "443" ]; then
-    echo -e " ${CGreen}[PASS]${CClear} [1] Protocol / Port .......... ${CGreen}${PROTO} / Port ${PORT}${CClear}"
-    proto_ok=1
-  else
-    echo -e " ${CRed}[WARN]${CClear} [1] Protocol / Port .......... ${CRed}${PROTO:-unknown} / Port ${PORT:-unknown}${CClear}  (Expected TCP/443 for DPI evasion)"
-    echo ""
-    echo -e "       ${CDkGray}Checks 2-9 require a TCP/443 OpenVPN connection. Configure the VPN slot${CClear}"
-    echo -e "       ${CDkGray}for TCP protocol on port 443 in the Merlin VPN client settings.${CClear}"
-    echo ""
-    return 1
-  fi
-
-  # Check 2: Tunnel interface up
-  local tun_ok=0
-  if ip link show "$TUNIF" >/dev/null 2>&1; then
-    local TUN_STATE
-    TUN_STATE=$(ip link show "$TUNIF" 2>/dev/null | head -1 | grep -o "state [A-Z]*" | cut -d' ' -f2)
-    echo -e " ${CGreen}[PASS]${CClear} [2] Tunnel Interface ......... ${CGreen}${TUNIF} UP${CClear}  (state: ${TUN_STATE:-UNKNOWN})"
-    tun_ok=1
-  else
-    echo -e " ${CRed}[FAIL]${CClear} [2] Tunnel Interface ......... ${CRed}${TUNIF} is not up - tunnel may be down${CClear}"
-    echo ""; return 1
-  fi
-
-  # Run curl --verbose through the tunnel, capturing headers/TLS details from stderr
-  local TMPBODY="/tmp/vr3dpi_body_${SLOT}.tmp"
-  local TMPVERB="/tmp/vr3dpi_verb_${SLOT}.tmp"
-  local CURLCODE
-
-  echo -e " ${CDkGray}       Running HTTPS verification through ${TUNIF} -- please wait...${CClear}"
-
-  CURLCODE=$(curl \
-    --interface "$TUNIF" \
-    --connect-timeout 8 \
-    --max-time 15 \
-    --silent \
-    --verbose \
-    --output "$TMPBODY" \
-    --write-out "%{http_code}" \
-    "$TESTURL" 2>"$TMPVERB")
-
-  # Check 3: HTTPS connectivity
-  local https_ok=0
-  if [ "$CURLCODE" = "200" ]; then
-    echo -e " ${CGreen}[PASS]${CClear} [3] HTTPS Connectivity ....... ${CGreen}HTTP ${CURLCODE} OK${CClear}  -- tunnel is passing HTTPS traffic"
-    https_ok=1
-  elif [ -z "$CURLCODE" ] || [ "$CURLCODE" = "000" ]; then
-    echo -e " ${CRed}[FAIL]${CClear} [3] HTTPS Connectivity ....... ${CRed}No response (HTTP 000) -- DPI blocking strongly suspected${CClear}"
-    rm -f "$TMPBODY" "$TMPVERB"; echo ""; return 1
-  else
-    echo -e " ${CYellow}[WARN]${CClear} [3] HTTPS Connectivity ....... ${CYellow}HTTP ${CURLCODE}${CClear}  -- expected 200, possible redirect or block page"
-  fi
-
-  # Check 4: TLS protocol version (from curl --verbose stderr output)
-  # NOTE: This reflects the inner HTTPS session between curl and Cloudflare,
-  # NOT the OpenVPN outer tunnel cipher. OpenVPN tls-cipher/cipher directives
-  # protect the router<->VPN-server link and are audited separately in check [8].
-  local TLSVER
-  TLSVER=$(grep -i "SSL connection using\|TLS connection using" "$TMPVERB" 2>/dev/null \
-           | head -1 \
-           | sed 's/.*using //' | cut -d'/' -f1 | tr -d '*< ' | xargs 2>/dev/null)
-  if [ -n "$TLSVER" ]; then
-    # Flag TLS 1.0/1.1 as warning (weak, DPI can classify easily)
-    if echo "$TLSVER" | grep -qE "TLSv1\.0|TLSv1\.1|SSLv"; then
-      echo -e " ${CYellow}[WARN]${CClear} [4] HTTPS TLS Version ........ ${CYellow}${TLSVER}${CClear}  -- upgrade to TLS 1.2+ recommended"
-    else
-      echo -e " ${CGreen}[PASS]${CClear} [4] HTTPS TLS Version ........ ${CGreen}${TLSVER}${CClear}  -- curl<->Cloudflare inner session"
-    fi
-  else
-    echo -e " ${CDkGray}[INFO]${CClear} [4] HTTPS TLS Version ........ ${CDkGray}Not determinable from curl output${CClear}"
-  fi
-
-  # Check 5: Negotiated cipher suite for the inner HTTPS session.
-  # curl verbose format: "SSL connection using TLSv1.3 / CIPHER / KEY_EXCHANGE / COMPRESSION"
-  # Field 2 (after first slash) is the cipher; field 4 (UNDEF) is compression -- not the cipher.
-  # This cipher is negotiated by the OS TLS stack with Cloudflare and is independent of the
-  # OpenVPN tls-cipher directive (which only governs the outer tunnel control channel).
-  local CIPHER
-  CIPHER=$(grep -i "SSL connection using\|TLS connection using" "$TMPVERB" 2>/dev/null \
-           | head -1 | sed 's/.*using //' | cut -d'/' -f2 | tr -d '*< ' | xargs 2>/dev/null)
-  if [ -n "$CIPHER" ] && [ "$CIPHER" != "UNDEF" ]; then
-    # Flag RC4, DES, NULL, EXPORT ciphers as weak
-    if echo "$CIPHER" | grep -qiE "RC4|DES|NULL|EXPORT|MD5|anon"; then
-      echo -e " ${CRed}[WARN]${CClear} [5] HTTPS Cipher Suite ....... ${CRed}${CIPHER}${CClear}  -- weak cipher, DPI classification risk"
-    else
-      echo -e " ${CGreen}[PASS]${CClear} [5] HTTPS Cipher Suite ....... ${CGreen}${CIPHER}${CClear}  -- curl<->Cloudflare inner session"
-    fi
-  elif [ "$CIPHER" = "UNDEF" ] || [ -z "$CIPHER" ]; then
-    # UNDEF means the curl build on this firmware doesn't expose the cipher name --
-    # try to extract it from the TLS version line directly as a fallback
-    local CIPHER_FB
-    CIPHER_FB=$(grep -i "SSL connection using\|TLS connection using" "$TMPVERB" 2>/dev/null \
-                | head -1 | grep -oE "TLS_[A-Z0-9_]+|ECDHE-[A-Z0-9-]+" | head -1)
-    if [ -n "$CIPHER_FB" ]; then
-      echo -e " ${CGreen}[PASS]${CClear} [5] HTTPS Cipher Suite ....... ${CGreen}${CIPHER_FB}${CClear}  -- curl<->Cloudflare inner session"
-    else
-      echo -e " ${CDkGray}[INFO]${CClear} [5] HTTPS Cipher Suite ....... ${CDkGray}Not exposed by this curl build${CClear}"
-    fi
-  fi
-
-  # Check 6: Server certificate issuer (from curl --verbose)
-  # Use sed to strip the leading "* " decoration only, NOT tr -d, so spaces inside the value are preserved.
-  local CERTISSUER CERTSUBJECT CERTEXPIRY CERTSTART
-  CERTISSUER=$(grep -i "issuer:" "$TMPVERB" 2>/dev/null \
-               | head -1 | sed 's/^[* ]*//; s/.*issuer: //')
-  CERTSUBJECT=$(grep -i "subject:" "$TMPVERB" 2>/dev/null \
-                | head -1 | sed 's/^[* ]*//; s/.*subject: //')
-  CERTEXPIRY=$(grep -i "expire date:" "$TMPVERB" 2>/dev/null \
-               | head -1 | sed 's/^[* ]*//; s/.*expire date: //')
-  CERTSTART=$(grep -i "start date:" "$TMPVERB" 2>/dev/null \
-              | head -1 | sed 's/^[* ]*//; s/.*start date: //')
-
-  if [ -n "$CERTISSUER" ]; then
-    echo -e " ${CGreen}[INFO]${CClear} [6] Certificate Issuer ....... ${CGreen}${CERTISSUER}${CClear}"
-    # Use the same unified pattern list as checkdpi_mitm() in the monitoring loop.
-    # On detection: set vr3dpi_mitm_N flag and write a log entry so the MITM banner
-    # and slot indicator activate even when triggered from a manual test run.
-    # On clean pass: clear the flag so the banner disappears.
-    if echo "$CERTISSUER" | grep -qiE \
-      "localhost|127\.|192\.|10\.|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[0-1]\.|router|gateway|\
-asus|merlin|cisco|juniper|fortinet|palo.alto|prisma|bluecoat|zscaler|forcepoint|\
-symantec.ssl.visibility|iboss|lightspeed|barracuda|sophos|untangle|watchguard|checkpoint|\
-squid|sonicwall|aruba|netskope|skyhigh|websense|trustwave|smoothwall|netsweeper|\
-securly|contentkeeper|cato|versa|umbrella|big-ip|ssl.inspection|ssl.intercept|\
-web.filter|content.filter|local.ca|self.signed|internal.ca|corp.ca|enterprise.ca|\
-government|ministry|national.security|intercept.ca|proxy.ca|firewall.ca"; then
-      echo -e "       ${CRed}     !!  Certificate issuer looks like an interception proxy -- TLS MITM detected! !!${CClear}"
-      dpi_log "ALERT: TLS MITM detected via manual test on VPN${SLOT} -- issuer: ${CERTISSUER}"
-      echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ALERT: TLS MITM DETECTED on VPN${SLOT} (manual DPI test): certificate issuer '${CERTISSUER}' matches a known interception proxy pattern." >> $dpilogfile
-      touch "/tmp/vr3dpi_mitm_${SLOT}"
-    else
-      # Issuer looks legitimate -- clear any MITM flag set by a prior detection
-      if [ -f "/tmp/vr3dpi_mitm_${SLOT}" ]; then
-        dpi_log "INFO: TLS MITM alert cleared via manual test on VPN${SLOT} -- issuer '${CERTISSUER}' now appears legitimate"
-        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: TLS MITM alert cleared on VPN${SLOT} (manual DPI test): certificate issuer '${CERTISSUER}' is now legitimate." >> $dpilogfile
-        rm -f "/tmp/vr3dpi_mitm_${SLOT}" 2>/dev/null
-      fi
-    fi
-  fi
-  [ -n "$CERTSUBJECT" ]  && echo -e " ${CGreen}[INFO]${CClear} [6] Certificate Subject ...... ${CGreen}${CERTSUBJECT}${CClear}"
-  [ -n "$CERTSTART" ]    && echo -e " ${CGreen}[INFO]${CClear} [6] Certificate Valid From ... ${CGreen}${CERTSTART}${CClear}"
-  [ -n "$CERTEXPIRY" ]   && echo -e " ${CGreen}[INFO]${CClear} [6] Certificate Expires ...... ${CGreen}${CERTEXPIRY}${CClear}"
-  [ -z "$CERTISSUER" ]   && echo -e " ${CDkGray}[INFO]${CClear} [6] Certificate Details ...... ${CDkGray}Not determinable from curl output${CClear}"
-
-  # Check 7: Confirm egress IP (from Cloudflare trace body) is NOT the WAN IP (leak check)
-  local VPNEGRESS WANIP
-  if [ -f "$TMPBODY" ]; then
-    VPNEGRESS=$(grep "^ip=" "$TMPBODY" 2>/dev/null | cut -d'=' -f2 | tr -d ' \r\n')
-  fi
-  WANIP=$($timeoutcmd$timeoutsec nvram get wan0_ipaddr 2>/dev/null)
-
-  if [ -n "$VPNEGRESS" ]; then
-    echo -e " ${CGreen}[INFO]${CClear} [7] VPN Egress IP ............ ${CGreen}${VPNEGRESS}${CClear}"
-    if [ -n "$WANIP" ] && [ "$VPNEGRESS" = "$WANIP" ]; then
-      echo -e " ${CRed}[FAIL]${CClear} [7] Egress / WAN Leak Check .. ${CRed}EGRESS IP MATCHES WAN (${WANIP}) -- POSSIBLE TRAFFIC LEAK!${CClear}"
-    else
-      echo -e " ${CGreen}[PASS]${CClear} [7] Egress / WAN Leak Check .. ${CGreen}Egress differs from WAN IP (${WANIP:-unknown}) ${CClear}-- no leak${CClear}"
-    fi
-  else
-    echo -e " ${CDkGray}[INFO]${CClear} [7] VPN Egress IP ............ ${CDkGray}Could not read Cloudflare trace response body${CClear}"
-  fi
-
-  # Check 8: TLS hardening directives present in active client.ovpn
-  if [ -f "$CONFFILE" ]; then
-    if grep -q "# vr3-dpi-hardening" "$CONFFILE" 2>/dev/null; then
-      echo -e " ${CGreen}[PASS]${CClear} [8] TLS Hardening Block ...... ${CGreen}PRESENT in active config${CClear}"
-      local d_tlsver d_tlscs d_cipher d_tlscipher d_mssfix d_resolv d_persist d_certcheck
-      grep -q "tls-version-min"        "$CONFFILE" && d_tlsver="${CGreen}OK${CClear}"       || d_tlsver="${CRed}MISSING${CClear}"
-      grep -q "tls-ciphersuites"       "$CONFFILE" && d_tlscs="${CGreen}OK${CClear}"        || d_tlscs="${CYellow}NOT SET${CClear}"
-      grep -q "cipher AES-256-GCM"     "$CONFFILE" && d_cipher="${CGreen}OK${CClear}"       || d_cipher="${CRed}MISSING${CClear}"
-      grep -q "tls-cipher"             "$CONFFILE" && d_tlscipher="${CGreen}OK${CClear}"    || d_tlscipher="${CRed}MISSING${CClear}"
-      grep -q "^mssfix"                "$CONFFILE" && d_mssfix="${CGreen}OK${CClear}"        || d_mssfix="${CRed}MISSING${CClear}"
-      grep -q "resolv-retry"           "$CONFFILE" && d_resolv="${CGreen}OK${CClear}"        || d_resolv="${CRed}MISSING${CClear}"
-      grep -q "persist-key"            "$CONFFILE" && d_persist="${CGreen}OK${CClear}"       || d_persist="${CRed}MISSING${CClear}"
-      grep -q "remote-cert-tls server" "$CONFFILE" && d_certcheck="${CGreen}OK${CClear}"    || d_certcheck="${CRed}MISSING${CClear}"
-      echo -e "       ${CClear}     tls-version-min 1.3 ...... ${d_tlsver}"
-      echo -e "       ${CClear}     tls-ciphersuites AES-256 . ${d_tlscs}"
-      echo -e "       ${CClear}     cipher AES-256-GCM ....... ${d_cipher}"
-      echo -e "       ${CClear}     tls-cipher ECDHE order ... ${d_tlscipher}"
-      echo -e "       ${CClear}     mssfix 1280 .............. ${d_mssfix}"
-      echo -e "       ${CClear}     resolv-retry infinite .... ${d_resolv}"
-      echo -e "       ${CClear}     persist-key/tun .......... ${d_persist}"
-      echo -e "       ${CClear}     remote-cert-tls server ... ${d_certcheck}"
-    else
-      if [ "$DPI_ENHANCED_TLS" = "1" ]; then
-        echo -e " ${CYellow}[WARN]${CClear} [8] TLS Hardening Block ...... ${CYellow}Not yet injected -- restart VPN${SLOT} to apply${CClear}"
-      else
-        echo -e " ${CDkGray}[INFO]${CClear} [8] TLS Hardening Block ...... ${CDkGray}Disabled (TLS Hardening is off in DPI settings)${CClear}"
-      fi
-    fi
-  else
-    echo -e " ${CDkGray}[INFO]${CClear} [8] TLS Hardening Block ...... ${CDkGray}Config file ${CONFFILE} not yet written (tunnel may be initializing)${CClear}"
-  fi
-
-  # Check 9: Active DPI detection sub-feature status
-  if [ "$DPI_DETECT" = "1" ]; then
-    echo -e " ${CGreen}[PASS]${CClear} [9] Active DPI Detection ..... ${CGreen}ENABLED${CClear}  -- checks every ${DPI_DETECT_INTERVAL} monitoring loop(s)"
-  else
-    echo -e " ${CDkGray}[INFO]${CClear} [9] Active DPI Detection ..... ${CDkGray}DISABLED${CClear}  -- enable in DPI settings (Option 3) for automatic interference detection"
-  fi
-
-  # Check 10: Verify the OpenVPN outer tunnel control and data channel ciphers from syslog.
-  # OpenVPN logs negotiated ciphers to syslog on connect. The control channel cipher is
-  # what the tls-cipher directive influences (TLS 1.2 only). The data channel cipher is
-  # what the cipher directive sets. Both are distinct from the inner HTTPS session (checks 4/5).
-  echo -e " ${CDkGray}       Checking syslog for OpenVPN VPN${SLOT} outer tunnel cipher negotiation...${CClear}"
-
-  # Preferred control-channel cipher patterns (OpenVPN and OpenSSL naming conventions)
-  local PREF_CTRL="ECDHE-RSA-AES256-GCM-SHA384\|ECDHE-ECDSA-AES256-GCM-SHA384\|DHE-RSA-AES256-GCM-SHA384\|TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384\|TLS-ECDHE-ECDSA-WITH-AES-256-GCM-SHA384\|TLS-DHE-RSA-WITH-AES-256-GCM-SHA384\|TLS_AES_256_GCM_SHA384"
-
-  # Search syslog for the most recent Control Channel log entry for this VPN slot.
-  # Merlin uses process names like vpnclient1, ovpn-client1, or similar.
-  local CTRL_LINE CTRL_VER CTRL_CIPHER
-  # Use explicit literal-bracket anchor (ovpn-client4[PID]) - reliable on BusyBox ERE.
-  # The [^0-9] pattern was inconsistent with BusyBox grep -iE; \[ matches the PID bracket directly.
-  CTRL_LINE=$(cat /tmp/syslog.log /tmp/syslog.log-1 2>/dev/null \
-    | grep -E "ovpn-client${SLOT}\[|vpnclient${SLOT}\[" \
-    | grep "Control Channel" | tail -1)
-
-  if [ -n "$CTRL_LINE" ]; then
-    # head -1: the control channel line contains TLSv1.3 twice (version + cipher prefix); take first only
-    CTRL_VER=$(echo "$CTRL_LINE" | grep -oE "TLSv[0-9]+\.[0-9]+" | head -1)
-    # Cipher format: "Control Channel: TLSv1.3, cipher TLSv1.3 CIPHER_NAME, peer certificate..."
-    # Strip through "cipher TLSvX.Y " then take text before the next comma
-    CTRL_CIPHER=$(echo "$CTRL_LINE" | sed 's/.*Control Channel: [^,]*, cipher [^ ]* //' | cut -d',' -f1 | xargs 2>/dev/null)
-    # Peer certificate key size: "peer certificate: 4096 bits RSA"
-    CTRL_PEERKEY=$(echo "$CTRL_LINE" | grep -oE "peer certificate: [^,]+" | sed 's/peer certificate: //')
-    if [ -n "$CTRL_VER" ] || [ -n "$CTRL_CIPHER" ]; then
-      echo -e " ${CGreen}[INFO]${CClear} [10] OVPN Control Channel .... ${CGreen}${CTRL_VER}${CClear} / ${CGreen}${CTRL_CIPHER}${CClear}"
-      [ -n "$CTRL_PEERKEY" ] && echo -e "       ${CClear}      Peer certificate ........ ${CGreen}${CTRL_PEERKEY}${CClear}"
-      if echo "$CTRL_VER" | grep -q "TLSv1\.3"; then
-        # TLS 1.3 selects its own cipher suites; tls-cipher only governs TLS 1.2 control channel.
-        # tls-ciphersuites pins the TLS 1.3 suite to TLS_AES_256_GCM_SHA384.
-        local tlscs_present=0
-        [ -f "$CONFFILE" ] && grep -q "tls-ciphersuites" "$CONFFILE" && tlscs_present=1
-        if echo "$CTRL_CIPHER" | grep -qE "AES_256_GCM|AES-256-GCM"; then
-          if [ "$tlscs_present" = "1" ]; then
-            echo -e "       ${CGreen}      TLS 1.3 preferred suite TLS_AES_256_GCM_SHA384 confirmed ${CClear}-- pinned via tls-ciphersuites directive${CClear}"
-          else
-            echo -e "       ${CGreen}      TLS 1.3 strong AES-256-GCM suite confirmed${CClear}  ${CYellow}(tls-ciphersuites not in config -- suite selected by server preference, not pinned)${CClear}"
-          fi
-        elif echo "$CTRL_CIPHER" | grep -qiE "CHACHA20"; then
-          if [ "$tlscs_present" = "1" ]; then
-            echo -e "       ${CYellow}      TLS 1.3 negotiated CHACHA20 despite tls-ciphersuites pinning AES-256-GCM ${CClear}-- server may be overriding${CClear}"
-          else
-            echo -e "       ${CYellow}      TLS 1.3 negotiated CHACHA20_POLY1305 ${CClear}-- add tls-ciphersuites TLS_AES_256_GCM_SHA384 to pin preferred suite${CClear}"
-          fi
-        else
-          echo -e "       ${CDkGray}      TLS 1.3 control channel -- tls-cipher applies to TLS 1.2 only... tls-ciphersuites governs TLS 1.3${CClear}"
-        fi
-      elif [ -n "$CTRL_CIPHER" ] && echo "$CTRL_CIPHER" | grep -q "$PREF_CTRL"; then
-        echo -e "       ${CGreen}      Control channel cipher is within the preferred DPI-hardened set${CClear}"
-      elif [ -n "$CTRL_CIPHER" ]; then
-        echo -e "       ${CYellow}      Control channel cipher is not in the preferred set ${CClear}-- check tls-cipher directive${CClear}"
-      fi
-    else
-      echo -e " ${CDkGray}[INFO]${CClear} [10] OVPN Control Channel .... ${CDkGray}Found log entry but could not parse cipher${CClear}"
-    fi
-  else
-    echo -e " ${CDkGray}[INFO]${CClear} [10] OVPN Control Channel .... ${CDkGray}Not found in syslog (may have rotated off; reconnect to repopulate)${CClear}"
-  fi
-
-  # Search syslog for the most recent Data Channel cipher entry for this VPN slot.
-  local DATA_LINE DATA_CIPHER
-  DATA_LINE=$(cat /tmp/syslog.log /tmp/syslog.log-1 2>/dev/null \
-    | grep -E "ovpn-client${SLOT}\[|vpnclient${SLOT}\[" \
-    | grep -E "Data Channel.*cipher|negotiated cipher|Cipher.*initialized" | tail -1)
-
-  if [ -n "$DATA_LINE" ]; then
-    # Try to extract cipher name from quoted form ('AES-256-GCM') or unquoted
-    DATA_CIPHER=$(echo "$DATA_LINE" | grep -oE "'[A-Z0-9_-]+'" | head -1 | tr -d "'")
-    [ -z "$DATA_CIPHER" ] && DATA_CIPHER=$(echo "$DATA_LINE" | grep -oE "cipher [A-Z0-9_-]+" | head -1 | sed 's/cipher //')
-    if [ -n "$DATA_CIPHER" ]; then
-      if echo "$DATA_CIPHER" | grep -qiE "AES-256-GCM|AES-256-CBC"; then
-        echo -e " ${CGreen}[PASS]${CClear} [10] OVPN Data Channel ....... ${CGreen}${DATA_CIPHER}${CClear}  -- preferred data cipher confirmed"
-      else
-        echo -e " ${CYellow}[WARN]${CClear} [10] OVPN Data Channel ....... ${CYellow}${DATA_CIPHER}${CClear}  -- AES-256-GCM preferred; check cipher directive"
-      fi
-    else
-      echo -e " ${CDkGray}[INFO]${CClear} [10] OVPN Data Channel ....... ${CDkGray}Found log entry but could not parse cipher name${CClear}"
-    fi
-  else
-    echo -e " ${CDkGray}[INFO]${CClear} [10] OVPN Data Channel ....... ${CDkGray}Not found in syslog (may have rotated off; reconnect to repopulate)${CClear}"
-  fi
-
-  # Summary
-  local overall overall_color
-  echo ""
-  echo -e "${CDkGray}  -------------------------------------------------------------------------${CClear}"
-  if [ "$DPI_ENABLED" != "1" ]; then
-    overall="DISABLED"; overall_color="${CDkGray}"
-  elif [ -f "/tmp/vr3dpi_fail_${SLOT}" ]; then
-    overall="FAILURE DETECTED"; overall_color="${CRed}"
-  elif [ "$DPI_ENHANCED_TLS" != "1" ] && [ "$DPI_DETECT" != "1" ]; then
-    overall="EXPOSED -- master switch on but all sub-features disabled"; overall_color="${CRed}"
-  elif [ "$CURLCODE" != "200" ]; then
-    overall="DEGRADED -- HTTPS test did not return 200"; overall_color="${CYellow}"
-  elif [ "$DPI_ENHANCED_TLS" = "1" ] && [ "$DPI_DETECT" = "1" ]; then
-    overall="FULLY PROTECTED"; overall_color="${CGreen}"
-  else
-    overall="PARTIAL -- enable both TLS Hardening and Detection for full coverage"; overall_color="${CYellow}"
-  fi
-  echo -e "  Overall DPI Protection Status: ${overall_color}${overall}${CClear}"
-  echo ""
-
-  rm -f "$TMPBODY" "$TMPVERB"
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dpi_setup - DPI Resistance configuration submenu (OpenVPN only)
-
-dpi_setup()
-{
-  local action
-
-  while true; do
-    dpi_loadconfig
-
-    # Build status display values
-    local en_disp en_color
-    if [ "$DPI_ENABLED" = "1" ]; then
-      en_color="$CGreen"; en_disp="Enabled"
-    else
-      en_color="$CRed";   en_disp="Disabled"
-    fi
-
-    local tls_disp tls_color
-    if [ "$DPI_ENHANCED_TLS" = "1" ]; then
-      tls_color="$CGreen"; tls_disp="Enabled"
-    else
-      tls_color="$CDkGray";  tls_disp="Disabled"
-    fi
-
-    local det_disp det_color
-    if [ "$DPI_DETECT" = "1" ]; then
-      det_color="$CGreen"; det_disp="Enabled"
-    else
-      det_color="$CDkGray";  det_disp="Disabled"
-    fi
-
-    # Detect configured OpenVPN TCP/443 slots for status display
-    local ovpn_slots="" s addr proto port
-    for s in 1 2 3 4 5; do
-      addr=$($timeoutcmd$timeoutsec nvram get "vpn_client${s}_addr" 2>/dev/null)
-      proto=$($timeoutcmd$timeoutsec nvram get "vpn_client${s}_proto" 2>/dev/null)
-      port=$($timeoutcmd$timeoutsec nvram get "vpn_client${s}_port" 2>/dev/null)
-      if [ -n "$addr" ] && { [ "$proto" = "tcp-client" ] || [ "$proto" = "tcp" ]; } && [ "$port" = "443" ]; then
-        ovpn_slots="${ovpn_slots}VPN${s} "
-      fi
-    done
-    [ -z "$ovpn_slots" ] && ovpn_slots="${CYellow}None detected (requires TCP/443 OVPN slots)${CClear}"
-
-    # stunnel status
-    local stunnel_bin stunnel_disp stunnel_color
-    stunnel_bin=$(dpi_find_stunnel)
-    if [ -n "$stunnel_bin" ]; then
-      stunnel_color="$CGreen"; stunnel_disp="Installed ($stunnel_bin)"
-    else
-      stunnel_color="$CDkGray"; stunnel_disp="Not installed"
-    fi
-
-    clear
-    echo -e "${InvGreen} ${InvDkGray}${CWhite} DPI Resistance Setup (OpenVPN Only)                                                   ${CClear}"
-    echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear} This feature helps OpenVPN tunnels resist Deep Packet Inspection (DPI) that some${CClear}"
-    echo -e "${InvGreen} ${CClear} governments and ISPs use to identify and block VPN traffic. It works by hardening${CClear}"
-    echo -e "${InvGreen} ${CClear} the TLS parameters of your OpenVPN connections to better resemble standard HTTPS${CClear}"
-    echo -e "${InvGreen} ${CClear} browser traffic, and by actively testing each tunnel to detect and respond to DPI${CClear}"
-    echo -e "${InvGreen} ${CClear} interference automatically.${CClear}"
-    echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear} ${CYellow}IMPORTANT:${CClear} This feature only applies to OpenVPN connections configured for the TCP${CClear}"
-    echo -e "${InvGreen} ${CClear} protocol on port 443. WireGuard connections are not affected. Verify your OpenVPN${CClear}"
-    echo -e "${InvGreen} ${CClear} client slots are set to TCP/443 in the Merlin VPN configuration UI.${CClear}"
-    echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-    echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear} Feature Status     : ${en_color}${en_disp}${CClear}"
-    echo -e "${InvGreen} ${CClear} TCP/443 OVPN Slots : ${CGreen}${ovpn_slots}${CClear}"
-    echo -e "${InvGreen} ${CClear} TLS Hardening      : ${tls_color}${tls_disp}${CClear}"
-    echo -e "${InvGreen} ${CClear} DPI Detection      : ${det_color}${det_disp}${CClear}  ${CWhite}(check every ${CGreen}${DPI_DETECT_INTERVAL}${CWhite} loops)${CClear}"
-    echo -e "${InvGreen} ${CClear} stunnel            : ${stunnel_color}${stunnel_disp}${CClear}"
-    echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-    echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(1)${CClear} : Enable / Disable DPI Resistance"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(2)${CClear} : Enable / Disable TLS Hardening"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(3)${CClear} : Enable / Disable Active DPI Detection"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(4)${CClear} : Set DPI Detection Check Interval (x loops)"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(5)${CClear} : stunnel TLS Wrapper Management (advanced)"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(6)${CClear} : Run DPI Protection Verification Report"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(7)${CClear} : View DPI Log Activity"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} | ${CClear}"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(e)${CClear} : Exit to Configuration Menu"
-    echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-    echo ""
-    read -p "Please select (1-7, e=Exit): " action
-
-    case "$action" in
-
-      # 1: Toggle master enable
-      1)
-        while true; do
-          clear
-          echo -e "${InvGreen} ${InvDkGray}${CWhite} Enable / Disable DPI Resistance                                                       ${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Enabling DPI Resistance activates all configured sub-features (TLS Hardening,${CClear}"
-          echo -e "${InvGreen} ${CClear} Active Detection) for any monitored OpenVPN TCP/443 connections. Disabling this${CClear}"
-          echo -e "${InvGreen} ${CClear} master switch suspends all DPI activity without changing individual settings.${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Note: TLS hardening directives already injected into running tunnels remain${CClear}"
-          echo -e "${InvGreen} ${CClear} active until those tunnels are restarted.${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          if [ "$DPI_ENABLED" = "1" ]; then
-            echo -e "${InvGreen} ${CClear} Current: ${CGreen}Enabled${CClear}"; echo ""
-          else
-            echo -e "${InvGreen} ${CClear} Current: ${CRed}Disabled${CClear}"; echo ""
-          fi
-          if promptyn "Proceed to toggle DPI Resistance? [y/n]: "; then
-            if [ "$DPI_ENABLED" = "1" ]; then
-              DPI_ENABLED=0
-              dpi_saveconfig
-              dpi_log "INFO: DPI Resistance master switch disabled by user"
-              echo ""
-              echo -e "${CGreen}DPI Resistance disabled.${CClear}"
-            else
-              DPI_ENABLED=1
-              dpi_saveconfig
-              dpi_log "INFO: DPI Resistance master switch enabled by user"
-              echo ""
-              echo -e "${CGreen}DPI Resistance enabled.${CClear}"
-              echo -e "TLS hardening will be injected on next VPN restart. Active detection will run${CClear}"
-              echo -e "every ${DPI_DETECT_INTERVAL} monitoring loop(s) when Detection is also enabled.${CClear}"
-            fi
-            echo ""
-            read -rsp $'Press any key to continue...\n' -n1 key
-          fi
-          break
-        done
-        ;;
-
-      # 2: Toggle TLS hardening
-      2)
-        while true; do
-          clear
-          echo -e "${InvGreen} ${InvDkGray}${CWhite} Enable / Disable TLS Hardening                                                        ${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} TLS Hardening injects additional directives into your OpenVPN config.ovpn config${CClear}"
-          echo -e "${InvGreen} ${CClear} file each time a VPN tunnel is restarted. These directives enforce strong encryption${CClear}"
-          echo -e "${InvGreen} ${CClear} on both the control and data channels, pin the TLS 1.3 cipher suite to AES-256-GCM,${CClear}"
-          echo -e "${InvGreen} ${CClear} require forward secrecy via ECDHE key exchange, and set MTU parameters that prevent${CClear}"
-          echo -e "${InvGreen} ${CClear} fragmentation. This hardens the tunnel against cipher downgrade attacks, weak key${CClear}"
-          echo -e "${InvGreen} ${CClear} negotiation, and packet-level analysis based on segment size anomalies. Note that${CClear}"
-          echo -e "${InvGreen} ${CClear} these directives do not alter OpenVPN's TLS handshake fingerprint, a DPI system${CClear}"
-          echo -e "${InvGreen} ${CClear} using JA3/JA4 classification can still identify the connection as OpenVPN. For${CClear}"
-          echo -e "${InvGreen} ${CClear} protocol-level obfuscation, the stunnel wrapper (Option 5) provides a stronger${CClear}"
-          echo -e "${InvGreen} ${CClear} outer TLS layer.${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Directives injected: tls-version-min 1.3, tls-ciphersuites TLS_AES_256_GCM_SHA384,${CClear}"
-          echo -e "${InvGreen} ${CClear} AES-256-GCM cipher, ECDHE cipher suite ordering (TLS 1.2 fallback), mssfix 1280,${CClear}"
-          echo -e "${InvGreen} ${CClear} resolv-retry infinite, persist-key, persist-tun, remote-cert-tls server.${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Note: fragment and sndbuf/rcvbuf are intentionally omitted. The fragment directive${CClear}"
-          echo -e "${InvGreen} ${CClear} causes double-fragmentation and keepalive timeouts on modern VPN servers; mssfix${CClear}"
-          echo -e "${InvGreen} ${CClear} 1280 prevents oversized segments at the TCP negotiation stage, which is the correct${CClear}"
-          echo -e "${InvGreen} ${CClear} layer to address MTU issues. Socket buffer management is left to Merlin's OS ${CClear}"
-          echo -e "${InvGreen} ${CClear} scheduler to prevent bufferbloat. These omissions are intentional and improve${CClear}"
-          echo -e "${InvGreen} ${CClear} reliability without reducing security.${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Note 2: Only applies to OpenVPN TCP/443 connections. WireGuard is unaffected.${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          if [ "$DPI_ENHANCED_TLS" = "1" ]; then
-            echo -e "${InvGreen} ${CClear} Current: ${CGreen}Enabled${CClear}"; echo ""
-          else
-            echo -e "${InvGreen} ${CClear} Current: ${CDkGray}Disabled${CClear}"; echo ""
-          fi
-          if promptyn "Proceed to toggle TLS Hardening? [y/n]: "; then
-            if [ "$DPI_ENHANCED_TLS" = "1" ]; then
-              DPI_ENHANCED_TLS=0
-              dpi_saveconfig
-              dpi_log "INFO: TLS Hardening disabled by user"
-              echo ""; echo -e "${CGreen}TLS Hardening disabled.${CClear}"
-            else
-              DPI_ENHANCED_TLS=1
-              dpi_saveconfig
-              dpi_log "INFO: TLS Hardening enabled by user"
-              echo ""; echo -e "${CGreen}TLS Hardening enabled.${CClear}"
-              echo -e "Directives will be injected on the next tunnel restart.${CClear}"
-            fi
-            echo ""
-            read -rsp $'Press any key to continue...\n' -n1 key
-          fi
-          break
-        done
-        ;;
-
-      # 3: Toggle active DPI detection
-      3)
-        while true; do
-          clear
-          echo -e "${InvGreen} ${InvDkGray}${CWhite} Enable / Disable Active DPI Detection (Layer 4)                                       ${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Active DPI Detection periodically tests each monitored OpenVPN TCP/443 tunnel by${CClear}"
-          echo -e "${InvGreen} ${CClear} sending an HTTPS request to a well-known endpoint (Cloudflare CDN trace) through${CClear}"
-          echo -e "${InvGreen} ${CClear} the tunnel interface. If the test returns anything other than HTTP 200, or fails${CClear}"
-          echo -e "${InvGreen} ${CClear} to connect entirely, VPNMON-R3 treats this as DPI interference, logs the event,${CClear}"
-          echo -e "${InvGreen} ${CClear} and immediately restarts that VPN slot to rotate to a new server.${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} The check interval is configurable (Option 4). A value of 5 means the test runs${CClear}"
-          echo -e "${InvGreen} ${CClear} once every 5 monitoring loop iterations, which at the default 60-second timer is${CClear}"
-          echo -e "${InvGreen} ${CClear} approximately every 5 minutes. Only OpenVPN TCP/443 slots are tested.${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          if [ "$DPI_DETECT" = "1" ]; then
-            echo -e "${InvGreen} ${CClear} Current: ${CGreen}Enabled${CClear}  (check every ${CGreen}${DPI_DETECT_INTERVAL}${CClear} loops)"; echo ""
-          else
-            echo -e "${InvGreen} ${CClear} Current: ${CDkGray}Disabled${CClear}"; echo ""
-          fi
-          if promptyn "Proceed to toggle Active DPI Detection? [y/n]: "; then
-            if [ "$DPI_DETECT" = "1" ]; then
-              DPI_DETECT=0
-              dpi_saveconfig
-              dpi_log "INFO: Active DPI Detection disabled by user"
-              echo ""; echo -e "${CGreen}Active DPI Detection disabled.${CClear}"
-            else
-              DPI_DETECT=1
-              dpi_saveconfig
-              dpi_log "INFO: Active DPI Detection enabled by user (interval: ${DPI_DETECT_INTERVAL} loops)"
-              echo ""; echo -e "${CGreen}Active DPI Detection enabled.${CClear}"
-              echo -e "Tests will run every ${DPI_DETECT_INTERVAL} monitoring loop(s) on TCP/443 OVPN slots.${CClear}"
-            fi
-            echo ""
-            read -rsp $'Press any key to continue...\n' -n1 key
-          fi
-          break
-        done
-        ;;
-
-      # 4: Set detection interval
-      4)
-        clear
-        echo -e "${InvGreen} ${InvDkGray}${CWhite} Set DPI Detection Check Interval                                                      ${CClear}"
-        echo -e "${InvGreen} ${CClear}"
-        echo -e "${InvGreen} ${CClear} Please indicate how many monitoring loop iterations should pass between each${CClear}"
-        echo -e "${InvGreen} ${CClear} Active DPI Detection check. At the default timer interval of 60 seconds, a value${CClear}"
-        echo -e "${InvGreen} ${CClear} of 5 checks every ~5 minutes. Lower values check more frequently but add curl${CClear}"
-        echo -e "${InvGreen} ${CClear} overhead to each loop. Minimum is 1 (every loop). Maximum is 60.${CClear}"
-        echo -e "${InvGreen} ${CClear}"
-        echo -e "${InvGreen} ${CClear} (Default = 5)${CClear}"
-        echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-        echo ""
-        echo -e "Current: ${CGreen}${DPI_DETECT_INTERVAL}${CClear} loops"; echo ""
-        read -p "Enter new interval [1-60] (e=Exit): " newinterval
-        if [ "$newinterval" = "e" ] || [ -z "$newinterval" ]; then
-          echo -e "\n[Exiting]"; sleep 1
-        elif echo "$newinterval" | grep -qE "^[1-9][0-9]?$|^60$" && [ "$newinterval" -ge 1 ] && [ "$newinterval" -le 60 ]; then
-          DPI_DETECT_INTERVAL="$newinterval"
-          dpi_saveconfig
-          dpi_log "INFO: DPI Detection interval set to ${DPI_DETECT_INTERVAL} loops by user"
-          echo ""; echo -e "${CGreen}Detection interval updated to ${DPI_DETECT_INTERVAL} loop(s).${CClear}"; echo ""
-          read -rsp $'Press any key to continue...\n' -n1 key
-        else
-          echo ""; echo -e "${CRed}ERROR: Please enter a value between 1 and 60.${CClear}"; sleep 3
-        fi
-        ;;
-
-      # 5: stunnel management
-      5)
-        while true; do
-          clear
-          echo -e "${InvGreen} ${InvDkGray}${CWhite} stunnel TLS Wrapper Management                                                        ${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} stunnel is an optional proxy tool that can wrap your OpenVPN TCP traffic inside a${CClear}"
-          echo -e "${InvGreen} ${CClear} genuine TLS 1.3 session, including a real SNI hostname. To a DPI box, the connection${CClear}"
-          echo -e "${InvGreen} ${CClear} looks identical to standard HTTPS browser traffic, providing the strongest available${CClear}"
-          echo -e "${InvGreen} ${CClear} obfuscation layer for OpenVPN TCP/443 connections.${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} stunnel is available via Entware: ${CGreen}opkg install stunnel${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} After installation, manual configuration of /opt/etc/stunnel/stunnel.conf is${CClear}"
-          echo -e "${InvGreen} ${CClear} required to define the client -> VPN server forwarding rules. VPNMON-R3 does not${CClear}"
-          echo -e "${InvGreen} ${CClear} auto-generate stunnel configs as each VPN provider requires different settings.${CClear}"
-          echo -e "${InvGreen} ${CClear} Refer to your VPN provider's stunnel documentation for the correct configuration.${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Optionally, please be on the lookout for ${CYellow}STUNMON${CClear}, a new script being released on${CClear}"
-          echo -e "${InvGreen} ${CClear} Github/SNBForums that will provide for the install, setup, configuration, monitoring${CClear}"
-          echo -e "${InvGreen} ${CClear} of stunnel. A compatible VPN provider that offers stunnel connections will be a must.${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-
-          local stbin
-          stbin=$(dpi_find_stunnel)
-
-          if [ -n "$stbin" ]; then
-            echo -e "${InvGreen} ${CClear} stunnel Status : ${CGreen}Installed${CClear} ($stbin)"
-            local stver
-            stver=$("$stbin" -version 2>&1 | sed -n '2p')
-            echo -e "${InvGreen} ${CClear} Version        : ${CGreen}${stver}${CClear}"
-          else
-            echo -e "${InvGreen} ${CClear} stunnel Status : ${CRed}Not installed${CClear}"
-          fi
-
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-          echo ""
-
-          if [ -z "$stbin" ]; then
-            read -p "Install stunnel via opkg? [y/n, e=Exit]: " stact
-            case "$stact" in
-              [Yy]*)
-                echo ""
-                echo -e "${CGreen}Installing stunnel via opkg...${CClear}"
-                dpi_log "INFO: User initiated stunnel install via opkg"
-                if opkg install stunnel; then
-                  dpi_log "INFO: stunnel installed successfully"
-                  echo ""
-                  echo -e "${CGreen}stunnel installed successfully.${CClear}"
-                  echo ""
-                  echo -e "Please configure /opt/etc/stunnel/stunnel.conf per your VPN provider's instructions.${CClear}"
-                  echo -e "Optionally, please use the STUNMON script to help setup, configure and monitor stunnel.${CClear}"
-                else
-                  dpi_log "WARNING: opkg install stunnel failed"
-                  echo ""
-                  echo -e "${CRed}Installation failed. Ensure Entware is installed and the router has internet access.${CClear}"
-                fi
-                echo ""
-                read -rsp $'Press any key to continue...\n' -n1 key
-                ;;
-              [Ee]*) break ;;
-              *) break ;;
-            esac
-          else
-            read -p "Press any key to continue: " stact
-            case "$stact" in
-              [Ee]*) break ;;
-              *) break ;;
-            esac
-          fi
-        done
-        ;;
-
-      # 6: Run DPI test now
-      6)
-        clear
-        echo -e "${InvGreen} ${InvDkGray}${CWhite} Run DPI Protection Verification Report                                                ${CClear}"
-        echo -e "${InvGreen} ${CClear}"
-        echo -e "${InvGreen} ${CClear} This runs a comprehensive DPI protection check on all connected OpenVPN TCP/443${CClear}"
-        echo -e "${InvGreen} ${CClear} slots. Each slot is tested across 10 verification points: protocol and port, tunnel${CClear}"
-        echo -e "${InvGreen} ${CClear} interface state, HTTPS connectivity through the tunnel, TLS protocol version,${CClear}"
-        echo -e "${InvGreen} ${CClear} negotiated cipher suite, server certificate issuer and MITM detection, egress IP${CClear}"
-        echo -e "${InvGreen} ${CClear} leak check against your WAN IP, TLS hardening directive presence, active DPI${CClear}"
-        echo -e "${InvGreen} ${CClear} detection status, and OpenVPN outer tunnel cipher verification from syslog.${CClear}"
-        echo -e "${InvGreen} ${CClear} If HTTPS connectivity fails, the slot is restarted.${CClear}"
-        echo -e "${InvGreen} ${CClear}"
-        echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-        echo ""
-
-        local tested=0
-        local ts ts_state ts_proto ts_port
-        for ts in 1 2 3 4 5; do
-          ts_state="$(_VPN_GetClientState_ "$ts")"
-          ts_proto=$($timeoutcmd$timeoutsec nvram get "vpn_client${ts}_proto" 2>/dev/null)
-          ts_port=$($timeoutcmd$timeoutsec nvram get "vpn_client${ts}_port" 2>/dev/null)
-
-          if [ "$ts_state" = "2" ] && { [ "$ts_proto" = "tcp-client" ] || [ "$ts_proto" = "tcp" ]; } && [ "$ts_port" = "443" ]; then
-            tested=$((tested + 1))
-            dpi_run_full_test "$ts"
-            echo -e "${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-            echo ""
-            read -rsp $'Press any key to continue...\n' -n1 key
-            echo ""
-          fi
-        done
-
-        if [ "$tested" = "0" ]; then
-          echo -e "${CYellow}No connected OpenVPN TCP/443 slots found to test.${CClear}"
-          echo -e "${CDkGray}Ensure at least one VPN slot is connected, monitored, and configured for TCP/443.${CClear}"
-          echo ""
-          read -rsp $'Press any key to continue...\n' -n1 key
-        fi
-        ;;
-
-      # 7: View DPI log
-      7)
-        dpivlogs
-        ;;
-
-      [Ee])
-        return
-        ;;
-
-      *)
-        ;;
-    esac
-  done
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
 # dvpn_find_wg - locate the wg binary and echo its full path, or empty if not found.
 # Called once per function that needs it rather than stored globally, so it
 # always reflects the current filesystem state (e.g. after Entware mounts).
@@ -4317,13 +3520,6 @@ do
      dvpnenableddisp="Enabled"
   fi
 
-  dpi_loadconfig
-  if [ "$DPI_ENABLED" = "1" ]; then
-     dpienableddisp="${CGreen}Enabled"
-  else
-     dpienableddisp="${CDkGray}Disabled"
-  fi
-
 
   utilspddisp="${CGreen}RX: 0-->$lowutilspd${CGreen}|${CYellow}$lowutilspd-->$medutilspd${CGreen}|${CRed}$medutilspd-->Max${CClear}"
   utilspdupdisp="${CGreen}TX: 0-->$lowutilspdup${CGreen}|${CYellow}$lowutilspdup-->$medutilspdup${CGreen}|${CRed}$medutilspdup-->Max${CClear}"
@@ -4357,13 +3553,12 @@ do
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(15)${CClear} : Connection Throughput Display Method         : ${CGreen}$throughputmethoddisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(16)${CClear} : WAN Recovery, Down, Reconnect Timers         : $wantimersdisp"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(17)${CClear} : Double-Hop OVPN/WG configuration             : ${CGreen}$dvpnenableddisp${CClear}"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(18)${CClear} : DPI Resistance (OpenVPN TCP/443 only)        : $dpienableddisp${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  | ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( e)${CClear} : Exit${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo ""
-  read -p "Please select? (1-18, e=Exit): " SelectSlot
+  read -p "Please select? (1-17, e=Exit): " SelectSlot
     case $SelectSlot in
       1)
         clear
@@ -5600,10 +4795,6 @@ do
         dvpn_setup
       ;;
 
-      18)
-        dpi_setup
-      ;;
-
     esac
 done
 }
@@ -5787,25 +4978,6 @@ vlogs()
 
 export TERM=linux
 nano +999999 --linenumbers $logfile
-timer="$timerloop"
-
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# dpivlogs - Display the DPI-specific activity log (vr3dpi.log) using nano
-
-dpivlogs()
-{
-
-export TERM=linux
-if [ ! -f "$dpilogfile" ]; then
-  echo -e "${CYellow}DPI log file not yet created. DPI activity will appear here once the DPI Resistance${CClear}"
-  echo -e "${CYellow}feature is enabled and monitoring begins.${CClear}"
-  echo ""
-  read -rsp $'Press any key to continue...\n' -n1 key
-  return
-fi
-nano +999999 --linenumbers "$dpilogfile"
 timer="$timerloop"
 
 }
@@ -7838,7 +7010,6 @@ saveconfig()
 
    dvpn_loadconfig
    dvpn_check_and_apply
-   dpi_loadconfig
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -8367,7 +7538,6 @@ restartvpn()
       printf "\33[2K\r"
       printf "${CGreen}\r[Letting VPN$1 Settle]"
       sleep 5
-      if [ "$DPI_ENABLED" = "1" ] && [ "$DPI_ENHANCED_TLS" = "1" ]; then inject_dpi_tls_hardening "$1"; fi
       return
 
     elif [ "$selectionmethod" -eq 1 ] # 1=roundrobin
@@ -8428,7 +7598,6 @@ restartvpn()
         printf "\33[2K\r"
         printf "${CGreen}\r[Letting VPN$1 Settle]"
         sleep 5
-        if [ "$DPI_ENABLED" = "1" ] && [ "$DPI_ENHANCED_TLS" = "1" ]; then inject_dpi_tls_hardening "$1"; fi
 
     elif [ "$selectionmethod" -eq 0 ] # 0=Random
       then
@@ -8457,7 +7626,6 @@ restartvpn()
         printf "\33[2K\r"
         printf "${CGreen}\r[Letting VPN$1 Settle]"
         sleep 5
-        if [ "$DPI_ENABLED" = "1" ] && [ "$DPI_ENHANCED_TLS" = "1" ]; then inject_dpi_tls_hardening "$1"; fi
     fi
 
   else
@@ -8472,259 +7640,8 @@ restartvpn()
     printf "\33[2K\r"
     printf "${CGreen}\r[Letting VPN$1 Settle]"
     sleep 5
-    if [ "$DPI_ENABLED" = "1" ] && [ "$DPI_ENHANCED_TLS" = "1" ]; then inject_dpi_tls_hardening "$1"; fi
   fi
 
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# inject_dpi_tls_hardening - Append TLS hardening directives into an active OpenVPN client config
-# Only applies to TCP connections, called after service start_vpnclientN settles.
-# $1 = VPN slot number
-
-inject_dpi_tls_hardening()
-{
-  local SLOT="$1"
-  local CONFFILE="/tmp/etc/openvpn/client${SLOT}/config.ovpn"
-  local PROTO
-
-  # Only inject for TCP connections - UDP on port 1194 cannot masquerade as HTTPS
-  PROTO="$($timeoutcmd$timeoutsec nvram get vpn_client${SLOT}_proto 2>/dev/null)"
-  if [ "$PROTO" != "tcp-client" ] && [ "$PROTO" != "tcp" ]; then
-    return 0
-  fi
-
-  # Wait briefly for Merlin FW to write the config file after service start
-  local waits=0
-  while [ ! -f "$CONFFILE" ] && [ "$waits" -lt 5 ]; do
-    sleep 2
-    waits=$((waits + 1))
-  done
-
-  if [ ! -f "$CONFFILE" ]; then
-    dpi_log "WARNING: TLS hardening skipped for VPN${SLOT} - config file not found at $CONFFILE"
-    return 1
-  fi
-
-  # Only inject if our marker is not already present (prevents duplicate directives on re-injection)
-  if grep -q "# vr3-dpi-hardening" "$CONFFILE" 2>/dev/null; then
-    return 0
-  fi
-
-  dpi_log "INFO: Injecting TLS hardening directives into VPN${SLOT} config"
-  cat >> "$CONFFILE" << 'DPIEOF'
-
-
-# vr3-dpi-hardening - injected by VPNMON-R3 DPI Resistance
-tls-version-min 1.3
-tls-ciphersuites TLS_AES_256_GCM_SHA384
-cipher AES-256-GCM
-tls-cipher TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384:TLS-ECDHE-ECDSA-WITH-AES-256-GCM-SHA384:TLS-DHE-RSA-WITH-AES-256-GCM-SHA384
-tun-mtu 1500
-mssfix 1280
-resolv-retry infinite
-persist-key
-persist-tun
-remote-cert-tls server
-DPIEOF
-
-  dpi_log "INFO: TLS hardening directives applied to VPN${SLOT}"
-  # Clear any failure flag now that the tunnel has been cleanly restarted and hardened
-  rm -f "/tmp/vr3dpi_fail_${SLOT}" 2>/dev/null
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# checkdpi - Test HTTPS connectivity through a specific OpenVPN tunnel interface to detect DPI blocking.
-# Uses curl routed through the tun1N interface to reach a well-known HTTPS endpoint.
-# If the test fails, the VPN slot is restarted immediately.
-# $1 = VPN slot number
-# Returns: 0 = clean, 1 = DPI interference detected
-
-checkdpi()
-{
-  local SLOT="$1"
-  local TUNIF="tun1${SLOT}"
-  local TESTURL="https://www.cloudflare.com/cdn-cgi/trace"
-  local HTTPCODE
-  local TMPBODY="/tmp/vr3dpi_chk_${SLOT}.tmp"
-
-  # Only check TCP-mode connections; UDP tunnels cannot mimic HTTPS
-  local PROTO
-  PROTO="$($timeoutcmd$timeoutsec nvram get vpn_client${SLOT}_proto 2>/dev/null)"
-  if [ "$PROTO" != "tcp-client" ] && [ "$PROTO" != "tcp" ]; then
-    return 0
-  fi
-
-  # Verify the tun interface is actually up before testing through it
-  if ! ip link show "$TUNIF" >/dev/null 2>&1; then
-    return 0
-  fi
-
-  # HTTPS reachability test through the tunnel interface.
-  HTTPCODE=$(curl \
-    --interface "$TUNIF" \
-    --connect-timeout 8 \
-    --max-time 15 \
-    --silent \
-    --output "$TMPBODY" \
-    --write-out "%{http_code}" \
-    "$TESTURL" 2>/dev/null)
-
-  if [ -z "$HTTPCODE" ] || [ "$HTTPCODE" = "000" ]; then
-    # Total failure - curl could not reach the endpoint at all through this tunnel
-    dpi_log "WARNING: DPI detection - VPN${SLOT} HTTPS test returned no response (code: ${HTTPCODE:-none}) - DPI blocking suspected"
-    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: DPI interference detected on VPN${SLOT}: HTTPS test through $TUNIF returned no response. Initiating tunnel restart." >> $dpilogfile
-    touch "/tmp/vr3dpi_fail_${SLOT}"
-    rm -f "$TMPBODY"
-    printf "\33[2K\r"
-    printf "${CRed}\r[DPI Interference Detected on VPN${SLOT}] HTTPS test failed -- Initiating restart${CClear}\n"
-    sleep 3
-    restartvpn "$SLOT"
-    dvpn_on_tunnel_restart "ovpn" "$SLOT"
-    sendmessage 1 "DPI Interference Detected" "$SLOT"
-    restartrouting
-    resetspdmerlin
-    exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
-    return 1
-  fi
-
-  if [ "$HTTPCODE" != "200" ]; then
-    # Received a non-200 response - could be a captive portal, DPI redirect, or block page
-    dpi_log "WARNING: DPI detection - VPN${SLOT} HTTPS test returned HTTP $HTTPCODE (expected 200) - possible DPI redirect or block"
-    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: DPI interference detected on VPN${SLOT}: HTTPS test returned HTTP $HTTPCODE through $TUNIF. Possible block page or redirect. Initiating tunnel restart." >> $dpilogfile
-    touch "/tmp/vr3dpi_fail_${SLOT}"
-    rm -f "$TMPBODY"
-    printf "\33[2K\r"
-    printf "${CYellow}\r[DPI Interference Detected on VPN${SLOT}] HTTPS returned HTTP $HTTPCODE -- Initiating restart${CClear}\n"
-    sleep 3
-    restartvpn "$SLOT"
-    dvpn_on_tunnel_restart "ovpn" "$SLOT"
-    sendmessage 1 "DPI Redirect/Block Detected" "$SLOT"
-    restartrouting
-    resetspdmerlin
-    exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
-    return 1
-  fi
-
-  # HTTP 200 confirmed. Now check the egress IP from the Cloudflare trace body.
-  local VPNEGRESS WANIP
-  VPNEGRESS=$(grep "^ip=" "$TMPBODY" 2>/dev/null | cut -d'=' -f2 | tr -d ' \r\n')
-  WANIP=$($timeoutcmd$timeoutsec nvram get wan0_ipaddr 2>/dev/null)
-  rm -f "$TMPBODY"
-
-  if [ -n "$VPNEGRESS" ] && [ -n "$WANIP" ] && [ "$VPNEGRESS" = "$WANIP" ]; then
-    # Egress IP matches WAN - traffic is bypassing the VPN tunnel entirely
-    dpi_log "ALERT: Traffic leak detected on VPN${SLOT} -- egress IP ${VPNEGRESS} equals WAN IP ${WANIP}"
-    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ALERT: DPI traffic leak on VPN${SLOT}: egress IP ${VPNEGRESS} matches WAN IP ${WANIP}. Traffic bypassing tunnel. Initiating restart." >> $dpilogfile
-    touch "/tmp/vr3dpi_fail_${SLOT}"
-    printf "\33[2K\r"
-    printf "${CRed}\r[DPI Traffic Leak on VPN${SLOT}] Egress IP equals WAN IP -- Initiating restart${CClear}\n"
-    sleep 3
-    restartvpn "$SLOT"
-    dvpn_on_tunnel_restart "ovpn" "$SLOT"
-    sendmessage 1 "DPI Traffic Leak Detected" "$SLOT"
-    restartrouting
-    resetspdmerlin
-    exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
-    return 1
-  fi
-
-  dpi_log "INFO: DPI detection check passed on VPN${SLOT} (HTTP $HTTPCODE, egress ${VPNEGRESS:-unknown} via $TUNIF)"
-  rm -f "/tmp/vr3dpi_fail_${SLOT}" 2>/dev/null
-  return 0
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# checkdpi_mitm - Periodic certificate issuer MITM detection for a monitored OpenVPN TCP/443 slot.
-# Runs at 3x the DPI_DETECT_INTERVAL cadence. Uses curl --verbose to read the TLS certificate
-# issuer from the inner HTTPS session through the VPN tunnel. If the issuer matches any known
-# interception proxy or local CA pattern, logs an ALERT and sends a notification.
-# Unlike checkdpi(), a MITM is a NETWORK-LEVEL interception -- restarting the tunnel does NOT
-# fix it, so no restart is triggered. The failure flag is set so the slot indicator turns red
-# and the condition is clearly visible in the main display.
-# $1 = VPN slot number
-
-checkdpi_mitm()
-{
-  local SLOT="$1"
-  local TUNIF="tun1${SLOT}"
-  local TESTURL="https://www.cloudflare.com/cdn-cgi/trace"
-  local TMPVERB="/tmp/vr3dpi_mitm_${SLOT}.tmp"
-
-  # Only check TCP-mode connections
-  local PROTO
-  PROTO="$($timeoutcmd$timeoutsec nvram get vpn_client${SLOT}_proto 2>/dev/null)"
-  if [ "$PROTO" != "tcp-client" ] && [ "$PROTO" != "tcp" ]; then
-    return 0
-  fi
-
-  # Verify the tun interface is up
-  if ! ip link show "$TUNIF" >/dev/null 2>&1; then
-    return 0
-  fi
-
-  # Fetch only headers/TLS verbose output -- discard body entirely
-  curl \
-    --interface "$TUNIF" \
-    --connect-timeout 8 \
-    --max-time 15 \
-    --silent \
-    --verbose \
-    --output /dev/null \
-    "$TESTURL" 2>"$TMPVERB"
-
-  if [ ! -s "$TMPVERB" ]; then
-    dpi_log "INFO: MITM check on VPN${SLOT} - no curl verbose output (tunnel may be down)"
-    rm -f "$TMPVERB"
-    return 0
-  fi
-
-  # Extract certificate issuer from curl verbose stderr
-  local CERTISSUER
-  CERTISSUER=$(grep -i "issuer:" "$TMPVERB" 2>/dev/null \
-               | head -1 | sed 's/^[* ]*//; s/.*issuer: //')
-  rm -f "$TMPVERB"
-
-  if [ -z "$CERTISSUER" ]; then
-    dpi_log "INFO: MITM check on VPN${SLOT} - could not parse certificate issuer from curl output"
-    return 0
-  fi
-
-  # Compare issuer against known interception proxy and local CA fingerprints.
-  # Legitimate public CAs (Google Trust Services, DigiCert, Let's Encrypt, Sectigo,
-  # GlobalSign, Entrust, Comodo) will never match these patterns.
-  # State-level and corporate MITM products typically will.
-  if echo "$CERTISSUER" | grep -qiE \
-    "localhost|127\.|192\.|10\.|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[0-1]\.|router|gateway|\
-asus|merlin|cisco|juniper|fortinet|palo.alto|prisma|bluecoat|zscaler|forcepoint|\
-symantec.ssl.visibility|iboss|lightspeed|barracuda|sophos|untangle|watchguard|checkpoint|\
-squid|sonicwall|aruba|netskope|skyhigh|websense|trustwave|smoothwall|netsweeper|\
-securly|contentkeeper|cato|versa|umbrella|big-ip|ssl.inspection|ssl.intercept|\
-web.filter|content.filter|local.ca|self.signed|internal.ca|corp.ca|enterprise.ca|\
-government|ministry|national.security|intercept.ca|proxy.ca|firewall.ca"; then
-
-    # MITM confirmed - log at ALERT level, notify, set MITM-specific flag
-    dpi_log "ALERT: TLS MITM detected on VPN${SLOT} -- certificate issuer does not match a trusted public CA: ${CERTISSUER}"
-    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - ALERT: TLS MITM DETECTED on VPN${SLOT}: certificate issuer '${CERTISSUER}' matches a known interception proxy pattern. This is a NETWORK-LEVEL interception -- tunnel restart will NOT resolve this. Manual investigation required." >> $dpilogfile
-    touch "/tmp/vr3dpi_mitm_${SLOT}"
-    printf "\33[2K\r"
-    printf "${CRed}\r[TLS MITM DETECTED on VPN${SLOT}] Cert issuer: ${CERTISSUER} -- Manual investigation required${CClear}\n"
-    sleep 5
-    # Notify but do NOT restart -- MITM is upstream of the router
-    sendmessage 1 "TLS MITM Detected on VPN${SLOT}" "$SLOT"
-    return 1
-  fi
-
-  # Issuer looks legitimate -- auto-clear the MITM alert flag so the banner and
-  # slot indicator both disappear without requiring manual intervention.
-  if [ -f "/tmp/vr3dpi_mitm_${SLOT}" ]; then
-    dpi_log "INFO: MITM check passed on VPN${SLOT} -- issuer '${CERTISSUER}' now appears legitimate. Clearing MITM alert."
-    echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - INFO: TLS MITM alert cleared on VPN${SLOT}: certificate issuer '${CERTISSUER}' is now legitimate." >> $dpilogfile
-    rm -f "/tmp/vr3dpi_mitm_${SLOT}" 2>/dev/null
-  else
-    dpi_log "INFO: MITM check passed on VPN${SLOT} -- issuer '${CERTISSUER}' appears legitimate"
-  fi
-  return 0
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -9092,13 +8009,6 @@ vreset()
   # Create a rudimentary lockfile so that VPNMON-R3 doesn't interfere during the reset
   echo -n > $lockfile
 
-  # Load supplementary configs -- these are separate files not included in the main config.
-  # Without these, DPI_ENABLED/DPI_ENHANCED_TLS stay at their default of 0, causing the
-  # TLS hardening injection guard in restartvpn() to silently skip injection on every
-  # scheduled reset even when TLS Hardening is enabled in the DPI settings.
-  dvpn_loadconfig
-  dpi_loadconfig
-
   slot=0
   for slot in $availableslots #loop through the 2/5 vpn slots
   do
@@ -9337,28 +8247,6 @@ getvpnip()
     fi
   else
     ubsync=""
-  fi
-
-  # DPI Resistance slot indicator - appended after ubsync on connected TCP/443 OVPN slots
-  dpisync=""
-  if [ "$DPI_ENABLED" = "1" ]; then
-    _dpi_slot_proto=$($timeoutcmd$timeoutsec nvram get "vpn_client${1}_proto" 2>/dev/null)
-    _dpi_slot_port=$($timeoutcmd$timeoutsec nvram get "vpn_client${1}_port" 2>/dev/null)
-    if { [ "$_dpi_slot_proto" = "tcp-client" ] || [ "$_dpi_slot_proto" = "tcp" ]; } && [ "$_dpi_slot_port" = "443" ]; then
-      # Red: a recent DPI detection failure flag OR a MITM alert flag exists for this slot
-      if [ -f "/tmp/vr3dpi_fail_${1}" ] || [ -f "/tmp/vr3dpi_mitm_${1}" ]; then
-        dpisync="${CRed}-X[DPI]${CClear}"
-      # Red: master switch is on but both sub-features are off (hollow protection)
-      elif [ "$DPI_ENHANCED_TLS" != "1" ] && [ "$DPI_DETECT" != "1" ]; then
-        dpisync="${CRed}-X[DPI]${CClear}"
-      # Green: both TLS hardening AND active detection are enabled
-      elif [ "$DPI_ENHANCED_TLS" = "1" ] && [ "$DPI_DETECT" = "1" ]; then
-        dpisync="${CGreen}->[DPI]${CClear}"
-      # Yellow: master on, at least one sub-feature active but not both
-      else
-        dpisync="${CYellow}-?[DPI]${CClear}"
-      fi
-    fi
   fi
 
   # Insert bogus IP if screenshotmode is on #
@@ -9637,96 +8525,64 @@ getwgcity()
 checkvpn()
 {
   CNT=0
+  #TRIES=3
   TUN="tun1$1"
-  # Lightweight connectivity test used only when both pings fail.
-  # Returns HTTP 204 No Content with a zero-byte body -- purpose-built for connectivity
-  # testing, no rate-limiting concern, and faster than a full icanhazip roundtrip.
-  local FALLBACK_URL="https://clients3.google.com/generate_204"
 
-  while [ "$CNT" -lt "$recover" ]; do
-
-    # --- Primary health check: ICMP ping ---
-    # Try primary host first, then secondary. Either succeeding is sufficient.
-    ping -I $TUN -q -c 1 -W 2 $PINGHOST > /dev/null 2>&1
+  while [ "$CNT" -lt "$recover" ]; do # Loop through number of tries
+    ping -I $TUN -q -c 1 -W 2 $PINGHOST > /dev/null 2>&1 # First try pings to Primary PING Host
     RC=$?
-    ping -I $TUN -q -c 1 -W 2 $PINGHOST2 > /dev/null 2>&1
+    ping -I $TUN -q -c 1 -W 2 $PINGHOST2 > /dev/null 2>&1 # Then try pings to Secondary PING Host
     SC=$?
-
-    if [ "$RC" -eq 0 ] || [ "$SC" -eq 0 ]; then
-      # At least one ping succeeded -- tunnel is healthy.
-      # Capture RTT from whichever host responded.
-      if [ "$RC" -eq 0 ]; then
-        vpnping=$(ping -I $TUN -c 1 -W 2 $PINGHOST \
-          | awk -F'time=| ms' 'NF==3{printf "%.3f", $(NF-1)}') 2>/dev/null
-      else
-        vpnping=$(ping -I $TUN -c 1 -W 2 $PINGHOST2 \
-          | awk -F'time=| ms' 'NF==3{printf "%.3f", $(NF-1)}') 2>/dev/null
-      fi
-      [ -z "$vpnping" ] && vpnping=0
-      vpnhealth="${CGreen}[ OK ]${CClear}"
-      vpnindicator="${InvGreen} ${CClear}"
-      if [ "$problemvpnslot" -eq "$1" ]; then
-        vrcnt=0
-        problemvpnslot=0
-      fi
-      printf "\33[2K\r"
-      break
-
-    else
-      # Both pings failed - could be ICMP blocked (common on NordVPN/ProtonVPN TCP/443)
-      # or an actual tunnel failure. Use a curl connectivity test to distinguish.
-      CURL_OUT=$(curl \
-        --silent \
-        --max-time 10 \
-        --interface "$TUN" \
-        --write-out "%{http_code}|%{time_connect}" \
-        --output /dev/null \
-        --request GET \
-        --url "$FALLBACK_URL" 2>/dev/null)
+    if [ "$RC" -eq 0 ] || [ "$SC" -eq 0 ]; then # Grab the public IP of the VPN Connection #
+      COMBOPING=0
+      ICANHAZIP="$(curl --silent --fail --retry 3 --retry-delay 1 --retry-all-errors --max-time 10 --interface "$TUN" --request GET --url https://ipv4.icanhazip.com)"
       IC=$?
-      CURL_CODE=$(echo "$CURL_OUT" | cut -d'|' -f1)
-      CURL_TCPMS=$(echo "$CURL_OUT" | cut -d'|' -f2 \
-        | awk '{printf "%.3f", $1*1000}' 2>/dev/null)
-
-      if [ "$IC" -eq 0 ] && [ "$CURL_CODE" = "204" ]; then
-        # Tunnel is healthy - ICMP is simply blocked by this provider.
-        # Use TCP connect time (SYN->SYN-ACK) as the RTT substitute.
-        vpnping="${CURL_TCPMS:-0}"
-        vpnhealth="${CGreen}[CURL]${CClear}"
+    else
+      COMBOPING=1
+      IC=2
+    fi
+    if [ "$COMBOPING" -eq 0 ] && [ "$IC" -eq 0 ]; then  # If both ping/curl come back successful, then proceed
+      vpnping=$(ping -I $TUN -c 1 -W 2 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1
+      VP=$?
+      if [ "$VP" -eq 0 ]; then
+        vpnhealth="${CGreen}[ OK ]${CClear}"
         vpnindicator="${InvGreen} ${CClear}"
         if [ "$problemvpnslot" -eq "$1" ]; then
           vrcnt=0
           problemvpnslot=0
         fi
-        printf "\33[2K\r"
-        break
-
       else
-        # Both ping AND curl failed -- genuine tunnel problem.
-        CNT="$((CNT+1))"
-        printf "\33[2K\r"
-        printf "\r${InvDkGray} ${CWhite} VPN$1${CClear} [Attempt $CNT]"
-        sleep 1
+        vpnping=0
+        vpnhealth="${CYellow}[UNKN]${CClear}"
+        vpnindicator="${InvYellow} ${CClear}"
+      fi
+      printf "\33[2K\r"
+      break
+    else
+      CNT="$((CNT+1))"
+      printf "\33[2K\r"
+      printf "\r${InvDkGray} ${CWhite} VPN$1${CClear} [Attempt $CNT]"
+      sleep 1 # Giving the VPN a chance to recover a certain number of times
 
-        if [ "$CNT" -eq "$recover" ]; then
-          printf "\33[2K\r"
-          vpnping=0
-          vpnhealth="${CRed}[FAIL]${CClear}"
-          vpnindicator="${InvRed} ${CClear}"
-          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$1 failed to respond" >> $logfile
-          vrcnt="$((vrcnt+1))"
-          problemvpnslot="$1"
-          if [ "$vrcnt" -ge 10 ]; then
-            monitored="${CRed}[!]${CClear}"
-          else
-            monitored="${CRed}[$vrcnt]${CClear}"
-          fi
-          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$1 attempt $vrcnt of $recover to allow connection to recover" >> $logfile
-          if [ "$vrcnt" -eq "$recover" ]; then
-            if [ "$((VPN$1))" = "1" ]; then
-              echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$1 failed to respond after $recover attempt(s)" >> $logfile
-              resetvpn=$1
-            fi
+      if [ "$CNT" -eq "$recover" ];then # But if it fails, report back that we have an issue requiring a VPN reset
+        printf "\33[2K\r"
+        vpnping=0
+        vpnhealth="${CRed}[FAIL]${CClear}"
+        vpnindicator="${InvRed} ${CClear}"
+        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$1 failed to respond" >> $logfile
+
+        vrcnt="$((vrcnt+1))"
+        problemvpnslot="$1"
+        if [ "$vrcnt" -ge 10 ]; then
+          monitored="${CRed}[!]${CClear}"
+        else
+          monitored="${CRed}[$vrcnt]${CClear}"
+        fi
+        echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$1 attempt $vrcnt of $recover to allow connection to recover" >> $logfile
+        if [ "$vrcnt" -eq "$recover" ]; then
+          if [ "$((VPN$1))" = "1" ]; then
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$1 failed to respond after $recover attempt(s)" >> $logfile
+            resetvpn=$1
           fi
         fi
       fi
@@ -10229,6 +9085,7 @@ wancheck()
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
+
 # This function was "borrowed" graciously from @dave14305 from his FlexQoS script to determine the active WAN connection.
 # Thanks much for your troubleshooting help as we tackled how to best derive the active WAN interface, Dave!
 
@@ -10861,7 +9718,7 @@ displayopsmenu()
       echo -e "${InvGreen} ${InvDkGray}${CWhite} Operations Menu                                                                                                                ${CClear}"
       echo -e "${InvGreen} ${CClear} Reset/Reconnect VPN 1:${CGreen}(1)${CClear} 2:${CGreen}(2)${CClear}                               ${InvGreen} ${CClear} ${CGreen}(C)${CClear}onfiguration Menu / Main Setup Menu $rldisp${CClear}"
       echo -e "${InvGreen} ${CClear} Stop/Unmonitor  VPN 1:${CGreen}(!)${CClear} 2:${CGreen}(@)${CClear}                               ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN/WG CRON Time Scheduler: $schedtime"
-      echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN Slots | Time Reset             ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / ${CGreen}(D)${CClear}PI Log /Trim Log Size (rows): $logSizeStr"
+      echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN Slots | Time Reset             ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim Log Size (rows): $logSizeStr"
       echo -e "${InvGreen} ${CClear} Update/Maintain ${CGreen}(V)${CClear}PN Server Lists                            ${InvGreen} ${CClear} ${CGreen}(A)${CClear}utostart VPNMON-R3 on Reboot: $rebootprot"
       echo -e "${InvGreen} ${CClear} Edit/R${CGreen}(U)${CClear}n Server List Automation                             ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer Loop Check Interval: $timerLoopStr | $recoverdisp"
       echo -e "${InvGreen} ${CClear} AMTM Email Not${CGreen}(I)${CClear}fications: $amtmdisp                  ${InvGreen} ${CClear} ${CGreen}(P)${CClear}ing Maximum Before Reset in ms: $pingResetStr"
@@ -10872,7 +9729,7 @@ displayopsmenu()
       echo -e "${InvGreen} ${InvDkGray}${CWhite} Operations Menu                                                                                                                ${CClear}"
       echo -e "${InvGreen} ${CClear} Reset/Reconnect VPN 1:${CGreen}(1)${CClear} 2:${CGreen}(2)${CClear} 3:${CGreen}(3)${CClear} 4:${CGreen}(4)${CClear} 5:${CGreen}(5)${CClear}             ${InvGreen} ${CClear} ${CGreen}(C)${CClear}onfiguration Menu / Main Setup Menu $rldisp${CClear}"
       echo -e "${InvGreen} ${CClear} Stop/Unmonitor  VPN 1:${CGreen}(!)${CClear} 2:${CGreen}(@)${CClear} 3:${CGreen}(#)${CClear} 4:${CGreen}($)${CClear} 5:${CGreen}(%)${CClear}             ${InvGreen} ${CClear} ${CGreen}(R)${CClear}eset VPN/WG CRON Time Scheduler: $schedtime"
-      echo -e "${InvGreen} ${CClear} Reset/Reconnect  WG 1:${CGreen}(6)${CClear} 2:${CGreen}(7)${CClear} 3:${CGreen}(8)${CClear} 4:${CGreen}(9)${CClear} 5:${CGreen}(0)${CClear}             ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / ${CGreen}(D)${CClear}PI Log / Trim Log Size (rows): $logSizeStr"
+      echo -e "${InvGreen} ${CClear} Reset/Reconnect  WG 1:${CGreen}(6)${CClear} 2:${CGreen}(7)${CClear} 3:${CGreen}(8)${CClear} 4:${CGreen}(9)${CClear} 5:${CGreen}(0)${CClear}             ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim Log Size (rows): $logSizeStr"
       echo -e "${InvGreen} ${CClear} Stop/Unmonitor   WG 1:${CGreen}(^)${CClear} 2:${CGreen}(&)${CClear} 3:${CGreen}(-)${CClear} 4:${CGreen}(+)${CClear} 5:${CGreen}(=)${CClear}             ${InvGreen} ${CClear} ${CGreen}(A)${CClear}utostart VPNMON-R3 on Reboot: $rebootprot"
       echo -e "${InvGreen} ${CClear} Enable/Disable ${CGreen}(M)${CClear}onitored VPN/WG Slots | Time Reset          ${InvGreen} ${CClear} ${CGreen}(T)${CClear}imer Loop Check Interval: $timerLoopStr | $recoverdisp"
       echo -e "${InvGreen} ${CClear} Update/Maintain ${CGreen}(V)${CClear}PN/${CGreen}(W)${CClear}G Server Lists                       ${InvGreen} ${CClear} ${CGreen}(P)${CClear}ing Maximum Before Reset in ms: $pingResetStr"
@@ -11118,27 +9975,9 @@ do
     exit 1
   fi
 
-  # stunmon.sh integration using live status file if present.
-  # STUNMON_MANAGED_SLOTS lists slots that stunmon.sh owns. For each such slot
-  # we force VPN#=0 in memory so VPNMON-R3 skips monitoring and restarting them.
-  STUNMON_MANAGED_SLOTS=""
-  if [ -f /jffs/addons/stunmon.d/stunmon.status ]
-  then
-    source /jffs/addons/stunmon.d/stunmon.status
-    for _stunslot in $STUNMON_MANAGED_SLOTS
-    do
-      eval "VPN${_stunslot}=0"
-    done
-  fi
-
   if [ -f "$dvpnconfig" ]
   then
     source "$dvpnconfig"
-  fi
-
-  if [ -f "$dpiconfig" ]
-  then
-    source "$dpiconfig"
   fi
 
   createconfigs
@@ -11159,13 +9998,6 @@ do
   #Set variables
   resetvpn=0
   resetwg=0
-
-  # Load the list of OpenVPN slots that were stuck in Connecting state last cycle
-  prevconnecting=""
-  if [ -f /tmp/vr3connecting.txt ]; then
-    prevconnecting="$(cat /tmp/vr3connecting.txt)"
-  fi
-  currconnecting=""
 
   #Check to see if a reset is currently underway
   lockcheck
@@ -11233,30 +10065,7 @@ do
 
   if [ "$useovpn" = "1" ]
   then
-    if [ "$DPI_ENABLED" = "1" ]; then
-      dpi_tls_hdr="${CRed}TLS-Hardening"
-      dpi_det_hdr="${CRed}Detection"
-      [ "$DPI_ENHANCED_TLS" = "1" ] && dpi_tls_hdr="${CGreen}TLS-Hardening"
-      [ "$DPI_DETECT"       = "1" ] && dpi_det_hdr="${CGreen}Detection"
-      echo -e "${InvDkGray}${CWhite} OpenVPN | ${CGreen}DPI Resistance: ACTIVE (OpenVPN only) ${CWhite}| ${dpi_tls_hdr}: ${dpi_det_hdr}${InvDkGray}                                                      ${CClear}"
-    else
-      echo -e "${InvDkGray} OpenVPN                                                                                                                         ${CClear}"
-    fi
-
-    # MITM alert banner shown directly under the OpenVPN header, persists until the
-    # certificate is detected as legitimate again by checkdpi_mitm(). Uses a separate
-    # flag file (vr3dpi_mitm_N) that is managed independently of the HTTPS failure flag.
-    _dpi_mitm_slots=""
-    for _ms in 1 2 3 4 5; do
-      [ -f "/tmp/vr3dpi_mitm_${_ms}" ] && _dpi_mitm_slots="${_dpi_mitm_slots}VPN${_ms} "
-    done
-    if [ -n "$_dpi_mitm_slots" ]; then
-      _mitm_banner=" !! TLS MITM ALERT: ${_dpi_mitm_slots}-- Cert issuer is not a trusted public CA. Manual investigation required."
-      _mitm_pad=$(( 129 - ${#_mitm_banner} ))
-      [ "$_mitm_pad" -lt 0 ] && _mitm_pad=0
-      echo -e "${InvRed}${CWhite}${_mitm_banner}$(printf '%*s' "$_mitm_pad" '')${CClear}"
-    fi
-    
+    echo -e "${InvDkGray} OpenVPN                                                                                                                         ${CClear}"
     echo ""
     #Display VPN client slot grid
     if [ "$unboundclient" != "0" ]; then
@@ -11282,7 +10091,6 @@ do
         #Set variables
         citychange=""
         ubsync=""
-        dpisync=""
         vpnrx1=""
         vpntx1=""
         vpnrx2=""
@@ -11334,8 +10142,6 @@ do
            vpntx1="${CDkGray}[n/a ]${CClear}"
            vpnrx2="${CDkGray}[n/a ]${CClear}"
            vpntx2="${CDkGray}[n/a ]${CClear}"
-           # Track monitored slots that are connecting so we can detect if stuck next cycle
-           if [ "$((VPN$i))" = "1" ]; then currconnecting="${currconnecting} $i"; fi
         elif [ "$vpnstate" = "2" ]
         then
            vpnstate="${CGreen}Connected${CClear}   "
@@ -11358,15 +10164,6 @@ do
            vpnip="          ${CDkGray}[n/a]${CClear}"
            vpncity="${CDkGray}[n/a]${CClear}"
            svrping="     ${CDkGray}[n/a]${CClear}"
-        fi
-
-        # stunmon integration: replace health indicator with [STUN] for any slot
-        # managed by stunmon.sh, regardless of VPN state or ping result.
-        if echo " $STUNMON_MANAGED_SLOTS " | grep -q " $i "
-        then
-          vpnhealth="${CCyan}[STUN]${CClear}"
-          # Remove all server entries from this particular slot as to not introduce a random reconnect breaking stunnel
-          rm -f "/jffs/addons/vpnmon-r3.d/vr3svr$i.txt" 2>/dev/null
         fi
 
         #Determine how many server entries are in each of the vpn slot alternate server files#
@@ -11482,9 +10279,9 @@ do
 
         # Print the results of all data gathered sofar #
         if [ "$bwdisp" = "1" ]; then
-          echo -e "$vpnindicator${InvDkGray}${CWhite} VPN$i${CClear} | $monitored | $servercnt | $vpnhealth | $vpnstate | $vpnip | $svrping | $vpntx1 | $vpnrx1 | $vpncity$sincelastreset $citychange$ubsync$dpisync"
+          echo -e "$vpnindicator${InvDkGray}${CWhite} VPN$i${CClear} | $monitored | $servercnt | $vpnhealth | $vpnstate | $vpnip | $svrping | $vpntx1 | $vpnrx1 | $vpncity$sincelastreset $citychange$ubsync"
         else
-          echo -e "$vpnindicator${InvDkGray}${CWhite} VPN$i${CClear} | $monitored | $servercnt | $vpnhealth | $vpnstate | $vpnip | $svrping | $vpntx2 | $vpnrx2 | $vpncity$sincelastreset $citychange$ubsync$dpisync"
+          echo -e "$vpnindicator${InvDkGray}${CWhite} VPN$i${CClear} | $monitored | $servercnt | $vpnhealth | $vpnstate | $vpnip | $svrping | $vpntx2 | $vpnrx2 | $vpncity$sincelastreset $citychange$ubsync"
         fi
 
         #if a vpn is monitored and disconnected, try to restart it
@@ -11533,32 +10330,6 @@ do
           restartvpn $i
           dvpn_on_tunnel_restart "ovpn" "$i";
           sendmessage 1 "VPN Slot In Error State" $i
-          restartrouting
-          resetspdmerlin
-          exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
-        fi
-
-        #if a vpn is monitored and stuck in Connecting state across two consecutive cycles, try to restart it
-        if [ "$((VPN$i))" = "1" ] && [ "$vpnstate" = "Connecting  " ] && echo " $prevconnecting " | grep -q " $i "
-        then #reconnect
-          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) VPNMON-R3[$$] - WARNING: VPN$i is stuck in Connecting state and being reconnected" >> $logfile
-          echo ""
-          printf "\33[2K\r"
-
-          #display a standard timer#
-          timer=0
-          while [ $timer -ne 5 ]
-          do
-            timer="$((timer+1))"
-            preparebar 46 "|"
-            progressbarpause $timer 5 "" "s" "Standard"
-          done
-          printf "\33[2K\r"
-
-          rm -f /tmp/vr3connecting.txt
-          restartvpn $i
-          dvpn_on_tunnel_restart "ovpn" "$i"
-          sendmessage 1 "VPN Stuck in Connecting State" $i
           restartrouting
           resetspdmerlin
           exec sh /jffs/scripts/vpnmon-r3.sh -noswitch
@@ -11641,13 +10412,6 @@ do
         sincelastreset=""
 
     done
-
-    # Persist which monitored slots are currently Connecting so the next cycle can detect stuck connections
-    if [ -n "$currconnecting" ]; then
-      echo "$currconnecting" > /tmp/vr3connecting.txt
-    else
-      rm -f /tmp/vr3connecting.txt
-    fi
 
     echo -e "-------|-----|--------|--------|--------------|-----------------|------------|--------|------------------------------------------"
     echo ""
@@ -12024,52 +10788,6 @@ do
   calcifacestats # Grab new stats after the timer completes for comparison
 
   dvpn_check_and_apply # Check if DoubleVPN is currently intact
-
-  # DPI Detection check - runs every DPI_DETECT_INTERVAL loops on TCP/443 OpenVPN slots
-  if [ "$DPI_ENABLED" = "1" ] && [ "$DPI_DETECT" = "1" ]; then
-    dpicheckcnt=$((dpicheckcnt + 1))
-    if [ "$dpicheckcnt" -ge "$DPI_DETECT_INTERVAL" ]; then
-      dpicheckcnt=0
-      _dpi_chk_slot=0
-      for _dpi_chk_slot in $availableslots; do
-        _dpi_chk_state="$(_VPN_GetClientState_ "$_dpi_chk_slot")"
-        _dpi_chk_proto=$($timeoutcmd$timeoutsec nvram get "vpn_client${_dpi_chk_slot}_proto" 2>/dev/null)
-        _dpi_chk_port=$($timeoutcmd$timeoutsec nvram get "vpn_client${_dpi_chk_slot}_port" 2>/dev/null)
-        _dpi_chk_mon=""
-        eval _dpi_chk_mon="\$VPN${_dpi_chk_slot}"
-        if [ "$_dpi_chk_mon" = "1" ] && [ "$_dpi_chk_state" = "2" ] && \
-           { [ "$_dpi_chk_proto" = "tcp-client" ] || [ "$_dpi_chk_proto" = "tcp" ]; } && \
-           [ "$_dpi_chk_port" = "443" ]; then
-          checkdpi "$_dpi_chk_slot"
-        fi
-      done
-    fi
-  fi
-
-  # MITM Certificate check - runs every (DPI_DETECT_INTERVAL * 3) loops on TCP/443 OpenVPN slots.
-  # Runs independently of the HTTPS/leak check - a MITM passes HTTP 200 so checkdpi() cannot
-  # detect it. Uses curl --verbose to read the cert issuer through the tunnel interface.
-  # Does NOT restart on detection; MITM is network-level and requires manual investigation.
-  if [ "$DPI_ENABLED" = "1" ] && [ "$DPI_DETECT" = "1" ]; then
-    dpimitm_cnt=$((dpimitm_cnt + 1))
-    _dpi_mitm_interval=$((DPI_DETECT_INTERVAL * 3))
-    if [ "$dpimitm_cnt" -ge "$_dpi_mitm_interval" ]; then
-      dpimitm_cnt=0
-      _dpi_mitm_slot=0
-      for _dpi_mitm_slot in $availableslots; do
-        _dpi_mitm_state="$(_VPN_GetClientState_ "$_dpi_mitm_slot")"
-        _dpi_mitm_proto=$($timeoutcmd$timeoutsec nvram get "vpn_client${_dpi_mitm_slot}_proto" 2>/dev/null)
-        _dpi_mitm_port=$($timeoutcmd$timeoutsec nvram get "vpn_client${_dpi_mitm_slot}_port" 2>/dev/null)
-        _dpi_mitm_mon=""
-        eval _dpi_mitm_mon="\$VPN${_dpi_mitm_slot}"
-        if [ "$_dpi_mitm_mon" = "1" ] && [ "$_dpi_mitm_state" = "2" ] && \
-           { [ "$_dpi_mitm_proto" = "tcp-client" ] || [ "$_dpi_mitm_proto" = "tcp" ]; } && \
-           [ "$_dpi_mitm_port" = "443" ]; then
-          checkdpi_mitm "$_dpi_mitm_slot"
-        fi
-      done
-    fi
-  fi
 
   #Check to see if a reset is currently underway
   lockcheck

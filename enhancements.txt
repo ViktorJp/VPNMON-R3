@@ -1,7 +1,8 @@
 To-Do:
-- ...
+- Add ability to support site-to-site VPN, using private IPs, doing away with health checks, city lookups, etc. - @toaruScar
 
 Done:
+- VPN will stay in "Connecting" state indefinitely. Check for state and reset if not connected after 1st loop. - @RRands
 - Double-Hop VPN capabilities
 - configurable timeouts for wan detection and resets @scootertramp
 - Find a way to remember past bandwidth stats so that it doesn't revert to [UNKN] as often.
